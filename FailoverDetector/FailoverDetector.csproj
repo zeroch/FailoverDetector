@@ -43,23 +43,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AlwayOn.designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>AlwayOn.dbml</DependentUpon>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="AlwayOn.dbml">
-      <Generator>MSLinqToSQLGenerator</Generator>
-      <LastGenOutput>AlwayOn.designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="AlwayOn.dbml.layout">
-      <DependentUpon>AlwayOn.dbml</DependentUpon>
-    </None>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
