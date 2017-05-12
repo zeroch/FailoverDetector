@@ -22,17 +22,26 @@ namespace FailoverDetector
         }
         public virtual void buildReport()
         {
+            // build dataSource
         }
 
         public virtual void analyzeData()
         {
+            // utilize data from container
+            // execute search codepath
+            // fill data to property
 
         }
         public virtual void showReport()
         {
-
+            // simple display data from property
         }
 
+
+    }
+
+    class AutoFailoverReport : FailoverReport
+    {
 
     }
 }

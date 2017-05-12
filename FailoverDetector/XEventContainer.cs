@@ -22,7 +22,7 @@ namespace FailoverDetector
         private SqlCommand insert_command;
         private QueryableXEventData raw_data;
 
-        private bool openXelFile(string fileName)
+        public bool openXelFile(string fileName)
         {
             if (fileName == null)
             {
@@ -42,11 +42,11 @@ namespace FailoverDetector
             }
         }
 
-        private void createTable()
+        public void createTable()
         {
         }
 
-        private void insertDataToTable()
+        public void insertDataToTable()
         {
 
         }
