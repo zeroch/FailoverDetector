@@ -8,7 +8,7 @@ using Microsoft.SqlServer.XEvent.Linq;
 
 namespace FailoverDetector
 {
-    class XEventContainer
+    public class XEventContainer
     {
         enum XEventType
         {
@@ -20,7 +20,7 @@ namespace FailoverDetector
         private const string connectionString = "Initial Catalog=FailoverDetector; Trusted_Connection=True;";
         private SqlConnection m_conn;
         private SqlCommand insert_command;
-        private QueryableXEventData raw_data;
+        public QueryableXEventData raw_data;
 
         public bool openXelFile(string fileName)
         {
@@ -32,6 +32,10 @@ namespace FailoverDetector
             {try
                 {
                     raw_data = new QueryableXEventData(fileName);
+                    if( raw_data == null)
+                    {
+                        return false;
+                    }
                     return true;
                 }catch(Exception e)
                 {
