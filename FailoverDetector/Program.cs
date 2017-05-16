@@ -13,13 +13,19 @@ namespace FailoverDetector
         static void Main(string[] args)
         {
 
-            string connStr = "Server=ze-vm001\\SQL18TEST01; Initial Catalog=FailoverDetector; Trusted_Connection=True;";
-            TestingSQLCommand testCommand = new TestingSQLCommand(connStr);
-            testCommand.TestSQLConnection();
+            //string connStr = "Server=ze-vm001\\SQL18TEST01; Initial Catalog=FailoverDetector; Trusted_Connection=True;";
+            //TestingSQLCommand testCommand = new TestingSQLCommand(connStr);
+            //testCommand.TestSQLConnection();
             //testCommand.TestSQLPrepare("NodeA");
             //testCommand.openXelFile("C:\\AlwaysOn_health_0_131180526930290000.xel");
             //testCommand.TestInsertRow();
-            testCommand.insertXelRowToTable("C:\\AlwaysOn_health_0_131180526930290000.xel");
+            XEventContainer container = new XEventContainer();
+            bool result = container.openXelFile("C:\\AlwaysOn_health_0_131180526930290000.xel");
+            if(result)
+            {
+                container.getStateChange();
+            }
+            //testCommand.insertXelRowToTable("C:\\AlwaysOn_health_0_131180526930290000.xel");
             Console.ReadLine();
         }
     }
@@ -211,7 +217,8 @@ namespace FailoverDetector
 
                         foreach (PublishedEvent evt in events)
                         {
-                            eventName = evt.Name;
+                            if (evt.Name == eventName)
+                                eventName = evt.Name;
                             time = evt.Timestamp.ToString();
                             PublishedEventField out_value;
 
