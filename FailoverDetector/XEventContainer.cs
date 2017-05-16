@@ -10,59 +10,35 @@ using System.Collections;
 
 namespace FailoverDetector
 {
-    public class XEventContainer
+    public class XEventContainer : DataContainer
     {
-        enum XEventType
-        {
-            AlwaysOnHealth,
-            SystemHealth,
-        };
+        private string filePath;
+        private AlwaysOnData m_AlwaysOn;
+        private SystemData m_System;
 
-        private string instanceName;
-        private const string connectionString = "Initial Catalog=FailoverDetector; Trusted_Connection=True;";
-        private SqlConnection m_conn;
-        private SqlCommand insert_command;
-        public QueryableXEventData raw_data;
-
-        public bool openXelFile(string fileName)
+        public XEventContainer(string path)
         {
-            if (fileName.Length == 0)
-            {
-                return false;
-            }
-            else
-            { try
-                {
-                    raw_data = new QueryableXEventData(fileName);
-                    return true;
-                } catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    Console.WriteLine("open XelFiel failed");
-                    return false;
-                }
-            }
+            filePath = path;
+            m_AlwaysOn = new AlwaysOnData();
+            m_System = new SystemData();
         }
+     
 
-        public void getStateChange()
+        public override void loadDataFile()
         {
+            // load xel File
+            // filter data
+            // extract into alwaysOnData
 
-            raw_data.Where(e => e.Name == "error_reported");
-            //IEnumerable<string> allEventName = raw_data.Select(evt => evt.Name);
-            //foreach( string s in allEventName)
-            //{
-            //    Console.WriteLine(s);
-            //}
-
+            // load xel File
+            // filter data
+            // extract into systemData
         }
-
-        public void filterNoise()
+        public override bool DetectFailover()
         {
-            
+            // run search at m_AlwaysOn
+            return true;
         }
-
-        
-
     }
-   
+
 }

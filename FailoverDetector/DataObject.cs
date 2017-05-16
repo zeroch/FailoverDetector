@@ -17,6 +17,14 @@ namespace FailoverDetector
             arMgrStateChangeEvent = new EventList();
             errorEvent = new EventList();
         }
+        public void loadData(string xelFileName, string serverName)
+        {  
+            // load xel File
+            // filter data
+            // extract into alwaysOnData
+           
+        }
+        
     }
     public class SystemData
     {
@@ -25,6 +33,7 @@ namespace FailoverDetector
         {
             spDiagResultEvents = new EventList();
         }
+        public void loadData(string xelFileName, string serverName) { }
     }
     public class EventList : IEnumerable
     {
