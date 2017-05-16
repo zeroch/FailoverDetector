@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
 using Microsoft.SqlServer.XEvent.Linq;
+using System.Collections;
+
 
 namespace FailoverDetector
 {
@@ -24,20 +26,16 @@ namespace FailoverDetector
 
         public bool openXelFile(string fileName)
         {
-            if (fileName == null)
+            if (fileName.Length == 0)
             {
                 return false;
             }
             else
-            {try
+            { try
                 {
                     raw_data = new QueryableXEventData(fileName);
-                    if( raw_data == null)
-                    {
-                        return false;
-                    }
                     return true;
-                }catch(Exception e)
+                } catch (Exception e)
                 {
                     Console.WriteLine(e);
                     Console.WriteLine("open XelFiel failed");
@@ -46,17 +44,21 @@ namespace FailoverDetector
             }
         }
 
-        public void createTable()
-        {
-        }
-
-        public void insertDataToTable()
+        public void getStateChange()
         {
 
+            raw_data.Where(e => e.Name == "error_reported");
+            //IEnumerable<string> allEventName = raw_data.Select(evt => evt.Name);
+            //foreach( string s in allEventName)
+            //{
+            //    Console.WriteLine(s);
+            //}
+
         }
+
         public void filterNoise()
         {
-
+            
         }
 
         
