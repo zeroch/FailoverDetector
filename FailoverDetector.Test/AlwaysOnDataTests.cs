@@ -1,25 +1,16 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using FailoverDetector;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FailoverDetector.Tests
 {
     public class AlwaysOnDataTests
     {
         [TestMethod()]
-        public void AlwaysOnDataTest()
+        public void TestParseStatement()
         {
-            Assert.Fail();
-        }
-
-        [TestMethod()]
-        public void loadDataTest()
-        {
-            Assert.Fail();
+            AlwaysOnData m_data = new AlwaysOnData();
+            string testStr = "ALTER AVAILABILITY GROUP [ag_name] failover";
+            Assert.AreEqual(true, m_data.ParseStatement(testStr));
         }
     }
 }

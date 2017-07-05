@@ -2,20 +2,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.SqlServer.XEvent.Linq;
+using System.Linq;
 
 namespace FailoverDetector
 {
     public class AlwaysOnData
     {
-        public EventList arStateChangeEvent;
-        public EventList arMgrStateChangeEvent;
-        public EventList errorEvent;
 
+        List<PartialReport> m_reports;
         public AlwaysOnData()
         {
-            arStateChangeEvent = new EventList();
-            arMgrStateChangeEvent = new EventList();
-            errorEvent = new EventList();
+
         }
         enum AlwaysOn_EventType {
             DLL_EXECUTED,
@@ -26,9 +23,78 @@ namespace FailoverDetector
             LOCK_REDO_BLOCKED,
             ERROR
         }
-        public void HandleDDLExecuted(PublishedEvent evt) { }
-        public void HandleAGLeaseExpired(PublishedEvent evt) { }
-        public void HandleARMgrStateChange(PublishedEvent evt) { }
+        public void HandleDDLExecuted(PublishedEvent evt)
+        {
+            // find active alter ag failover
+            // we only can find based on statement:
+            // pattern is 
+            // ALTER AVAILABILITY GROUP [ag_name] failover
+            // ALTER AVAILABILITY GROUP ag_name force_failover_allow_data_loss
+            string evt_statement = evt.Fields["statement"].Value.ToString();
+            bool isForceFailover = ParseStatement(evt_statement);
+            if (isForceFailover)
+            {
+                // receive a agName, which mean PrseStatement valid a failover statement
+                // check fill report or populate a report
+                bool commited = (evt.Fields["ddl_phase"].Value.ToString() == "commit");
+                if (commited)
+                {
+                    if(!m_reports.Any() || ((m_reports.Last().EndTime - evt.Timestamp).TotalMinutes > 5) )
+                    {
+                        PartialReport pReport = new PartialReport();
+                        pReport.StartTime = evt.Timestamp;
+                        pReport.EndTime = evt.Timestamp;
+                        pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
+                        pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
+                        pReport.ForceFailoverFound = true;
+
+                        m_reports.Add(pReport);
+                    }else
+                    {
+                        PartialReport prevReport = m_reports.Last();
+                        {
+                            prevReport.EndTime = evt.Timestamp;
+                            prevReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
+                            prevReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
+                            prevReport.ForceFailoverFound = true;
+                        }
+                    }
+
+                }
+            }
+
+        }
+        // parse and find failover statement
+        // ALTER AVAILABILITY GROUP [ag_name] failover
+        // ALTER AVAILABILITY GROUP ag_name force_failover_allow_data_loss
+        public bool ParseStatement(string str)
+        {
+
+            string[] wds = str.Split(' ');
+            List<string> words = wds.Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ;
+            string[] compare = { "alter", "availability", "group" };
+            string[] failover = { "failover", "force_failover_allow_data_loss" };
+
+            string command = String.Join(" ", words.Take(3)).ToLower();
+            string parameter = words[4].ToLower();
+            if (command.Equals("alter availability group"))
+            {
+                if (parameter.Equals("failover") || parameter.Equals("force_failover_allow_data_loss"))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        public void HandleAGLeaseExpired(PublishedEvent evt)
+        {
+
+        }
+        public void HandleARMgrStateChange(PublishedEvent evt)
+        {
+        }
         public void HandleARState(PublishedEvent evt) { }
         public void HandleARStateChange(PublishedEvent evt) { }
         public void HandleLockRedoBlocked(PublishedEvent evt) { }

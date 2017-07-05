@@ -12,7 +12,10 @@ namespace FailoverDetector
     {
         static void Main(string[] args)
         {
-
+            AlwaysOnData m_data = new AlwaysOnData();
+            string failoverStr = "ALTER AVAILABILITY GROUP [testAg] failover";
+            m_data.ParseStatement(failoverStr);
+            Console.ReadLine();
         }
     }
 
