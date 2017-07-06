@@ -39,11 +39,7 @@ namespace FailoverDetector.Tests
 
         }
 
-        [TestMethod()]
-        public void HandleARMgrStateChangeTest()
-        {
 
-        }
     }
 }
 

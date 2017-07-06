@@ -13,8 +13,7 @@ namespace FailoverDetector
         static void Main(string[] args)
         {
             AlwaysOnData m_data = new AlwaysOnData();
-            string failoverStr = "ALTER AVAILABILITY GROUP [testAg] failover";
-            m_data.ParseStatement(failoverStr);
+            m_data.loadData("C:\\AlwaysOn_health_0_131173774616860000.xel", "WG1-SSQL-20C\\INSTANCE7");
             Console.ReadLine();
         }
     }

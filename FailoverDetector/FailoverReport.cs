@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FailoverDetector
 {
-    class FailoverReport
+    public class FailoverReport
     {
         // property
         private DateTimeOffset  failoverTime;
@@ -42,7 +42,7 @@ namespace FailoverDetector
 
     // shameless copy from hadrarstatetransition.h
 
-    class PartialReport : FailoverReport
+    public class PartialReport : FailoverReport
     {
         enum EHadrArRole
         {
@@ -68,7 +68,11 @@ namespace FailoverDetector
 
         public string AgName { get => agName; set => agName = value; }
 
+        public PartialReport()
+        {
+            roleTransition = new List<EHadrArRole>();
 
+        }
 
         public DateTimeOffset StartTime { get => startTime; set => startTime = value; }
         public DateTimeOffset EndTime { get => endTime; set => endTime = value; }
@@ -114,7 +118,7 @@ namespace FailoverDetector
         }
     }
 
-    class AutoFailoverReport : FailoverReport
+    public class AutoFailoverReport : FailoverReport
     {
 
     }

@@ -6,14 +6,59 @@ using System.Linq;
 
 namespace FailoverDetector
 {
+    public class ReportListManager
+    {
+        List<PartialReport> m_reports;
+        string m_agName;
+        public ReportListManager()
+        {
+            m_reports = new List<PartialReport>();
+            m_agName = "";
+        }
+        public PartialReport FGetReport(PublishedEvent evt)
+        {
+            PartialReport pReport;
+            if (!m_reports.Any() || ((evt.Timestamp - m_reports.Last().EndTime).TotalMinutes >5))
+            {
+
+                pReport = new PartialReport();
+                pReport.StartTime = evt.Timestamp;
+                pReport.EndTime = evt.Timestamp;
+                pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
+                pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
+
+
+                m_reports.Add(pReport);
+            }
+            else
+            {
+                pReport = m_reports.Last();
+                pReport.EndTime = evt.Timestamp;
+                pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
+                pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
+            }
+            return pReport;
+        }
+
+        // we should always has pReport populate from list
+        // but I will check list anyway
+        public void UpdateReport(PartialReport pReport)
+        {
+            if(m_reports.Any())
+            {
+                m_reports.Remove(m_reports.Last());
+                m_reports.Add(pReport);
+            }
+        }
+    }
     public class AlwaysOnData
     {
 
         List<PartialReport> m_reports;
-        Dictionary<string, List<PartialReport>> agEventMap;
+        Dictionary<string, ReportListManager> agEventMap;
         public AlwaysOnData()
         {
-            agEventMap = new Dictionary<string, List<PartialReport>>();
+            agEventMap = new Dictionary<string, ReportListManager>();
         }
         enum AlwaysOn_EventType {
             DLL_EXECUTED,
@@ -42,33 +87,18 @@ namespace FailoverDetector
                 {
                     string agName = evt.Fields["availability_group_name"].Value.ToString();
                     // get List of report for this ag
-                    if (!agEventMap.TryGetValue(agName, out List<PartialReport> m_reports))
+                    if (!agEventMap.TryGetValue(agName, out ReportListManager m_reports))
                     {
-                        m_reports = new List<PartialReport>();
+                        m_reports = new ReportListManager();
                         agEventMap.Add(agName, m_reports);
                     }
-                    if (!m_reports.Any() || ((m_reports.Last().EndTime - evt.Timestamp).TotalMinutes > 5) )
-                    {
-                        PartialReport pReport = new PartialReport();
-                        pReport.StartTime = evt.Timestamp;
-                        pReport.EndTime = evt.Timestamp;
-                        pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
-                        pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
-                        pReport.ForceFailoverFound = true;
+                    PartialReport pReport = m_reports.FGetReport(evt);
+                    pReport.ForceFailoverFound = true;
 
-                        m_reports.Add(pReport);
-                    }else
-                    {
-                        PartialReport prevReport = m_reports.Last();
-                        {
-                            prevReport.EndTime = evt.Timestamp;
-                            prevReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
-                            prevReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
-                            prevReport.ForceFailoverFound = true;
-                        }
-                    }
+                    m_reports.UpdateReport(pReport);
 
                 }
+
             }
 
         }
@@ -102,33 +132,27 @@ namespace FailoverDetector
         }
         public void HandleARMgrStateChange(PublishedEvent evt)
         {
-            string agName = evt.Fields["availability_group_name"].Value.ToString();
-            // get List of report for this ag
-            if (!agEventMap.TryGetValue(agName, out List<PartialReport> m_reports))
-            {
-                m_reports = new List<PartialReport>();
-                agEventMap.Add(agName, m_reports);
-            }
-            if (!m_reports.Any() || ((m_reports.Last().EndTime - evt.Timestamp).TotalMinutes > 5))
-            {
-                PartialReport pReport = new PartialReport();
-                pReport.StartTime = evt.Timestamp;
-                pReport.EndTime = evt.Timestamp;
-                pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
-                pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
-                pReport.AddRoleTransition(evt.Fields["previous_state"].Value.ToString());
-                pReport.AddRoleTransition(evt.Fields["current_state"].Value.ToString());
-             }else
-            {
-                PartialReport pReport = m_reports.Last();
-                pReport.EndTime = evt.Timestamp;
-                pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
-                pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
-                pReport.AddRoleTransition(evt.Fields["current_state"].Value.ToString());
-            }
+;
         }
         public void HandleARState(PublishedEvent evt) { }
-        public void HandleARStateChange(PublishedEvent evt) { }
+        public void HandleARStateChange(PublishedEvent evt)
+        {
+            string agName = evt.Fields["availability_group_name"].Value.ToString();
+            // get List of report for this ag
+            if (!agEventMap.TryGetValue(agName, out ReportListManager m_reports))
+            {
+                m_reports = new ReportListManager();
+                agEventMap.Add(agName, m_reports);
+            }
+            PartialReport pReport = m_reports.FGetReport(evt);
+            pReport.AddRoleTransition(evt.Fields["previous_state"].Value.ToString());
+            pReport.AddRoleTransition(evt.Fields["current_state"].Value.ToString());
+
+            m_reports.UpdateReport(pReport);
+
+        }
+
+
         public void HandleLockRedoBlocked(PublishedEvent evt) { }
         public void HandleErrorReported(PublishedEvent evt) { }
         private void DispatchEvent(PublishedEvent evt)
