@@ -64,6 +64,7 @@ namespace FailoverDetector
         DateTimeOffset endTime;
         bool leaseTimeoutFound;
         bool forceFailoverFound;
+        List<EHadrArRole> roleTransition;
 
         public string AgName { get => agName; set => agName = value; }
 
@@ -74,6 +75,43 @@ namespace FailoverDetector
         public bool LeaseTimeoutFound { get => leaseTimeoutFound; set => leaseTimeoutFound = value; }
         public bool ForceFailoverFound { get => forceFailoverFound; set => forceFailoverFound = value; }
         public string AgId { get => agId; set => agId = value; }
+
+        public void AddRoleTransition(string cRole)
+        {
+            EHadrArRole m_role = EHadrArRole.HADR_AR_ROLE_LAST;
+            switch(cRole)
+            {
+                case "RESOLVING_NORMAL":
+                    m_role = EHadrArRole.HADR_AR_ROLE_RESOLVING_NORMAL;
+                    break;
+                case "RESOLVING_PENDING_FAILOVER":
+                    m_role = EHadrArRole.HADR_AR_ROLE_RESOLVING_PENDING_FAILOVER;
+                    break;
+                case "PRIMARY_PENDING":
+                    m_role = EHadrArRole.HADR_AR_ROLE_PRIMARY_PENDING;
+                    break;
+                case "PRIMARY_NORMAL":
+                    m_role = EHadrArRole.HADR_AR_ROLE_PRIMARY_NORMAL;
+                    break;
+                case "SECONDARY_NORMAL":
+                    m_role = EHadrArRole.HADR_AR_ROLE_SECONDARY_NORMAL;
+                    break;
+                case "NOT_AVAILABLE":
+                    m_role = EHadrArRole.HADR_AR_ROLE_NOT_AVAILABLE;
+                    break;
+                case "GLOBAL_PRIMARY":
+                    m_role = EHadrArRole.HADR_AR_ROLE_GLOBAL_PRIMARY;
+                    break;
+                case "FORWARDER":
+                    m_role = EHadrArRole.HADR_AR_ROLE_FORWARDER;
+                    break;
+                default:
+                    break;
+            }
+
+            roleTransition.Add(m_role);
+
+        }
     }
 
     class AutoFailoverReport : FailoverReport

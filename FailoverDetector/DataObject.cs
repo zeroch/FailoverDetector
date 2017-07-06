@@ -10,9 +10,10 @@ namespace FailoverDetector
     {
 
         List<PartialReport> m_reports;
+        Dictionary<string, List<PartialReport>> agEventMap;
         public AlwaysOnData()
         {
-
+            agEventMap = new Dictionary<string, List<PartialReport>>();
         }
         enum AlwaysOn_EventType {
             DLL_EXECUTED,
@@ -39,7 +40,14 @@ namespace FailoverDetector
                 bool commited = (evt.Fields["ddl_phase"].Value.ToString() == "commit");
                 if (commited)
                 {
-                    if(!m_reports.Any() || ((m_reports.Last().EndTime - evt.Timestamp).TotalMinutes > 5) )
+                    string agName = evt.Fields["availability_group_name"].Value.ToString();
+                    // get List of report for this ag
+                    if (!agEventMap.TryGetValue(agName, out List<PartialReport> m_reports))
+                    {
+                        m_reports = new List<PartialReport>();
+                        agEventMap.Add(agName, m_reports);
+                    }
+                    if (!m_reports.Any() || ((m_reports.Last().EndTime - evt.Timestamp).TotalMinutes > 5) )
                     {
                         PartialReport pReport = new PartialReport();
                         pReport.StartTime = evt.Timestamp;
@@ -94,6 +102,30 @@ namespace FailoverDetector
         }
         public void HandleARMgrStateChange(PublishedEvent evt)
         {
+            string agName = evt.Fields["availability_group_name"].Value.ToString();
+            // get List of report for this ag
+            if (!agEventMap.TryGetValue(agName, out List<PartialReport> m_reports))
+            {
+                m_reports = new List<PartialReport>();
+                agEventMap.Add(agName, m_reports);
+            }
+            if (!m_reports.Any() || ((m_reports.Last().EndTime - evt.Timestamp).TotalMinutes > 5))
+            {
+                PartialReport pReport = new PartialReport();
+                pReport.StartTime = evt.Timestamp;
+                pReport.EndTime = evt.Timestamp;
+                pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
+                pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
+                pReport.AddRoleTransition(evt.Fields["previous_state"].Value.ToString());
+                pReport.AddRoleTransition(evt.Fields["current_state"].Value.ToString());
+             }else
+            {
+                PartialReport pReport = m_reports.Last();
+                pReport.EndTime = evt.Timestamp;
+                pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
+                pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
+                pReport.AddRoleTransition(evt.Fields["current_state"].Value.ToString());
+            }
         }
         public void HandleARState(PublishedEvent evt) { }
         public void HandleARStateChange(PublishedEvent evt) { }

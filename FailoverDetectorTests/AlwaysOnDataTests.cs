@@ -1,10 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FailoverDetector;
+using Microsoft.SqlServer.XEvent.Linq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
+
 
 namespace FailoverDetector.Tests
 {
@@ -37,6 +36,12 @@ namespace FailoverDetector.Tests
                                 HEALTH_CHECK_TIMEOUT = 600000
                                 )   ";
             Assert.AreEqual(false, m_data.ParseStatement(testStr));
+
+        }
+
+        [TestMethod()]
+        public void HandleARMgrStateChangeTest()
+        {
 
         }
     }
