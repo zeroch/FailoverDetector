@@ -39,6 +39,16 @@ namespace FailoverDetector
             }
             return pReport;
         }
+        public void ShowReportArRoleTransition()
+        {
+            foreach (PartialReport pReport in m_reports)
+            {
+                Console.WriteLine("A report starts at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
+                pReport.ShowRoleTransition();
+                Console.WriteLine("A report ends at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.EndTime.ToString());
+                Console.WriteLine();
+            }
+        }
 
         // we should always has pReport populate from list
         // but I will check list anyway
@@ -48,6 +58,28 @@ namespace FailoverDetector
             {
                 m_reports.Remove(m_reports.Last());
                 m_reports.Add(pReport);
+            }
+        }
+        // before you call this method, you should finish parsing all AlwaysOn Xevent
+        // you have a list of partialReport
+        // search signs of failover from these report
+        public void AnalyzeReport()
+        {
+            // Alter AG failover 
+            foreach(PartialReport pReport in m_reports)
+            {
+                if( pReport.ForceFailoverFound)
+                {
+                    // this report is useful, I will push it into Failover Report for future investigation
+
+                }
+
+                // search roleTransition from Primary Pending to Primary Normal
+                if (pReport.SearchFailoverRole())
+                {
+                    // this report is useful, I will push it into Failover Report for future investigation
+                }
+ 
             }
         }
     }
@@ -125,10 +157,18 @@ namespace FailoverDetector
             return false;
         }
 
-
         public void HandleAGLeaseExpired(PublishedEvent evt)
         {
-
+            string agName = evt.Fields["availability_group_name"].Value.ToString();
+            // get List of report for this ag
+            if (!agEventMap.TryGetValue(agName, out ReportListManager m_reports))
+            {
+                m_reports = new ReportListManager();
+                agEventMap.Add(agName, m_reports);
+            }
+            PartialReport pReport = m_reports.FGetReport(evt);
+            pReport.LeaseTimeoutFound = true;
+            m_reports.UpdateReport(pReport);
         }
         public void HandleARMgrStateChange(PublishedEvent evt)
         {
@@ -145,7 +185,10 @@ namespace FailoverDetector
                 agEventMap.Add(agName, m_reports);
             }
             PartialReport pReport = m_reports.FGetReport(evt);
-            pReport.AddRoleTransition(evt.Fields["previous_state"].Value.ToString());
+            if(pReport.IsEmptyRole())
+            {
+                pReport.AddRoleTransition(evt.Fields["previous_state"].Value.ToString());
+            }
             pReport.AddRoleTransition(evt.Fields["current_state"].Value.ToString());
 
             m_reports.UpdateReport(pReport);
@@ -198,7 +241,14 @@ namespace FailoverDetector
 
            
         }
-        
+        public void ShowAGRoleTransition()
+        {
+            Dictionary<string, ReportListManager>.ValueCollection rlMgrColl = agEventMap.Values;
+            foreach (ReportListManager rlMgr in rlMgrColl)
+            {
+                rlMgr.ShowReportArRoleTransition();
+            }
+        }
     }
     public class SystemData
     {

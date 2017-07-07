@@ -13,7 +13,9 @@ namespace FailoverDetector
         static void Main(string[] args)
         {
             AlwaysOnData m_data = new AlwaysOnData();
-            m_data.loadData("C:\\AlwaysOn_health_0_131173774616860000.xel", "WG1-SSQL-20C\\INSTANCE7");
+            m_data.loadData("C:\\AlwaysOn_health_0_131180526930290000.xel", "WG1-SSQL-20C\\INSTANCE7");
+
+            m_data.ShowAGRoleTransition();
             Console.ReadLine();
         }
     }

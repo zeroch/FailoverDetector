@@ -79,7 +79,8 @@ namespace FailoverDetector
         public bool LeaseTimeoutFound { get => leaseTimeoutFound; set => leaseTimeoutFound = value; }
         public bool ForceFailoverFound { get => forceFailoverFound; set => forceFailoverFound = value; }
         public string AgId { get => agId; set => agId = value; }
-
+        
+        public bool IsEmptyRole() { return roleTransition.Any() ? false : true; }
         public void AddRoleTransition(string cRole)
         {
             EHadrArRole m_role = EHadrArRole.HADR_AR_ROLE_LAST;
@@ -116,6 +117,31 @@ namespace FailoverDetector
             roleTransition.Add(m_role);
 
         }
+        public void ShowRoleTransition()
+        {
+            foreach(EHadrArRole aRole in roleTransition)
+            {
+                Console.WriteLine("Current: {0}", aRole.ToString());
+            }
+            
+        }
+
+        public bool SearchFailoverRole()
+        {
+            EHadrArRole prevRole = roleTransition.First();
+            foreach(EHadrArRole CurrentRole in roleTransition)
+            {
+                if (prevRole.Equals(EHadrArRole.HADR_AR_ROLE_PRIMARY_PENDING) && CurrentRole.Equals(EHadrArRole.HADR_AR_ROLE_PRIMARY_NORMAL))
+                {
+                    return true;
+                }
+                prevRole = CurrentRole;
+            }
+            return false;
+
+
+        }
+
     }
 
     public class AutoFailoverReport : FailoverReport
