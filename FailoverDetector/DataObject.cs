@@ -9,10 +9,12 @@ namespace FailoverDetector
     public class ReportListManager
     {
         List<PartialReport> m_reports;
+        List<PartialReport> m_failoverReport;
         string m_agName;
         public ReportListManager()
         {
             m_reports = new List<PartialReport>();
+            m_failoverReport = new List<PartialReport>();
             m_agName = "";
         }
         public PartialReport FGetReport(PublishedEvent evt)
@@ -41,7 +43,7 @@ namespace FailoverDetector
         }
         public void ShowReportArRoleTransition()
         {
-            foreach (PartialReport pReport in m_reports)
+            foreach (PartialReport pReport in m_failoverReport)
             {
                 Console.WriteLine("A report starts at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
                 pReport.ShowRoleTransition();
@@ -71,13 +73,14 @@ namespace FailoverDetector
                 if( pReport.ForceFailoverFound)
                 {
                     // this report is useful, I will push it into Failover Report for future investigation
-
+                    m_failoverReport.Add(pReport);
                 }
 
                 // search roleTransition from Primary Pending to Primary Normal
                 if (pReport.SearchFailoverRole())
                 {
                     // this report is useful, I will push it into Failover Report for future investigation
+                    m_failoverReport.Add(pReport);
                 }
  
             }
@@ -238,8 +241,17 @@ namespace FailoverDetector
                     DispatchEvent(evt);
                 }
             }
+            AnalyzeReports();
 
            
+        }
+        public void AnalyzeReports()
+        {
+            Dictionary<string, ReportListManager>.ValueCollection rlMgrColl = agEventMap.Values;
+            foreach (ReportListManager rlMgr in rlMgrColl)
+            {
+                rlMgr.AnalyzeReport();
+            }
         }
         public void ShowAGRoleTransition()
         {
