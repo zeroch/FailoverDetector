@@ -6,94 +6,17 @@ using System.Linq;
 
 namespace FailoverDetector
 {
-    public class ReportListManager
-    {
-        List<PartialReport> m_reports;
-        List<PartialReport> m_failoverReport;
-        string m_agName;
-        public ReportListManager()
-        {
-            m_reports = new List<PartialReport>();
-            m_failoverReport = new List<PartialReport>();
-            m_agName = "";
-        }
-        public PartialReport FGetReport(PublishedEvent evt)
-        {
-            PartialReport pReport;
-            if (!m_reports.Any() || ((evt.Timestamp - m_reports.Last().EndTime).TotalMinutes >5))
-            {
-
-                pReport = new PartialReport();
-                pReport.StartTime = evt.Timestamp;
-                pReport.EndTime = evt.Timestamp;
-                pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
-                pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
-
-
-                m_reports.Add(pReport);
-            }
-            else
-            {
-                pReport = m_reports.Last();
-                pReport.EndTime = evt.Timestamp;
-                pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
-                pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
-            }
-            return pReport;
-        }
-        public void ShowReportArRoleTransition()
-        {
-            foreach (PartialReport pReport in m_failoverReport)
-            {
-                Console.WriteLine("A report starts at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
-                pReport.ShowRoleTransition();
-                Console.WriteLine("A report ends at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.EndTime.ToString());
-                Console.WriteLine();
-            }
-        }
-
-        // we should always has pReport populate from list
-        // but I will check list anyway
-        public void UpdateReport(PartialReport pReport)
-        {
-            if(m_reports.Any())
-            {
-                m_reports.Remove(m_reports.Last());
-                m_reports.Add(pReport);
-            }
-        }
-        // before you call this method, you should finish parsing all AlwaysOn Xevent
-        // you have a list of partialReport
-        // search signs of failover from these report
-        public void AnalyzeReport()
-        {
-            // Alter AG failover 
-            foreach(PartialReport pReport in m_reports)
-            {
-                if( pReport.ForceFailoverFound)
-                {
-                    // this report is useful, I will push it into Failover Report for future investigation
-                    m_failoverReport.Add(pReport);
-                }
-
-                // search roleTransition from Primary Pending to Primary Normal
-                if (pReport.SearchFailoverRole())
-                {
-                    // this report is useful, I will push it into Failover Report for future investigation
-                    m_failoverReport.Add(pReport);
-                }
- 
-            }
-        }
-    }
+    
     public class AlwaysOnData
     {
+        string instanceName;
+        Dictionary<string, AgReportMgr> agEventMap;
 
-        List<PartialReport> m_reports;
-        Dictionary<string, ReportListManager> agEventMap;
+        public Dictionary<string, AgReportMgr> AgEventMap { get => agEventMap; set => agEventMap = value; }
+
         public AlwaysOnData()
         {
-            agEventMap = new Dictionary<string, ReportListManager>();
+            agEventMap = new Dictionary<string, AgReportMgr>();
         }
         enum AlwaysOn_EventType {
             DLL_EXECUTED,
@@ -122,9 +45,9 @@ namespace FailoverDetector
                 {
                     string agName = evt.Fields["availability_group_name"].Value.ToString();
                     // get List of report for this ag
-                    if (!agEventMap.TryGetValue(agName, out ReportListManager m_reports))
+                    if (!agEventMap.TryGetValue(agName, out AgReportMgr m_reports))
                     {
-                        m_reports = new ReportListManager();
+                        m_reports = new AgReportMgr(agName, instanceName);
                         agEventMap.Add(agName, m_reports);
                     }
                     PartialReport pReport = m_reports.FGetReport(evt);
@@ -164,9 +87,9 @@ namespace FailoverDetector
         {
             string agName = evt.Fields["availability_group_name"].Value.ToString();
             // get List of report for this ag
-            if (!agEventMap.TryGetValue(agName, out ReportListManager m_reports))
+            if (!agEventMap.TryGetValue(agName, out AgReportMgr m_reports))
             {
-                m_reports = new ReportListManager();
+                m_reports = new AgReportMgr(agName, instanceName);
                 agEventMap.Add(agName, m_reports);
             }
             PartialReport pReport = m_reports.FGetReport(evt);
@@ -182,9 +105,9 @@ namespace FailoverDetector
         {
             string agName = evt.Fields["availability_group_name"].Value.ToString();
             // get List of report for this ag
-            if (!agEventMap.TryGetValue(agName, out ReportListManager m_reports))
+            if (!agEventMap.TryGetValue(agName, out AgReportMgr m_reports))
             {
-                m_reports = new ReportListManager();
+                m_reports = new AgReportMgr(agName, instanceName);
                 agEventMap.Add(agName, m_reports);
             }
             PartialReport pReport = m_reports.FGetReport(evt);
@@ -232,6 +155,7 @@ namespace FailoverDetector
         }
         public void loadData(string xelFileName, string serverName)
         {
+            instanceName = serverName;
             // load xel File
             using (QueryableXEventData events = new QueryableXEventData(xelFileName))
             {
@@ -241,26 +165,96 @@ namespace FailoverDetector
                     DispatchEvent(evt);
                 }
             }
-            AnalyzeReports();
 
            
         }
         public void AnalyzeReports()
         {
-            Dictionary<string, ReportListManager>.ValueCollection rlMgrColl = agEventMap.Values;
-            foreach (ReportListManager rlMgr in rlMgrColl)
+            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = agEventMap.Values;
+            foreach (AgReportMgr rlMgr in rlMgrColl)
             {
                 rlMgr.AnalyzeReport();
             }
         }
         public void ShowAGRoleTransition()
         {
-            Dictionary<string, ReportListManager>.ValueCollection rlMgrColl = agEventMap.Values;
-            foreach (ReportListManager rlMgr in rlMgrColl)
+            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = agEventMap.Values;
+            foreach (AgReportMgr rlMgr in rlMgrColl)
             {
                 rlMgr.ShowReportArRoleTransition();
             }
         }
+
+        public void ShowFailoverReports()
+        {
+            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = agEventMap.Values;
+            foreach (AgReportMgr rlMgr in rlMgrColl)
+            {
+                rlMgr.ShowReport();
+            }
+
+        }
+
+        public void mergeInstance(AlwaysOnData nextNode)
+        {
+
+            // fetch one AgReportMgr and find same agName from another Data source
+            foreach(KeyValuePair<string,AgReportMgr> kvp in agEventMap)
+            {
+                string pAgName = kvp.Key;
+                AgReportMgr pReportMgr = kvp.Value;
+                AgReportMgr nReportMgr;
+
+                List<PartialReport> new_list = new List<PartialReport>();
+
+                if (nextNode.agEventMap.TryGetValue(pAgName, out nReportMgr))
+                {
+                    // pReportMgr vs nReportMgr
+                    // merge these two reportMgr
+                    List<PartialReport> pReports = pReportMgr.Reports;
+                    List<PartialReport> nReports = nReportMgr.Reports;
+
+                    int i = 0;
+                    int j = 0;
+
+                    while(i < pReports.Count && j < nReports.Count)
+                    { 
+                        PartialReport left = pReports[i];
+                        PartialReport right = nReports[j];
+                        // NOT in the same time range
+                        if( ((left.StartTime-right.EndTime).TotalMinutes >5) )
+                        {
+                            // push right to new list
+                            new_list.Add(right);
+                            j++;
+
+                        }else if 
+                            ((right.StartTime - left.EndTime).TotalMinutes > 5)  
+                        {
+                            // push left to new list
+                            new_list.Add(left);
+                            i++;
+                        }else
+                        {
+                            // TODO: report that merged compare with next left/right
+                            // merge
+                            // time
+
+                            left.MergeReport(right);
+                            new_list.Add(left);
+                            i++;j++;
+                        }
+
+                    }
+                    pReportMgr.Reports.Clear();
+                    pReportMgr.Reports = new_list;
+
+                }
+                
+
+            }
+        }
+
     }
     public class SystemData
     {

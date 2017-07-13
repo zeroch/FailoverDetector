@@ -12,10 +12,14 @@ namespace FailoverDetector
     {
         static void Main(string[] args)
         {
-            AlwaysOnData m_data = new AlwaysOnData();
-            m_data.loadData("C:\\Users\\zeche\\Documents\\WorkItems\\POC\\VM003_0.xel", "ZE-VM003");
-            
-            m_data.ShowAGRoleTransition();
+            AlwaysOnData Node003 = new AlwaysOnData();
+            Node003.loadData("C:\\Users\\zeche\\Documents\\WorkItems\\POC\\VM003_0.xel", "ZE-VM003");
+            AlwaysOnData Node001 = new AlwaysOnData();
+            Node001.loadData("C:\\Users\\zeche\\Documents\\WorkItems\\POC\\VM001_0.xel", "ZE-VM001");
+
+            Node001.mergeInstance(Node003);
+            Node001.AnalyzeReports();
+            Node001.ShowFailoverReports();
             Console.ReadLine();
         }
     }
