@@ -15,12 +15,6 @@ namespace FailoverDetector
         private string previousPrimary;
         private bool failoverResult;
         private string rootCause;
-        private IList<XEventContainer> dataSourceList;
-
-        public void addDataSource(XEventContainer dataContainer)
-        {
-            dataSourceList.Add(dataContainer);
-        }
         public virtual void buildReport()
         {
             // build dataSource
