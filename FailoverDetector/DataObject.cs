@@ -9,6 +9,8 @@ namespace FailoverDetector
     
     public class AlwaysOnData
     {
+
+        readonly int DefaultInterval = 10;
         string instanceName;
         Dictionary<string, AgReportMgr> agEventMap;
 
@@ -195,7 +197,7 @@ namespace FailoverDetector
 
         }
 
-        public void mergeInstance(AlwaysOnData nextNode)
+        public void MergeInstance(AlwaysOnData nextNode)
         {
 
             // fetch one AgReportMgr and find same agName from another Data source
@@ -222,14 +224,14 @@ namespace FailoverDetector
                         PartialReport left = pReports[i];
                         PartialReport right = nReports[j];
                         // NOT in the same time range
-                        if( ((left.StartTime-right.EndTime).TotalMinutes >5) )
+                        if( ((left.StartTime-right.EndTime).TotalMinutes >DefaultInterval) )
                         {
                             // push right to new list
                             new_list.Add(right);
                             j++;
 
                         }else if 
-                            ((right.StartTime - left.EndTime).TotalMinutes > 5)  
+                            ((right.StartTime - left.EndTime).TotalMinutes > DefaultInterval)  
                         {
                             // push left to new list
                             new_list.Add(left);

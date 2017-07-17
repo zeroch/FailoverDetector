@@ -212,6 +212,7 @@ namespace FailoverDetector
     }
     public class AgReportMgr
     {
+        readonly int DefaultInterval = 10;
         List<PartialReport> m_reports;
         List<PartialReport> m_failoverReport;
         string m_agName;
@@ -231,7 +232,7 @@ namespace FailoverDetector
         public PartialReport FGetReport(PublishedEvent evt)
         {
             PartialReport pReport;
-            if (!m_reports.Any() || ((evt.Timestamp - m_reports.Last().EndTime).TotalMinutes > 5))
+            if (!m_reports.Any() || ((evt.Timestamp - m_reports.Last().EndTime).TotalMinutes > DefaultInterval))
             {
 
                 pReport = new PartialReport(this.serverName);

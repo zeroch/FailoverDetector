@@ -17,7 +17,7 @@ namespace FailoverDetector
             AlwaysOnData Node001 = new AlwaysOnData();
             Node001.loadData("C:\\Users\\zeche\\Documents\\WorkItems\\POC\\VM001_0.xel", "ZE-VM001");
 
-            Node001.mergeInstance(Node003);
+            Node001.MergeInstance(Node003);
             Node001.AnalyzeReports();
             Node001.ShowFailoverReports();
             Console.ReadLine();
