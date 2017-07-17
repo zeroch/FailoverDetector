@@ -213,6 +213,9 @@ namespace FailoverDetector
                 {
                     // pReportMgr vs nReportMgr
                     // merge these two reportMgr
+                    pReportMgr.SortReports();
+                    nReportMgr.SortReports();
+
                     List<PartialReport> pReports = pReportMgr.Reports;
                     List<PartialReport> nReports = nReportMgr.Reports;
 

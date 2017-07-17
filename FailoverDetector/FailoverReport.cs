@@ -83,6 +83,8 @@ namespace FailoverDetector
         public bool ForceFailoverFound { get => forceFailoverFound; set => forceFailoverFound = value; }
         public string AgId { get => agId; set => agId = value; }
         public bool merged { get; private set; }
+        public string OldPrimary { get => oldPrimary; set => oldPrimary = value; }
+        public string NewPrimary { get => newPrimary; set => newPrimary = value; }
 
         public void MergeReport(PartialReport other)
         {
@@ -177,11 +179,11 @@ namespace FailoverDetector
                 }
                 endState = tRoleSet.LastOrDefault();
 
-                if( initState == EHadrArRole.HADR_AR_ROLE_SECONDARY_NORMAL && endState == EHadrArRole.HADR_AR_ROLE_PRIMARY_NORMAL)
+                if(  endState == EHadrArRole.HADR_AR_ROLE_PRIMARY_NORMAL)
                 {
                     newPrimary = instanceName;
                 }
-                if (initState == EHadrArRole.HADR_AR_ROLE_PRIMARY_NORMAL && endState == EHadrArRole.HADR_AR_ROLE_SECONDARY_NORMAL)
+                if (initState == EHadrArRole.HADR_AR_ROLE_PRIMARY_NORMAL)
                 {
                     oldPrimary = instanceName;
                 }
@@ -191,20 +193,23 @@ namespace FailoverDetector
         public bool SearchFailoverRole()
         {
             Dictionary<string, List<EHadrArRole>>.ValueCollection vRoleTransition = roleTransition.Values;
-            EHadrArRole prevRole = vRoleTransition.First()[0];
-            foreach(EHadrArRole CurrentRole in vRoleTransition.First())
+            foreach(List<EHadrArRole> pList in vRoleTransition)
             {
-                if( CurrentRole == EHadrArRole.HADR_AR_ROLE_RESOLVING_PENDING_FAILOVER)
+                EHadrArRole prevRole = pList.FirstOrDefault();
+                foreach(EHadrArRole CurrentRole in pList)
                 {
-                    failoverDetected = true;
-                    ForceFailoverFound = true;
+                    if( CurrentRole == EHadrArRole.HADR_AR_ROLE_RESOLVING_PENDING_FAILOVER)
+                    {
+                        failoverDetected = true;
+                        ForceFailoverFound = true;
+                    }
+                    if (prevRole.Equals(EHadrArRole.HADR_AR_ROLE_PRIMARY_PENDING) && CurrentRole.Equals(EHadrArRole.HADR_AR_ROLE_PRIMARY_NORMAL))
+                    {
+                        failoverDetected = true;
+                        return true;
+                    }
+                    prevRole = CurrentRole;
                 }
-                if (prevRole.Equals(EHadrArRole.HADR_AR_ROLE_PRIMARY_PENDING) && CurrentRole.Equals(EHadrArRole.HADR_AR_ROLE_PRIMARY_NORMAL))
-                {
-                    failoverDetected = true;
-                    return true;
-                }
-                prevRole = CurrentRole;
             }
             return false;
         }
@@ -232,7 +237,9 @@ namespace FailoverDetector
         public PartialReport FGetReport(PublishedEvent evt)
         {
             PartialReport pReport;
-            if (!m_reports.Any() || ((evt.Timestamp - m_reports.Last().EndTime).TotalMinutes > DefaultInterval))
+            if (    !m_reports.Any() 
+                || ((evt.Timestamp - m_reports.Last().EndTime).TotalMinutes > DefaultInterval) 
+                || ((m_reports.Last().EndTime - evt.Timestamp).TotalMinutes > DefaultInterval))
             {
 
                 pReport = new PartialReport(this.serverName);
@@ -253,6 +260,15 @@ namespace FailoverDetector
             }
             return pReport;
         }
+
+        // XEvent somehow doesn't sorted by timestamp. 
+        // once we have a list of Report, we need to sort them before merge two instance reports
+        public void SortReports()
+        {
+            // just simply sort by Endtime stamp
+            m_reports.Sort((rp1, rp2) => DateTimeOffset.Compare(rp1.EndTime, rp2.EndTime));
+        }
+ 
         public void ShowReportArRoleTransition()
         {
             foreach (PartialReport pReport in m_reports)
@@ -268,6 +284,16 @@ namespace FailoverDetector
             foreach (PartialReport pReport in m_failoverReport)
             {
                 Console.WriteLine("A report starts at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
+                // Lease timeout
+                Console.WriteLine("Failover due to AG LeaseTimeout: {0}", pReport.LeaseTimeoutFound);
+                // Force failover
+                Console.WriteLine("Failover due to Force Failover DDL: {0}", pReport.ForceFailoverFound);
+                // Old Primary
+                Console.WriteLine("Primary before Failover: {0}", pReport.OldPrimary);
+                // New Primary
+                Console.WriteLine("Primary after Failover: {0}", pReport.NewPrimary);
+                // Role Transition
+
                 pReport.ShowRoleTransition();
                 Console.WriteLine("A report ends at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.EndTime.ToString());
                 Console.WriteLine();
@@ -301,6 +327,10 @@ namespace FailoverDetector
                 if (pReport.ForceFailoverFound)
                 {
                     // this report is useful, I will push it into Failover Report for future investigation
+                    m_failoverReport.Add(pReport);
+                }
+                if (pReport.LeaseTimeoutFound)
+                {
                     m_failoverReport.Add(pReport);
                 }
 
