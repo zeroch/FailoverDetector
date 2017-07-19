@@ -68,6 +68,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SystemHealthParser.cs" />
     <Compile Include="DataObject.cs" />
     <Compile Include="FailoverReport.cs" />
     <Compile Include="Program.cs" />
