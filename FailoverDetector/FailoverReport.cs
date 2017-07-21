@@ -397,12 +397,11 @@ namespace FailoverDetector
                 {
                     // this report is useful, I will push it into Failover Report for future investigation
                     m_failoverReport.Add(pReport);
-                }
+                }else 
                 if (pReport.LeaseTimeoutFound)
                 {
                     m_failoverReport.Add(pReport);
-                }
-
+                }else 
                 // search roleTransition from Primary Pending to Primary Normal
                 if (pReport.SearchFailoverRole())
                 {

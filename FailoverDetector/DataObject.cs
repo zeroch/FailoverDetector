@@ -170,9 +170,18 @@ namespace FailoverDetector
 
                     //FIXME a temp filter to easy of demo
                     TimeSpan diff = new TimeSpan(0, 0, 0);
-                    DateTimeOffset start = new DateTimeOffset(2017, 07, 20, 19, 00, 00, diff);
-                    DateTimeOffset end = new DateTimeOffset(2017, 07, 20, 20, 00, 00, diff);
-                    if  ( evt.Timestamp > start && evt.Timestamp < end)
+                    // test case for manual failover is 
+                    //              7 -20 05:52 UTC
+                    // test case for lease timeout but successful failover 
+                    //              07-20 05:34 UTC
+                    // test case for Hit System Dump threashold 
+                    //              07/20 19:00 -> 20:00 UTC
+                    DateTimeOffset Threashold_Start = new DateTimeOffset(2017, 07, 20, 19, 00, 00, diff);
+                    DateTimeOffset Threashold_End = new DateTimeOffset(2017, 07, 20, 19, 40, 00, diff);
+                    DateTimeOffset Manual_Start = new DateTimeOffset(2017, 07, 20, 05, 30, 00, diff);
+                    DateTimeOffset Manual_End = new DateTimeOffset(2017, 07, 20, 05, 55, 00, diff);
+                    if  ( (evt.Timestamp > Threashold_Start && evt.Timestamp < Threashold_End) ||
+                        (evt.Timestamp > Manual_Start && evt.Timestamp < Manual_End))
                     {
                         DispatchEvent(evt);
                     }
