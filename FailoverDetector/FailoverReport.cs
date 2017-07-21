@@ -190,6 +190,24 @@ namespace FailoverDetector
        
             }
         }
+
+        public void ProcessSystemData()
+        {
+            // open the system xevent, search sp_server_diagnostics_component_result
+            // in the timeline, this is a bit brute force, but we can optimize  later time
+            string url = "C:\\Users\\zeche\\Documents\\WorkItems\\POC\\SYS001_0.xel";
+            SystemHealthParser parse;
+            using (QueryableXEventData evts = new QueryableXEventData(url))
+            {
+                foreach (PublishedEvent evt in evts)
+                {
+                    if (evt.Timestamp > StartTime && evt.Timestamp < EndTime)
+                    {
+
+                    }
+                }
+            }
+        }
         public bool SearchFailoverRole()
         {
             Dictionary<string, List<EHadrArRole>>.ValueCollection vRoleTransition = roleTransition.Values;
