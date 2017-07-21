@@ -217,7 +217,7 @@ namespace FailoverDetector
     }
     public class AgReportMgr
     {
-        readonly int DefaultInterval = 10;
+        readonly int DefaultInterval = 5;
         List<PartialReport> m_reports;
         List<PartialReport> m_failoverReport;
         string m_agName;
@@ -297,6 +297,7 @@ namespace FailoverDetector
                 pReport.ShowRoleTransition();
                 Console.WriteLine("A report ends at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.EndTime.ToString());
                 Console.WriteLine();
+                Console.ReadLine();
             }
         }
 

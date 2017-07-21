@@ -10,7 +10,7 @@ namespace FailoverDetector
     public class AlwaysOnData
     {
 
-        readonly int DefaultInterval = 10;
+        readonly int DefaultInterval = 5;
         string instanceName;
         Dictionary<string, AgReportMgr> agEventMap;
 
@@ -74,7 +74,10 @@ namespace FailoverDetector
             string[] failover = { "failover", "force_failover_allow_data_loss" };
 
             string command = String.Join(" ", words.Take(3)).ToLower();
-            string parameter = words[4].ToLower();
+            string parameter = words[4].ToLower().TrimEnd(';');
+            // HANDEL case like 
+            // "failover;" we need to trim the ';'
+            
             if (command.Equals("alter availability group"))
             {
                 if (parameter.Equals("failover") || parameter.Equals("force_failover_allow_data_loss"))
@@ -164,7 +167,15 @@ namespace FailoverDetector
                 foreach(PublishedEvent evt in events)
                 {
                     // dispatch event and handle by own method.
-                    DispatchEvent(evt);
+
+                    //FIXME a temp filter to easy of demo
+                    TimeSpan diff = new TimeSpan(0, 0, 0);
+                    DateTimeOffset start = new DateTimeOffset(2017, 07, 20, 19, 00, 00, diff);
+                    DateTimeOffset end = new DateTimeOffset(2017, 07, 20, 20, 00, 00, diff);
+                    if  ( evt.Timestamp > start && evt.Timestamp < end)
+                    {
+                        DispatchEvent(evt);
+                    }
                 }
             }
 

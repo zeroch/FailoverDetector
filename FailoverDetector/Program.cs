@@ -28,7 +28,7 @@ namespace FailoverDetector
             TimeSpan diff = new TimeSpan(-7, 0, 0);
             DateTimeOffset start = new DateTimeOffset(2017, 07, 08, 22, 26, 00, diff);
             DateTimeOffset end = new DateTimeOffset(2017, 07, 08, 22, 29, 00, diff);
-            string url = "C:\\Users\\zeche\\Documents\\WorkItems\\POC\\SYS003_0.xel";
+            string url = "C:\\Users\\zeche\\Documents\\WorkItems\\POC\\SYS001_0.xel";
             using (QueryableXEventData evts = new QueryableXEventData(url))
             {
                 foreach (PublishedEvent evt in evts)
