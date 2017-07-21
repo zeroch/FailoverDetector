@@ -9,10 +9,63 @@ using System.IO;
 
 namespace FailoverDetector
 {
-    class SystemHealthParser
+    public class SystemHealthData
     {
-        public void ParseSystemComponent(String xmlString)
+        // system component
+        // QP component
+        // Resource component
+        SystemComponent m_sysComp;
+        public SystemHealthData()
         {
+            SysComp = new SystemComponent();
+        }
+
+        public SystemComponent SysComp { get => m_sysComp; set => m_sysComp = value; }
+
+        public class SystemComponent
+        {
+            UInt32 totalDump;
+            UInt32 intervalDump;
+            UInt32 memoryScribblerCount;
+            bool detected;
+            DateTimeOffset timestamp;
+            public SystemComponent()
+            {
+                 TotalDump = 0;
+                 IntervalDump = 0;
+                 MemoryScribblerCount = 0;
+                 Detected = false;
+                 Timestamp = DateTimeOffset.MinValue;
+            }
+
+            public uint TotalDump { get => totalDump; set => totalDump = value; }
+            public uint IntervalDump { get => intervalDump; set => intervalDump = value; }
+            public uint MemoryScribblerCount { get => memoryScribblerCount; set => memoryScribblerCount = value; }
+            public bool Detected { get => detected; set => detected = value; }
+            public DateTimeOffset Timestamp { get => timestamp; set => timestamp = value; }
+        }
+        public bool IsSystemHealth()
+        {
+            if (SysComp.Detected)
+                return true;
+            else
+                return false;
+        }
+
+
+    }
+
+
+    public class SystemHealthParser
+    {
+        SystemHealthData m_sysData;
+        public SystemHealthParser(SystemHealthData pSysData)
+        {
+            m_sysData = pSysData;
+        }
+        public bool ParseSystemComponent(String xmlString)
+        {
+            bool ret = false;
             StringBuilder output = new StringBuilder();
             using (XmlReader reader = XmlReader.Create(new StringReader(xmlString)))
             {
@@ -37,6 +90,7 @@ namespace FailoverDetector
                         UInt32 latchWarnings = UInt32.TryParse(reader.GetAttribute("latchWarnings"), out temp) ? temp : 0;
                         UInt32 isAccessViolationOccurred = UInt32.TryParse(reader.GetAttribute("isAccessViolationOccurred"), out temp) ? temp : 0;
                         UInt32 writeAccessViolationCount = UInt32.TryParse(reader.GetAttribute("writeAccessViolationCount"), out temp) ? temp : 0;
+                        UInt32 memoryScribblerCount = UInt32.TryParse(reader.GetAttribute("memoryScribblerCount"), out temp) ? temp : 0;
                         UInt32 totalDumpRequests = UInt32.TryParse(reader.GetAttribute("totalDumpRequests"), out temp) ? temp : 0;
                         UInt32 intervalDumpRequests = UInt32.TryParse(reader.GetAttribute("intervalDumpRequests"), out temp) ? temp : 0;
                         UInt32 nonYieldingTasksReported = UInt32.TryParse(reader.GetAttribute("nonYieldingTasksReported"), out temp) ? temp : 0;
@@ -44,11 +98,22 @@ namespace FailoverDetector
                         UInt32 systemCpuUtilization = UInt32.TryParse(reader.GetAttribute("systemCpuUtilization"), out temp) ? temp : 0;
                         UInt32 sqlCpuUtilization = UInt32.TryParse(reader.GetAttribute("sqlCpuUtilization"), out temp) ? temp : 0;
 
+                        if ( (totalDumpRequests > 100 && intervalDumpRequests > 1) ||
+                             memoryScribblerCount > 3)
+                        {
+                            m_sysData.SysComp.Detected = true;
+
+                            m_sysData.SysComp.MemoryScribblerCount = memoryScribblerCount;
+                            m_sysData.SysComp.TotalDump = totalDumpRequests;
+                            m_sysData.SysComp.IntervalDump = intervalDumpRequests;
+                            ret = true;
+                        }
                         //Console.WriteLine("systemCpuUtilization: {0}", systemCpuUtilization);
                         //Console.WriteLine("Detail: spinlockBackoffs: {0} \t totalDumpRequests: {1}", spinlockBackoffs, totalDumpRequests);
                     }
                 }
             }
+            return ret;
         }
 
         public bool ParseQPComponent(String xmlString)
@@ -82,18 +147,18 @@ namespace FailoverDetector
                         bool b_hasDeadlockedSchedulersOccurred = (hasDeadlockedSchedulersOccurred != 0);
                         if (b_hasDeadlockedSchedulersOccurred)
                         {
-                            Console.WriteLine("Query Processing Error: Deadlocked Scheduler Occurred");
+                            //Console.WriteLine("Query Processing Error: Deadlocked Scheduler Occurred");
                             ret = false;
                         }
                         if (b_hasUnresolvableDeadlockOccurred)
                         {
-                            Console.WriteLine("Query Processing Error: unresolvable Deadlock Occurred");
+                            //Console.WriteLine("Query Processing Error: unresolvable Deadlock Occurred");
                             ret = false;
                         }
 
                         if (pendingTasks > 0)
                         {
-                            Console.WriteLine("Query Processing Warning: Pending Task more than 0.");
+                            //Console.WriteLine("Query Processing Warning: Pending Task more than 0.");
                             ret = false;
                         }
                     }

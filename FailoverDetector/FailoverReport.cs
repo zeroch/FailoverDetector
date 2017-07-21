@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace FailoverDetector
 {
     public class FailoverReport
@@ -35,10 +36,10 @@ namespace FailoverDetector
 
     }
 
-    // shameless copy from hadrarstatetransition.h
 
     public class PartialReport : FailoverReport
     {
+        // shameless copy from hadrarstatetransition.h
         enum EHadrArRole
         {
             HADR_AR_ROLE_RESOLVING_NORMAL = 0,
@@ -64,6 +65,8 @@ namespace FailoverDetector
         string oldPrimary;
         string newPrimary;
 
+        SystemHealthData m_sysData;
+
         Dictionary<string, List<EHadrArRole>> roleTransition;
 
         public string AgName { get => agName; set => agName = value; }
@@ -75,6 +78,8 @@ namespace FailoverDetector
             roleTransition.Add(serverName, tempList);
             failoverDetected = false;
             merged = false;
+            m_sysData = new SystemHealthData();
+
         }
 
         public DateTimeOffset StartTime { get => startTime; set => startTime = value; }
@@ -160,6 +165,17 @@ namespace FailoverDetector
             
         }
         
+        public void ShowSystemData()
+        {
+            if (m_sysData.IsSystemHealth())
+            {
+                Console.WriteLine("sp_server_diagnostics is in unhealthy state.");
+                Console.Write("System Component is in Error: ");
+                Console.WriteLine("Too much Dump");
+                Console.WriteLine("TotalDumps Request: {0}, Interval Dump Request: {1}", m_sysData.SysComp.TotalDump, m_sysData.SysComp.IntervalDump);
+            }
+                
+        }
         public void IdentifyRoles()
         {
             //  iterate through roleTransition
@@ -196,18 +212,50 @@ namespace FailoverDetector
             // open the system xevent, search sp_server_diagnostics_component_result
             // in the timeline, this is a bit brute force, but we can optimize  later time
             string url = "C:\\Users\\zeche\\Documents\\WorkItems\\POC\\SYS001_0.xel";
-            SystemHealthParser parse;
+            SystemHealthParser parser = new SystemHealthParser(m_sysData);
+            TimeSpan diff = new TimeSpan(0, 5, 0);
             using (QueryableXEventData evts = new QueryableXEventData(url))
             {
                 foreach (PublishedEvent evt in evts)
                 {
-                    if (evt.Timestamp > StartTime && evt.Timestamp < EndTime)
+                    if (evt.Timestamp > (StartTime - diff) && evt.Timestamp < (EndTime + diff))
                     {
-
+                        if (evt.Name.ToString() == "sp_server_diagnostics_component_result")
+                        {
+                            String t_component = evt.Fields["component"].Value.ToString();
+                            String t_data = evt.Fields["data"].Value.ToString();
+                            switch (t_component)
+                            {
+                                case "QUERY_PROCESSING":
+                                    // fix it later
+                                    if (!parser.ParseQPComponent(t_data))
+                                    {
+                                        //Console.WriteLine("Event: {0}, time:{1} ", evt.Name, evt.Timestamp);
+                                    }
+                                    break;
+                                case "SYSTEM":
+                                    // component data should written in side parser, pass by reference
+                                    if (parser.ParseSystemComponent(t_data))
+                                    {
+                                        // mark the time stamp, since inside parser doesn't come with time. 
+                                        m_sysData.SysComp.Timestamp = evt.Timestamp;
+                                    }
+                                    break;
+                                case "RESOURCE":
+                                    parser.ParseResource(t_data);
+                                    break;
+                                case "IO_SUBSYSTEM":
+                                    parser.ParseIOSubsytem(t_data);
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
                     }
                 }
             }
-        }
+        
         public bool SearchFailoverRole()
         {
             Dictionary<string, List<EHadrArRole>>.ValueCollection vRoleTransition = roleTransition.Values;
@@ -311,8 +359,10 @@ namespace FailoverDetector
                 // New Primary
                 Console.WriteLine("Primary after Failover: {0}", pReport.NewPrimary);
                 // Role Transition
+                pReport.ShowSystemData();
 
                 pReport.ShowRoleTransition();
+
                 Console.WriteLine("A report ends at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.EndTime.ToString());
                 Console.WriteLine();
                 Console.ReadLine();
@@ -359,6 +409,7 @@ namespace FailoverDetector
                     // this report is useful, I will push it into Failover Report for future investigation
                     m_failoverReport.Add(pReport);
                 }
+                pReport.ProcessSystemData();
 
             }
         }
