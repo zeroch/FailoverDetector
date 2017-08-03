@@ -12,6 +12,7 @@ namespace FailoverDetector
     {
         static void Main(string[] args)
         {
+
             AlwaysOnData Node003 = new AlwaysOnData();
             Node003.loadData("C:\\Users\\zeche\\Documents\\WorkItems\\POC\\VM003_0.xel", "ZE-VM003");
             AlwaysOnData Node001 = new AlwaysOnData();
