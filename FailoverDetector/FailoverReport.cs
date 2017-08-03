@@ -351,6 +351,15 @@ namespace FailoverDetector
             {
                 Console.WriteLine("A report starts at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
                 // Lease timeout
+                if (pReport.LeaseTimeoutFound)
+                {
+                    Console.WriteLine("Failover due to AG LeaseTimeout: {0}, Error: 19407", pReport.LeaseTimeoutFound);
+                    Console.WriteLine("Detail:");
+                    Console.WriteLine("Windows Server Failover Cluster did not receive a process event signal from SQL Server hosting availability group {0} within the lease timeout period.", pReport.AgName);
+                    Console.WriteLine("Error: 19419, Severity: 16, State: 1.");
+                    Console.WriteLine();
+
+                }
                 Console.WriteLine("Failover due to AG LeaseTimeout: {0}", pReport.LeaseTimeoutFound);
                 // Force failover
                 Console.WriteLine("Failover due to Force Failover DDL: {0}", pReport.ForceFailoverFound);
