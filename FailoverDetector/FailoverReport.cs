@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.IO;
 
 namespace FailoverDetector
 {
@@ -78,6 +78,8 @@ namespace FailoverDetector
             roleTransition.Add(serverName, tempList);
             failoverDetected = false;
             merged = false;
+            oldPrimary = "";
+            newPrimary = "";
             m_sysData = new SystemHealthData();
 
         }
@@ -212,6 +214,16 @@ namespace FailoverDetector
             // open the system xevent, search sp_server_diagnostics_component_result
             // in the timeline, this is a bit brute force, but we can optimize  later time
             string url = "C:\\Users\\zeche\\Documents\\WorkItems\\POC\\SYS001_0.xel";
+            // we should have a prev primary at this point now. 
+            // use primary name to determine which .xel file to open
+            if ( oldPrimary.Length != 0)
+            {
+                url = Directory.GetCurrentDirectory();
+                url += @"\Data\";
+                url += oldPrimary;
+                url += @"\";
+                url += @"system_health*.xel";
+            }
             SystemHealthParser parser = new SystemHealthParser(m_sysData);
             TimeSpan diff = new TimeSpan(0, 5, 0);
             using (QueryableXEventData evts = new QueryableXEventData(url))
@@ -399,6 +411,8 @@ namespace FailoverDetector
         // search signs of failover from these report
         public void AnalyzeReport()
         {
+            // let me do a little sorting at here
+            this.SortReports();
             foreach (PartialReport pReport in m_reports)
             {
                 pReport.IdentifyRoles();

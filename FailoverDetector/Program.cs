@@ -21,7 +21,7 @@ namespace FailoverDetector
             int i = 0;
             foreach( string node in nodes)
             {
-                string xelPath = node + @"\*.xel";
+                string xelPath = node + @"\AlwaysOn_health*.xel";
                 string nodeName = node.Remove(0, path.Length + 1);
                 Console.WriteLine("xel file path is : {0}\n Node name: {1}", xelPath, nodeName);
                 instance = new AlwaysOnData();
@@ -31,6 +31,7 @@ namespace FailoverDetector
                     nodeList.First().MergeInstance(instance);
                 }
                 nodeList.Add(instance);
+                i++;
 
             }
             AlwaysOnData Node001 = nodeList.First();
