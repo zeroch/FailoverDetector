@@ -39,7 +39,14 @@ namespace FailoverDetector.Tests
 
         }
 
+        [TestMethod()]
+        public void ParseStatementWithEmptyString()
+        {
+            AlwaysOnData m_data = new AlwaysOnData();
+            string testStr = @"   ";
+            Assert.AreEqual(false, m_data.ParseStatement(testStr));
 
+        }
     }
 }
 

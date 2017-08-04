@@ -71,6 +71,13 @@ namespace FailoverDetector
             string[] wds = str.Split(' ');
             List<string> words = wds.Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ;
 
+            // sanity check, if words count is less than 3
+            // we have to check strings that after trim space.
+
+            if(words.Count < 3)
+            {
+                return false;
+            }
             string command = String.Join(" ", words.Take(3)).ToLower();
             string parameter = words.LastOrDefault().ToLower().TrimEnd(';');
             // HANDEL case like 
