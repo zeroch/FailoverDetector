@@ -70,11 +70,9 @@ namespace FailoverDetector
 
             string[] wds = str.Split(' ');
             List<string> words = wds.Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ;
-            string[] compare = { "alter", "availability", "group" };
-            string[] failover = { "failover", "force_failover_allow_data_loss" };
 
             string command = String.Join(" ", words.Take(3)).ToLower();
-            string parameter = words[4].ToLower().TrimEnd(';');
+            string parameter = words.LastOrDefault().ToLower().TrimEnd(';');
             // HANDEL case like 
             // "failover;" we need to trim the ';'
             
