@@ -13,23 +13,16 @@ namespace FailoverDetector
         string sPattern = @"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}";
         string testLogPath = @"C:\\Users\zeche\Documents\WorkItems\POC\Data\TestLog.log";
 
-        enum PatternIndex : int
+    
+        public LogParser()
         {
-            Timstamp = 0,
-            Spid,
-            Message
-        };
-        public void Init()
-        {
-
-        }
-        public void Exit()
-        {
+            m_entryList = new List<ErrorLogEntry>();
         }
 
+        List<ErrorLogEntry> m_entryList;
 
         private Regex rxTimeStamp = new Regex(@"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private Regex rxSpid = new Regex(@"spid[0-9]{1,5}|LOGON", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private Regex rxSpid = new Regex(@"spid[0-9]{1,5}|LOGON|Backup", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         public string TokenizeTimestamp(string line)
         {
             // 2017-10-11 11:04:12.32
@@ -57,22 +50,120 @@ namespace FailoverDetector
             }
             return tmp;
         }
-
-        public void testRexParser()
+    
+        public class ErrorLogEntry
         {
-            using (FileStream stream = File.OpenRead(testLogPath))
+            private string message;
+            private string timestamp;
+            private string spid;
+
+            public string Message { get => message; set => message = value; }
+            public string Timestamp { get => timestamp; set => timestamp = value; }
+            public string Spid { get => spid; set => spid = value; }
+
+            public ErrorLogEntry()
+            {
+                message = String.Empty;
+                spid = String.Empty;
+                timestamp = String.Empty;
+            }
+            public ErrorLogEntry(string pTimestamp, string pSpid, string pMessage)
+            {
+                timestamp = pTimestamp;
+                spid = pSpid;
+                message = pMessage;
+            }
+            public bool Equals(ErrorLogEntry logEntry)
+            {
+                if ( String.Equals(this.timestamp, logEntry.Timestamp)
+                    && String.Equals(this.spid, logEntry.Spid)
+                    && String.Equals(this.message, logEntry.Message))
+                {
+                    return true;
+                }else
+                {
+                    return false;
+                }
+            }
+            // if a log entry doesn't has timestamp, then it is a tracated message from last message
+            public bool IsTrancated()
+
+            {
+                if(String.IsNullOrEmpty(Message))
+                {
+                    return true;
+                }else
+                {
+                    return false;
+                }
+            }
+            public bool IsEmpty()
+            {
+                if (String.IsNullOrWhiteSpace(timestamp)
+                    && String.IsNullOrWhiteSpace(spid)
+                    && String.IsNullOrWhiteSpace(message))
+                {
+                    return true;
+                }else
+                {
+                    return false;
+                }
+            }
+        }
+        // change a text log entry into a struct format
+        public ErrorLogEntry ParseLogEntry(string line)
+        {
+            ErrorLogEntry entry = new ErrorLogEntry();
+                
+            string tmpTimeStamp = TokenizeTimestamp(line);
+
+            line = line.Substring(tmpTimeStamp.Length).Trim();
+            string tmpSpid = TokenizeSpid(line);
+
+            string tmpMessage = line.Substring(tmpSpid.Length).Trim();
+            
+            if(!String.IsNullOrWhiteSpace(tmpTimeStamp))
+            {
+                entry.Timestamp = tmpTimeStamp;
+            }
+            if(!String.IsNullOrWhiteSpace(tmpSpid))
+            {
+                entry.Spid = tmpSpid;
+            }
+            if(!String.IsNullOrWhiteSpace(tmpMessage))
+            {
+                entry.Message = tmpMessage;
+            }
+
+            return entry;
+
+        }
+
+        public void ParseLog(string logFilePath)
+        {
+            using (FileStream stream = File.OpenRead(logFilePath))
             {
                 using (StreamReader reader = new StreamReader(stream))
                 {
+                    ErrorLogEntry pEntry;
                     string line;
                     while ((line = reader.ReadLine()) != null)
                     {
-                        Console.WriteLine(line);
-                        Regex rgx = new Regex(sPattern);
-                        MatchCollection mc = rgx.Matches(line);
-                        foreach (Match match in mc)
+                        pEntry = ParseLogEntry(line);
+                        if (!pEntry.IsEmpty())
                         {
-                            Console.WriteLine(match);
+                            if (pEntry.IsTrancated())
+                            {
+                                // dont use and access date
+                                // append message with last one I think. 
+                                // trancated is a special case in our problem.
+                            }else
+                            {
+                                // now we need to check the date in our checking range
+                                //if (pEntry.Timestamp < sometime upper bound
+                                //    && pEntry.Timestamp > sometime lower bound)
+                                // parse message, search the pattern we will use. 
+                            }
                         }
                     }
                 }
