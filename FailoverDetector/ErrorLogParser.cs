@@ -66,13 +66,13 @@ namespace FailoverDetector
                 }
             }
         }
-    public class LogParser
+    public class ErrorLogParser
     {
         // get timestamp from each line.
         string sPattern = @"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}";
         string testLogPath = @"C:\\Users\zeche\Documents\WorkItems\POC\Data\TestLog.log";
     
-        public LogParser()
+        public ErrorLogParser()
         {
             m_entryList = new List<ErrorLogEntry>();
         }
