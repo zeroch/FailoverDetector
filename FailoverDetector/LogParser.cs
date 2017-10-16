@@ -7,50 +7,6 @@ using System.Text.RegularExpressions;
 
 namespace FailoverDetector
 {
-    public class LogParser
-    {
-        // get timestamp from each line.
-        string sPattern = @"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}";
-        string testLogPath = @"C:\\Users\zeche\Documents\WorkItems\POC\Data\TestLog.log";
-
-    
-        public LogParser()
-        {
-            m_entryList = new List<ErrorLogEntry>();
-        }
-
-        List<ErrorLogEntry> m_entryList;
-
-        private Regex rxTimeStamp = new Regex(@"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private Regex rxSpid = new Regex(@"spid[0-9]{1,5}|LOGON|Backup", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        public string TokenizeTimestamp(string line)
-        {
-            // 2017-10-11 11:04:12.32
-            string tmp = string.Empty;
-            if(this.rxTimeStamp.IsMatch(line))
-            {
-                string timeStamp = this.rxTimeStamp.Match(line).Value;
-                // based on regex rules, we crop timestamp for 22 chars
-                // TODO: don't remove timestamp at here. we need to return timestamp first.
-                //tmp = line.Substring(22).Trim();
-                tmp = timeStamp;
-            }
-            return tmp;
-        }
-
-        // we expected input string is after tokenize timestamp
-        // typical result is spid* or LOGON
-        // TODO: not sure are we expecting a empty result. 
-        public string TokenizeSpid(string line)
-        {
-            string tmp = string.Empty;
-            if(this.rxSpid.IsMatch(line))
-            {
-                tmp = this.rxSpid.Match(line).Value;
-            }
-            return tmp;
-        }
-    
         public class ErrorLogEntry
         {
             private string message;
@@ -89,7 +45,7 @@ namespace FailoverDetector
             public bool IsTrancated()
 
             {
-                if(String.IsNullOrEmpty(Message))
+                if(String.IsNullOrEmpty(timestamp))
                 {
                     return true;
                 }else
@@ -110,6 +66,55 @@ namespace FailoverDetector
                 }
             }
         }
+    public class LogParser
+    {
+        // get timestamp from each line.
+        string sPattern = @"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}";
+        string testLogPath = @"C:\\Users\zeche\Documents\WorkItems\POC\Data\TestLog.log";
+    
+        public LogParser()
+        {
+            m_entryList = new List<ErrorLogEntry>();
+        }
+
+        List<ErrorLogEntry> m_entryList;
+
+        private Regex rxTimeStamp = new Regex(@"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private Regex rxSpid = new Regex(@"spid[0-9]{1,5}|LOGON|Backup", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        // SQLError 17148, 
+        private Regex rxError17148 = new Regex(@"SQL Server is terminating in response to a 'stop' request from Service Control Manager", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        // SQL Error 17147
+        private Regex rxErrorServerKill = new Regex(@"SQL Server is terminating because of a system shutdown");
+
+        // methods
+        public string TokenizeTimestamp(string line)
+        {
+            // 2017-10-11 11:04:12.32
+            string tmp = string.Empty;
+            if(this.rxTimeStamp.IsMatch(line))
+            {
+                string timeStamp = this.rxTimeStamp.Match(line).Value;
+                // based on regex rules, we crop timestamp for 22 chars
+                // TODO: don't remove timestamp at here. we need to return timestamp first.
+                //tmp = line.Substring(22).Trim();
+                tmp = timeStamp;
+            }
+            return tmp;
+        }
+
+        // we expected input string is after tokenize timestamp
+        // typical result is spid* or LOGON
+        // TODO: not sure are we expecting a empty result. 
+        public string TokenizeSpid(string line)
+        {
+            string tmp = string.Empty;
+            if(this.rxSpid.IsMatch(line))
+            {
+                tmp = this.rxSpid.Match(line).Value;
+            }
+            return tmp;
+        }
+    
         // change a text log entry into a struct format
         public ErrorLogEntry ParseLogEntry(string line)
         {
@@ -163,12 +168,26 @@ namespace FailoverDetector
                                 //if (pEntry.Timestamp < sometime upper bound
                                 //    && pEntry.Timestamp > sometime lower bound)
                                 // parse message, search the pattern we will use. 
+                                if(this.rxError17148.IsMatch(pEntry.Message))
+                                {
+                                    Console.WriteLine("time:{0}, message: {1}", pEntry.Timestamp, pEntry.Message);
+                                }
                             }
                         }
                     }
                 }
             }
 
+        }
+        
+        public bool MatchErrorStopService(string msg)
+        {
+            return this.rxError17148.IsMatch(msg);
+        }
+
+        public bool MatchErrorServerKill(string msg)
+        {
+            return this.rxErrorServerKill.IsMatch(msg);
         }
     }
     
