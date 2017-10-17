@@ -7,66 +7,82 @@ using System.Text.RegularExpressions;
 
 namespace FailoverDetector
 {
-        public class ErrorLogEntry
+    public abstract class LogParser
+    {
+        private DateTimeOffset FailoverTimeStart;
+        private DateTimeOffset FailoverTimeEnd;
+
+        public LogParser() { }
+        public void SetTargetFailoverTime(DateTimeOffset start, DateTimeOffset end)
         {
-            private string message;
-            private string timestamp;
-            private string spid;
+            FailoverTimeStart = start;
+            FailoverTimeEnd = end;
+        }
 
-            public string Message { get => message; set => message = value; }
-            public string Timestamp { get => timestamp; set => timestamp = value; }
-            public string Spid { get => spid; set => spid = value; }
+        abstract public string TokenizeTimestamp(string line);
+        abstract public ErrorLogEntry ParseLogEntry(string entry);
 
-            public ErrorLogEntry()
-            {
-                message = String.Empty;
-                spid = String.Empty;
-                timestamp = String.Empty;
-            }
-            public ErrorLogEntry(string pTimestamp, string pSpid, string pMessage)
-            {
-                timestamp = pTimestamp;
-                spid = pSpid;
-                message = pMessage;
-            }
-            public bool Equals(ErrorLogEntry logEntry)
-            {
-                if ( String.Equals(this.timestamp, logEntry.Timestamp)
-                    && String.Equals(this.spid, logEntry.Spid)
-                    && String.Equals(this.message, logEntry.Message))
-                {
-                    return true;
-                }else
-                {
-                    return false;
-                }
-            }
-            // if a log entry doesn't has timestamp, then it is a tracated message from last message
-            public bool IsTrancated()
+    }
+    public class ErrorLogEntry
+    {
+        private string message;
+        private string timestamp;
+        private string spid;
 
+        public string Message { get => message; set => message = value; }
+        public string Timestamp { get => timestamp; set => timestamp = value; }
+        public string Spid { get => spid; set => spid = value; }
+
+        public ErrorLogEntry()
+        {
+            message = String.Empty;
+            spid = String.Empty;
+            timestamp = String.Empty;
+        }
+        public ErrorLogEntry(string pTimestamp, string pSpid, string pMessage)
+        {
+            timestamp = pTimestamp;
+            spid = pSpid;
+            message = pMessage;
+        }
+        public bool Equals(ErrorLogEntry logEntry)
+        {
+            if ( String.Equals(this.timestamp, logEntry.Timestamp)
+                && String.Equals(this.spid, logEntry.Spid)
+                && String.Equals(this.message, logEntry.Message))
             {
-                if(String.IsNullOrEmpty(timestamp))
-                {
-                    return true;
-                }else
-                {
-                    return false;
-                }
-            }
-            public bool IsEmpty()
+                return true;
+            }else
             {
-                if (String.IsNullOrWhiteSpace(timestamp)
-                    && String.IsNullOrWhiteSpace(spid)
-                    && String.IsNullOrWhiteSpace(message))
-                {
-                    return true;
-                }else
-                {
-                    return false;
-                }
+                return false;
             }
         }
-    public class ErrorLogParser
+        // if a log entry doesn't has timestamp, then it is a tracated message from last message
+        public bool IsTrancated()
+
+        {
+            if(String.IsNullOrEmpty(timestamp))
+            {
+                return true;
+            }else
+            {
+                return false;
+            }
+        }
+        public bool IsEmpty()
+        {
+            if (String.IsNullOrWhiteSpace(timestamp)
+                && String.IsNullOrWhiteSpace(spid)
+                && String.IsNullOrWhiteSpace(message))
+            {
+                return true;
+            }else
+            {
+                return false;
+            }
+        }
+    }
+    public class ErrorLogParser : LogParser
     {
         // get timestamp from each line.
         string sPattern = @"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}";
@@ -87,7 +103,7 @@ namespace FailoverDetector
         private Regex rxErrorServerKill = new Regex(@"SQL Server is terminating because of a system shutdown");
 
         // methods
-        public string TokenizeTimestamp(string line)
+        public override string TokenizeTimestamp(string line)
         {
             // 2017-10-11 11:04:12.32
             string tmp = string.Empty;
@@ -116,7 +132,7 @@ namespace FailoverDetector
         }
     
         // change a text log entry into a struct format
-        public ErrorLogEntry ParseLogEntry(string line)
+        public override ErrorLogEntry ParseLogEntry(string line)
         {
             ErrorLogEntry entry = new ErrorLogEntry();
                 
