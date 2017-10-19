@@ -11,8 +11,9 @@ namespace FailoverDetector
     {
         public ApplicationLogParser()
         {
+            UTCcorrection = new TimeSpan(4, 0, 0);
         }
-
+        TimeSpan UTCcorrection;
         private Regex rxTimeStamp = new Regex(@"\d{1,2}\/\d{1,2}\/\d{4}\s\d{2}:\d{2}:\d{2}\s+[AM|PM]{2}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private Regex rxEntryType = new Regex(@"Information|Error");
         private Regex rxBrackets = new Regex(@"\[.*?\]");
@@ -21,11 +22,20 @@ namespace FailoverDetector
         public override string TokenizeTimestamp(string line)
         {
             string tmp = string.Empty;
-            if( this.rxTimeStamp.IsMatch(line))
+            if (this.rxTimeStamp.IsMatch(line))
             {
                 tmp = this.rxTimeStamp.Match(line).Value;
             }
             return tmp;
+        }
+        public override DateTimeOffset ParseTimeStamp(string timestamp)
+        {
+            DateTimeOffset parsedTime;
+            DateTimeOffset.TryParse(timestamp, null as IFormatProvider,
+                                    System.Globalization.DateTimeStyles.AssumeUniversal,
+                                    out parsedTime);
+            parsedTime += UTCcorrection;
+            return parsedTime;
         }
         public string TokenizeEntryType(string line)
         {
@@ -50,6 +60,7 @@ namespace FailoverDetector
         public override ErrorLogEntry ParseLogEntry(string line)
         {
             string tmpTimestamp = TokenizeTimestamp(line);
+            DateTimeOffset tmpParsedTime = ParseTimeStamp(tmpTimestamp);
             line = line.Substring(tmpTimestamp.Length).Trim();
 
             string tmpType = TokenizeEntryType(line);
@@ -58,7 +69,7 @@ namespace FailoverDetector
             string tmpSQLSource = TokenizeSQLSource(line);
             line = line.Substring(tmpSQLSource.Length ).Trim();
 
-            ErrorLogEntry entry = new ErrorLogEntry(tmpTimestamp, "", line);
+            ErrorLogEntry entry = new ErrorLogEntry(tmpParsedTime, "", line);
             return entry;
 
         }

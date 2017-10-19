@@ -29,6 +29,18 @@ namespace FailoverDetector.Tests
         }
 
         [TestMethod()]
+        public void ParseTimeStampTest()
+        {
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 19, 10, 30, 8, new TimeSpan(-4, 0, 0));
+
+            string retTime = appLogParser.TokenizeTimestamp(testString);
+            DateTimeOffset parsedTime = appLogParser.ParseTimeStamp(retTime);
+            Console.WriteLine("Parse string timestamp: {0} to DateTimeOffset: {1}", retTime, parsedTime.ToString());
+            DateTimeOffset utcTime = cmp.ToUniversalTime();
+            Assert.AreEqual(utcTime, parsedTime);
+        }
+
+        [TestMethod()]
         public void TokenizeEntryTypeTest()
         {
             string retType = appLogParser.TokenizeEntryType(testString);
@@ -48,8 +60,11 @@ namespace FailoverDetector.Tests
         public void ParseLogEntryTest()
         {
             ErrorLogEntry ret = appLogParser.ParseLogEntry(testString);
-            ErrorLogEntry test = new ErrorLogEntry(@"9/19/2017 10:30:08 AM", @"", @"The state of the local availability replica in availability group 'ag8102017' has changed from   'RESOLVING_NORMAL' to 'PRIMARY_PENDING'.  The state changed because the availability group is coming online.  For more information, see the SQL Server error log, Windows Server Failover Clustering (WSFC) management console, or WSFC log.");
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 19, 10, 30, 8, new TimeSpan(-4, 0, 0));
+            ErrorLogEntry test = new ErrorLogEntry(cmp, @"", @"The state of the local availability replica in availability group 'ag8102017' has changed from   'RESOLVING_NORMAL' to 'PRIMARY_PENDING'.  The state changed because the availability group is coming online.  For more information, see the SQL Server error log, Windows Server Failover Clustering (WSFC) management console, or WSFC log.");
             Assert.IsTrue(ret.Equals(test));
         }
+
+
     }
 }

@@ -20,26 +20,27 @@ namespace FailoverDetector
         }
 
         abstract public string TokenizeTimestamp(string line);
+        abstract public DateTimeOffset ParseTimeStamp(string timestamp);
         abstract public ErrorLogEntry ParseLogEntry(string entry);
 
     }
     public class ErrorLogEntry
     {
         private string message;
-        private string timestamp;
+        private DateTimeOffset timestamp;
         private string spid;
 
         public string Message { get => message; set => message = value; }
-        public string Timestamp { get => timestamp; set => timestamp = value; }
+        public DateTimeOffset Timestamp { get => timestamp; set => timestamp = value; }
         public string Spid { get => spid; set => spid = value; }
 
         public ErrorLogEntry()
         {
             message = String.Empty;
             spid = String.Empty;
-            timestamp = String.Empty;
+            timestamp = DateTimeOffset.MinValue;
         }
-        public ErrorLogEntry(string pTimestamp, string pSpid, string pMessage)
+        public ErrorLogEntry(DateTimeOffset pTimestamp, string pSpid, string pMessage)
         {
             timestamp = pTimestamp;
             spid = pSpid;
@@ -61,7 +62,7 @@ namespace FailoverDetector
         public bool IsTrancated()
 
         {
-            if(String.IsNullOrEmpty(timestamp))
+            if (this.timestamp == DateTimeOffset.MinValue) 
             {
                 return true;
             }else
@@ -71,7 +72,7 @@ namespace FailoverDetector
         }
         public bool IsEmpty()
         {
-            if (String.IsNullOrWhiteSpace(timestamp)
+            if ( (timestamp == DateTimeOffset.MinValue)
                 && String.IsNullOrWhiteSpace(spid)
                 && String.IsNullOrWhiteSpace(message))
             {
@@ -87,10 +88,11 @@ namespace FailoverDetector
         // get timestamp from each line.
         string sPattern = @"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}";
         string testLogPath = @"C:\\Users\zeche\Documents\WorkItems\POC\Data\TestLog.log";
-    
+        TimeSpan UTCcorrection;
         public ErrorLogParser()
         {
             m_entryList = new List<ErrorLogEntry>();
+            UTCcorrection = new TimeSpan(4, 0, 0);
         }
 
         List<ErrorLogEntry> m_entryList;
@@ -116,6 +118,22 @@ namespace FailoverDetector
                 tmp = timeStamp;
             }
             return tmp;
+        }
+
+
+        // parse a string timestamp to a dateTimeOffset, so we can compare
+        // it with failover time
+
+        public override DateTimeOffset ParseTimeStamp(string timestamp)
+        {
+            // timestamp have a special 23.5    we need to remove .x value from string
+            string[] substr = timestamp.Split('.');
+            DateTimeOffset parsedTime;
+            DateTimeOffset.TryParse(substr[0], null as IFormatProvider,
+                                System.Globalization.DateTimeStyles.AssumeUniversal, out parsedTime);
+            parsedTime += UTCcorrection;
+            return parsedTime;
+
         }
 
         // we expected input string is after tokenize timestamp
@@ -145,7 +163,8 @@ namespace FailoverDetector
             
             if(!String.IsNullOrWhiteSpace(tmpTimeStamp))
             {
-                entry.Timestamp = tmpTimeStamp;
+
+                entry.Timestamp = ParseTimeStamp(tmpTimeStamp);
             }
             if(!String.IsNullOrWhiteSpace(tmpSpid))
             {

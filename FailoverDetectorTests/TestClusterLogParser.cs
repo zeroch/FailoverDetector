@@ -24,6 +24,17 @@ namespace FailoverDetectorTests
             Assert.AreEqual(retTime, "2017/09/14-18:16:27.575");
         }
         [TestMethod]
+        public void TestParseTimeStamp()
+        {
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 18, 16, 27, new TimeSpan(-4, 0, 0));
+
+            string retTime = clusterLogParser.TokenizeTimestamp(testString);
+            DateTimeOffset parsedTime = clusterLogParser.ParseTimeStamp(retTime);
+            Console.WriteLine("Parse string timestamp: {0} to DateTimeOffset: {1}", retTime, parsedTime.ToString());
+            DateTimeOffset utcTime = cmp.ToUniversalTime();
+            Assert.AreEqual(utcTime, parsedTime);
+        }
+        [TestMethod]
         public void TestTokenizePid()
         {
             string retPid = clusterLogParser.TokenizePidTid(testString);
@@ -50,7 +61,8 @@ namespace FailoverDetectorTests
         public void TestClusterParseLog()
         {
             ErrorLogEntry ret = clusterLogParser.ParseLogEntry(testString);
-            ErrorLogEntry test = new ErrorLogEntry(@"2017/09/14-18:16:27.575", @"0000126c.00001cec::", @"SQL Server Availability Group <ag8102017>: [hadrag] SQL server service is not alive");
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 18, 16, 27, new TimeSpan(-4, 0, 0));
+            ErrorLogEntry test = new ErrorLogEntry(cmp, @"0000126c.00001cec::", @"SQL Server Availability Group <ag8102017>: [hadrag] SQL server service is not alive");
             Assert.IsTrue(ret.Equals(test));
         }
     }

@@ -17,8 +17,10 @@ namespace FailoverDetector
         {
             // TODO: come back later
             entryList = new List<ErrorLogEntry>();
+            UTCcorrection = new TimeSpan(4, 0, 0);
         }
 
+        TimeSpan UTCcorrection;
         List<ErrorLogEntry> entryList;
         private Regex rxTimeStamp = new Regex(@"\d{4}/\d{2}/\d{2}-\d{2}:\d{2}:\d{2}.\d{3}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private Regex rxPid = new Regex(@"[0-9a-f]{8}.[0-9a-f]{8}::", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -39,6 +41,17 @@ namespace FailoverDetector
                 tmp = timeStamp;
             }
             return tmp;
+        }
+        public override DateTimeOffset ParseTimeStamp(string timestamp)
+        {
+            // timestamp have a special 23.5    we need to remove .x value from string
+            // FIXME: a hack to format timestamp string
+            timestamp = timestamp.Split('.')[0].Replace('-', ' ');
+            DateTimeOffset parsedTime;
+            DateTimeOffset.TryParse(timestamp, null as IFormatProvider,
+                                System.Globalization.DateTimeStyles.AssumeUniversal, out parsedTime);
+            parsedTime += UTCcorrection;
+            return parsedTime;
         }
 
         // in the comming analysis, PID and Thread ID really doesn't matter
@@ -81,6 +94,7 @@ namespace FailoverDetector
             line = line.Substring(tmpPid.Length).Trim();
 
             string tmpTimestamp = TokenizeTimestamp(line);
+            DateTimeOffset tmpParsedTime = ParseTimeStamp(tmpTimestamp);
             line = line.Substring(tmpTimestamp.Length).Trim();
 
             string tmpType = TokenizeEntryType(line);
@@ -89,7 +103,7 @@ namespace FailoverDetector
             string tmpChannel = TokenizeChannel(line);
             line = line.Substring(tmpChannel.Length ).Trim();
 
-            ErrorLogEntry entry = new ErrorLogEntry(tmpTimestamp, tmpPid, line);
+            ErrorLogEntry entry = new ErrorLogEntry(tmpParsedTime, tmpPid, line);
             return entry;
 
         }

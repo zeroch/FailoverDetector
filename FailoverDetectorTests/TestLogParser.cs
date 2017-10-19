@@ -9,41 +9,31 @@ namespace FailoverDetectorTests
     [TestClass]
     public class TestLogParser
     {
-        string testLogPath = @"C:\\Users\zeche\Documents\WorkItems\POC\Data\TestLog.log";
-        [TestMethod]
-        public void TestRegexParser()
+        string testString = @"2017-09-14 16:19:57.05 spid24s     Always On: The availability replica manager is going offline because the local Windows Server Failover Clustering (WSFC) node has lost quorum. This is an informational message only. No user action is required.";
+        ErrorLogParser logParser;
+        [TestInitialize]
+        public void Setup()
         {
-            ErrorLogParser logParser = new ErrorLogParser();
-            logParser.ParseLog(testLogPath);
-
+            logParser = new ErrorLogParser();
         }
-
         [TestMethod]
         public void TestTokenizeTimestamp()
         {
-            ErrorLogParser logParser = new ErrorLogParser();
-            using (FileStream stream = File.OpenRead(testLogPath))
-            {
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    string line;
-                    while((line = reader.ReadLine()) != null)
-                    {
-                        Console.WriteLine(line);
-                        string tmpTimeStamp = logParser.TokenizeTimestamp(line);
-                        Console.WriteLine(tmpTimeStamp);
-                        if(!String.IsNullOrWhiteSpace(tmpTimeStamp))
-                        {
-                            string subline = line.Substring(22).Trim();
-                            string tmpSpid = logParser.TokenizeSpid(subline);
-                            Console.WriteLine(tmpSpid);
-                            string tmpMessage = subline.Substring(tmpSpid.Length).Trim();
-                            Console.WriteLine(tmpMessage);
-                        }
-                    }
+            string tmpTimeStamp = logParser.TokenizeTimestamp(testString);
+            Console.WriteLine(tmpTimeStamp);
+            Assert.AreEqual(tmpTimeStamp, "2017-09-14 16:19:57.05");
+        }
 
-                }
-            }
+        [TestMethod]
+        public void TestParseTimeStamp()
+        {
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 16, 19, 57, new TimeSpan(-4,0,0));
+
+            string retTime = logParser.TokenizeTimestamp(testString);
+            DateTimeOffset parsedTime = logParser.ParseTimeStamp(retTime);
+            Console.WriteLine("Parse string timestamp: {0} to DateTimeOffset: {1}", retTime, parsedTime.ToString());
+            DateTimeOffset utcTime = cmp.ToUniversalTime();
+            Assert.AreEqual(utcTime, parsedTime);
         }
 
         [TestMethod]
@@ -59,7 +49,8 @@ namespace FailoverDetectorTests
         [TestMethod]
         public void TestErrorLogEntryEquals()
         {
-            ErrorLogEntry pEntry = new ErrorLogEntry("2017-09-10 22:00:00.19", "spid191", "UTC adjustment: -4:00");
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 10, 22, 00 ,00, new TimeSpan(-4,0,0));
+            ErrorLogEntry pEntry = new ErrorLogEntry(cmp, "spid191", "UTC adjustment: -4:00");
             string testString = @"2017-09-10 22:00:00.19 spid191     UTC adjustment: -4:00";
             ErrorLogEntry entry = new ErrorLogEntry();
             ErrorLogParser parser = new ErrorLogParser();
