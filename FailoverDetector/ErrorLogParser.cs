@@ -22,7 +22,7 @@ namespace FailoverDetector
         abstract public string TokenizeTimestamp(string line);
         abstract public DateTimeOffset ParseTimeStamp(string timestamp);
         abstract public ErrorLogEntry ParseLogEntry(string entry);
-
+        abstract public void SetupRegexList();
     }
     public class ErrorLogEntry
     {
@@ -89,12 +89,24 @@ namespace FailoverDetector
         string sPattern = @"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}";
         string testLogPath = @"C:\\Users\zeche\Documents\WorkItems\POC\Data\TestLog.log";
         TimeSpan UTCcorrection;
+        List<Regex> m_RegexList;
         public ErrorLogParser()
         {
             m_entryList = new List<ErrorLogEntry>();
             UTCcorrection = new TimeSpan(4, 0, 0);
         }
-
+        public override void SetupRegexList()
+        {
+            m_RegexList = new List<Regex>();
+            m_RegexList.Add(rxTimeStamp);
+            m_RegexList.Add(rxSpid);
+            m_RegexList.Add(rxError17148);
+            m_RegexList.Add(rxErrorServerKill);
+            m_RegexList.Add(rxStateTransition);
+            m_RegexList.Add(rxStringInQuote);
+            m_RegexList.Add(rxFirstSentence);
+            m_RegexList.Add(rxUTCAdjust);
+        }
         List<ErrorLogEntry> m_entryList;
 
         private Regex rxTimeStamp = new Regex(@"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -103,6 +115,25 @@ namespace FailoverDetector
         private Regex rxError17148 = new Regex(@"SQL Server is terminating in response to a 'stop' request from Service Control Manager", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         // SQL Error 17147
         private Regex rxErrorServerKill = new Regex(@"SQL Server is terminating because of a system shutdown");
+        // SQL Error 19406, show state transition of a replica
+        private Regex rxStateTransition = new Regex(@"The state of the local availability replica in availability group");
+        // if we match current message is 19406, we tokenize value from '%ls'
+        private Regex rxStringInQuote = new Regex(@"\'\w+\'");
+        // match any character that beginning of a string and end with a dot '.'
+        private Regex rxFirstSentence = new Regex(@"^([^.]*)\.");
+        // match UTC adjustment so we can convert all time to UTC time
+        private Regex rxUTCAdjust = new Regex(@"(UTC adjustment:).*");
+        // ag lease expired
+        private Regex rxLeaeExpired = new Regex(@"(The lease between availability group)(.*)(and the Windows Server Failover Cluster has expired)");
+
+        // HADR_AG_LEASE_RENEWAL_TIMEOUT
+        private Regex rxLeaseTimeout = new Regex(@"(SQL Server hosting availability group)(.*)(did not receive a process event signal from the Windows Server Failover Cluster within the lease timeout period.)");
+
+        // HADR_AG_LEASE_RENEWAL_FAILED_DUE_WINDOWS_ERROR
+        private Regex rxLeaseRenewFailed = new Regex(@"(The renewal of the lease between availability group)(.*)(and the Windows Server Failover Cluster failed)");
+
+        // HADR_AG_LEASE_FAILED_TO_SLEEP_FOR_EXCESS_LEASE
+        private Regex rxLeaseFailedToSleep = new Regex(@"(The lease of availability group)(.*)(lease is no longer valid to start the lease renewal process)");
 
         // methods
         public override string TokenizeTimestamp(string line)
@@ -223,6 +254,37 @@ namespace FailoverDetector
         public bool MatchErrorServerKill(string msg)
         {
             return this.rxErrorServerKill.IsMatch(msg);
+        }
+
+        public bool MatchStateTransition(string msg)
+        {
+            return this.rxStateTransition.IsMatch(msg);
+        }
+
+        public bool MatchUTCAdjust(string msg)
+        {
+            return this.rxUTCAdjust.IsMatch(msg);
+        }
+
+
+        public bool MatchLeaseExpired(string msg)
+        {
+            return this.rxLeaeExpired.IsMatch(msg);
+        }
+
+        public bool MatchLeaseTimeout(string msg)
+        {
+            return this.rxLeaseTimeout.IsMatch(msg);
+        }
+
+        public bool MatchLeaseFailedToSleep(string msg)
+        {
+            return this.rxLeaseFailedToSleep.IsMatch(msg);
+        }
+
+        public bool MatchLeaseRenewFailed(string msg)
+        {
+            return this.rxLeaseRenewFailed.IsMatch(msg);
         }
     }
     

@@ -13,6 +13,10 @@ namespace FailoverDetector
         {
             UTCcorrection = new TimeSpan(4, 0, 0);
         }
+        public override void SetupRegexList()
+        {
+            throw new NotImplementedException();
+        }
         TimeSpan UTCcorrection;
         private Regex rxTimeStamp = new Regex(@"\d{1,2}\/\d{1,2}\/\d{4}\s\d{2}:\d{2}:\d{2}\s+[AM|PM]{2}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private Regex rxEntryType = new Regex(@"Information|Error");

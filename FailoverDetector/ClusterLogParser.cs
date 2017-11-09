@@ -20,12 +20,37 @@ namespace FailoverDetector
             UTCcorrection = new TimeSpan(4, 0, 0);
         }
 
+        public override void SetupRegexList()
+        {
+            throw new NotImplementedException();
+        }
+
         TimeSpan UTCcorrection;
         List<ErrorLogEntry> entryList;
         private Regex rxTimeStamp = new Regex(@"\d{4}/\d{2}/\d{2}-\d{2}:\d{2}:\d{2}.\d{3}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private Regex rxPid = new Regex(@"[0-9a-f]{8}.[0-9a-f]{8}::", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private Regex rxEntryType = new Regex(@"ERR|INFO|warn");
         private Regex rxBrackets = new Regex(@"\[.*?\]");
+
+        // cluster log 1006
+        private Regex rxClusterHalt = new Regex(@"Cluster service was halted due to incomplete connectivity with other cluster nodes");
+        // cluster log 1069
+        private Regex rxResourceFailed = new Regex(@"Cluster resource(.*)in clustered service or application(.*)failed");
+
+        // Cluster log Node Offline, 1135
+        private Regex rxNodeOffline = new Regex(@"(Cluster node)(.*)(was removed from the active failover cluster membership)");
+
+        // cluster log 1177
+        private Regex rxLossQuorum = new Regex(@"The Cluster service is shutting down because quorum was lost");
+
+        // cluster log 1205
+        private Regex rxClusterOffline = new Regex(@"The Cluster service failed to bring clustered role(.*)completely online or offline");
+
+        // failover
+        private Regex rxFailover = new Regex(@"The Cluster service is attempting to fail over the clustered role(.*)from node(.*)to node (.*)");
+
+        // RHS terminated
+        private Regex rxRHSTerminated = new Regex(@"The cluster Resource Hosting Subsystem \(RHS\) process was terminated and will be restarted");
 
         // methods
         public override string TokenizeTimestamp(string line)
@@ -108,5 +133,39 @@ namespace FailoverDetector
 
         }
 
+        public bool MatchClusterHalt(string msg)
+        {
+            return this.rxClusterHalt.IsMatch(msg);
+        }
+
+        public bool MatchResourceFailed(string msg)
+        {
+            return this.rxResourceFailed.IsMatch(msg);
+        }
+
+        public bool MatchNodeOffline(string msg)
+        {
+            return this.rxNodeOffline.IsMatch(msg);
+        }
+
+        public bool MatchLossQuorum(string msg)
+        {
+            return this.rxLossQuorum.IsMatch(msg);
+        }
+
+        public bool MatchClusterOffline(string msg)
+        {
+            return this.rxClusterOffline.IsMatch(msg);
+        }
+
+        public bool MatchFailover(string msg)
+        {
+            return this.rxFailover.IsMatch(msg);
+        }
+
+        public bool MatchRHSTerminated(string msg)
+        {
+            return this.rxRHSTerminated.IsMatch(msg);
+        }
     }
 }
