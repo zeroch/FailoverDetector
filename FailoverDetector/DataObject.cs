@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using Microsoft.SqlServer.XEvent.Linq;
 using System.Linq;
@@ -10,34 +9,33 @@ namespace FailoverDetector
     public class AlwaysOnData
     {
 
-        readonly int DefaultInterval = 5;
-        string instanceName;
-        Dictionary<string, AgReportMgr> agEventMap;
+        readonly int _defaultInterval = 5;
+        string _instanceName;
 
-        public Dictionary<string, AgReportMgr> AgEventMap { get => agEventMap; set => agEventMap = value; }
+        public Dictionary<string, AgReportMgr> AgEventMap { get; set; }
 
         public AlwaysOnData()
         {
-            agEventMap = new Dictionary<string, AgReportMgr>();
+            AgEventMap = new Dictionary<string, AgReportMgr>();
         }
-        enum AlwaysOn_EventType {
-            DLL_EXECUTED,
-            AG_LEASE_EXPIRED,
-            AR_MANGER_STATE_CHANGE,
-            AR_STATE,
-            AR_STATE_CHANGE,
-            LOCK_REDO_BLOCKED,
-            ERROR
+        enum AlwaysOnEventType {
+            DllExecuted,
+            AgLeaseExpired,
+            ArMangerStateChange,
+            ArState,
+            ArStateChange,
+            LockRedoBlocked,
+            Error
         }
-        public void HandleDDLExecuted(PublishedEvent evt)
+        public void HandleDdlExecuted(PublishedEvent evt)
         {
             // find active alter ag failover
             // we only can find based on statement:
             // pattern is 
             // ALTER AVAILABILITY GROUP [ag_name] failover
             // ALTER AVAILABILITY GROUP ag_name force_failover_allow_data_loss
-            string evt_statement = evt.Fields["statement"].Value.ToString();
-            bool isForceFailover = ParseStatement(evt_statement);
+            string evtStatement = evt.Fields["statement"].Value.ToString();
+            bool isForceFailover = ParseStatement(evtStatement);
             if (isForceFailover)
             {
                 // receive a agName, which mean PrseStatement valid a failover statement
@@ -47,15 +45,15 @@ namespace FailoverDetector
                 {
                     string agName = evt.Fields["availability_group_name"].Value.ToString();
                     // get List of report for this ag
-                    if (!agEventMap.TryGetValue(agName, out AgReportMgr m_reports))
+                    if (!AgEventMap.TryGetValue(agName, out AgReportMgr mReports))
                     {
-                        m_reports = new AgReportMgr(agName, instanceName);
-                        agEventMap.Add(agName, m_reports);
+                        mReports = new AgReportMgr(agName, _instanceName);
+                        AgEventMap.Add(agName, mReports);
                     }
-                    PartialReport pReport = m_reports.FGetReport(evt);
+                    PartialReport pReport = mReports.FGetReport(evt);
                     pReport.ForceFailoverFound = true;
 
-                    m_reports.UpdateReport(pReport);
+                    mReports.UpdateReport(pReport);
 
                 }
 
@@ -79,6 +77,7 @@ namespace FailoverDetector
                 return false;
             }
             string command = String.Join(" ", words.Take(3)).ToLower();
+            // TODO posibble null reference exception
             string parameter = words.LastOrDefault().ToLower().TrimEnd(';');
             // HANDEL case like 
             // "failover;" we need to trim the ';'
@@ -93,41 +92,42 @@ namespace FailoverDetector
             return false;
         }
 
-        public void HandleAGLeaseExpired(PublishedEvent evt)
+        public void HandleAgLeaseExpired(PublishedEvent evt)
         {
             string agName = evt.Fields["availability_group_name"].Value.ToString();
             // get List of report for this ag
-            if (!agEventMap.TryGetValue(agName, out AgReportMgr m_reports))
+            if (!AgEventMap.TryGetValue(agName, out AgReportMgr mReports))
             {
-                m_reports = new AgReportMgr(agName, instanceName);
-                agEventMap.Add(agName, m_reports);
+                mReports = new AgReportMgr(agName, _instanceName);
+                AgEventMap.Add(agName, mReports);
             }
-            PartialReport pReport = m_reports.FGetReport(evt);
+            PartialReport pReport = mReports.FGetReport(evt);
             pReport.LeaseTimeoutFound = true;
-            m_reports.UpdateReport(pReport);
+            mReports.UpdateReport(pReport);
         }
-        public void HandleARMgrStateChange(PublishedEvent evt)
-        {
+        public void HandleArMgrStateChange(PublishedEvent evt)
+        {   
+            // TODO: add it later
 ;
         }
-        public void HandleARState(PublishedEvent evt) { }
-        public void HandleARStateChange(PublishedEvent evt)
+        public void HandleArState(PublishedEvent evt) { }
+        public void HandleArStateChange(PublishedEvent evt)
         {
             string agName = evt.Fields["availability_group_name"].Value.ToString();
             // get List of report for this ag
-            if (!agEventMap.TryGetValue(agName, out AgReportMgr m_reports))
+            if (!AgEventMap.TryGetValue(agName, out AgReportMgr mReports))
             {
-                m_reports = new AgReportMgr(agName, instanceName);
-                agEventMap.Add(agName, m_reports);
+                mReports = new AgReportMgr(agName, _instanceName);
+                AgEventMap.Add(agName, mReports);
             }
-            PartialReport pReport = m_reports.FGetReport(evt);
+            PartialReport pReport = mReports.FGetReport(evt);
             if(pReport.IsEmptyRole())
             {
                 pReport.AddRoleTransition(evt.Fields["previous_state"].Value.ToString());
             }
             pReport.AddRoleTransition(evt.Fields["current_state"].Value.ToString());
 
-            m_reports.UpdateReport(pReport);
+            mReports.UpdateReport(pReport);
 
         }
 
@@ -203,19 +203,19 @@ namespace FailoverDetector
             switch(evt.Name)
             {
                 case "alwayson_ddl_executed":
-                    HandleDDLExecuted(evt);
+                    HandleDdlExecuted(evt);
                     break;
                 case "availability_group_lease_expired":
-                    HandleAGLeaseExpired(evt);
+                    HandleAgLeaseExpired(evt);
                     break;
                 case "availability_replica_manager_state_change":
-                    HandleARMgrStateChange(evt);
+                    HandleArMgrStateChange(evt);
                     break;
                 case "availability_replica_state":
-                    HandleARState(evt);
+                    HandleArState(evt);
                     break;
                 case "availability_replica_state_change":
-                    HandleARStateChange(evt);
+                    HandleArStateChange(evt);
                     break;
                 case "lock_redo_blocked":
                     HandleLockRedoBlocked(evt);
@@ -227,9 +227,9 @@ namespace FailoverDetector
                     break;
             }
         }
-        public void loadData(string xelFileName, string serverName)
+        public void LoadData(string xelFileName, string serverName)
         {
-            instanceName = serverName;
+            _instanceName = serverName;
             // load xel File
             using (QueryableXEventData events = new QueryableXEventData(xelFileName))
             {
@@ -245,15 +245,15 @@ namespace FailoverDetector
         }
         public void AnalyzeReports()
         {
-            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = agEventMap.Values;
+            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = AgEventMap.Values;
             foreach (AgReportMgr rlMgr in rlMgrColl)
             {
                 rlMgr.AnalyzeReport();
             }
         }
-        public void ShowAGRoleTransition()
+        public void ShowAgRoleTransition()
         {
-            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = agEventMap.Values;
+            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = AgEventMap.Values;
             foreach (AgReportMgr rlMgr in rlMgrColl)
             {
                 rlMgr.ShowReportArRoleTransition();
@@ -262,7 +262,7 @@ namespace FailoverDetector
 
         public void ShowFailoverReports()
         {
-            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = agEventMap.Values;
+            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = AgEventMap.Values;
             foreach (AgReportMgr rlMgr in rlMgrColl)
             {
                 rlMgr.ShowReport();
@@ -274,15 +274,14 @@ namespace FailoverDetector
         {
 
             // fetch one AgReportMgr and find same agName from another Data source
-            foreach(KeyValuePair<string,AgReportMgr> kvp in agEventMap)
+            foreach(KeyValuePair<string,AgReportMgr> kvp in AgEventMap)
             {
                 string pAgName = kvp.Key;
                 AgReportMgr pReportMgr = kvp.Value;
-                AgReportMgr nReportMgr;
 
-                List<PartialReport> new_list = new List<PartialReport>();
+                List<PartialReport> newList = new List<PartialReport>();
 
-                if (nextNode.agEventMap.TryGetValue(pAgName, out nReportMgr))
+                if (nextNode.AgEventMap.TryGetValue(pAgName, out var nReportMgr))
                 {
                     // pReportMgr vs nReportMgr
                     // merge these two reportMgr
@@ -300,17 +299,17 @@ namespace FailoverDetector
                         PartialReport left = pReports[i];
                         PartialReport right = nReports[j];
                         // NOT in the same time range
-                        if( ((left.StartTime-right.EndTime).TotalMinutes >DefaultInterval) )
+                        if( ((left.StartTime-right.EndTime).TotalMinutes >_defaultInterval) )
                         {
                             // push right to new list
-                            new_list.Add(right);
+                            newList.Add(right);
                             j++;
 
                         }else if 
-                            ((right.StartTime - left.EndTime).TotalMinutes > DefaultInterval)  
+                            ((right.StartTime - left.EndTime).TotalMinutes > _defaultInterval)  
                         {
                             // push left to new list
-                            new_list.Add(left);
+                            newList.Add(left);
                             i++;
                         }else
                         {
@@ -319,13 +318,13 @@ namespace FailoverDetector
                             // time
 
                             left.MergeReport(right);
-                            new_list.Add(left);
+                            newList.Add(left);
                             i++;j++;
                         }
 
                     }
                     pReportMgr.Reports.Clear();
-                    pReportMgr.Reports = new_list;
+                    pReportMgr.Reports = newList;
 
                 }
                 

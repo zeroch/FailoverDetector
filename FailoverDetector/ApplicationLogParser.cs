@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 
 namespace FailoverDetector
@@ -11,52 +7,52 @@ namespace FailoverDetector
     {
         public ApplicationLogParser()
         {
-            UTCcorrection = new TimeSpan(4, 0, 0);
+            _utCcorrection = new TimeSpan(4, 0, 0);
         }
         public override void SetupRegexList()
         {
             throw new NotImplementedException();
         }
-        TimeSpan UTCcorrection;
-        private Regex rxTimeStamp = new Regex(@"\d{1,2}\/\d{1,2}\/\d{4}\s\d{2}:\d{2}:\d{2}\s+[AM|PM]{2}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private Regex rxEntryType = new Regex(@"Information|Error");
-        private Regex rxBrackets = new Regex(@"\[.*?\]");
-        private Regex rxMSSQLSource = new Regex(@"MSSQL\$\w+");
+
+        readonly TimeSpan _utCcorrection;
+        private readonly Regex _rxTimeStamp = new Regex(@"\d{1,2}\/\d{1,2}\/\d{4}\s\d{2}:\d{2}:\d{2}\s+[AM|PM]{2}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private readonly Regex _rxEntryType = new Regex(@"Information|Error");
+        private Regex _rxBrackets = new Regex(@"\[.*?\]");
+        private readonly Regex _rxMssqlSource = new Regex(@"MSSQL\$\w+");
 
         public override string TokenizeTimestamp(string line)
         {
             string tmp = string.Empty;
-            if (this.rxTimeStamp.IsMatch(line))
+            if (_rxTimeStamp.IsMatch(line))
             {
-                tmp = this.rxTimeStamp.Match(line).Value;
+                tmp = _rxTimeStamp.Match(line).Value;
             }
             return tmp;
         }
         public override DateTimeOffset ParseTimeStamp(string timestamp)
         {
-            DateTimeOffset parsedTime;
             DateTimeOffset.TryParse(timestamp, null as IFormatProvider,
                                     System.Globalization.DateTimeStyles.AssumeUniversal,
-                                    out parsedTime);
-            parsedTime += UTCcorrection;
+                                    out var parsedTime);
+            parsedTime += _utCcorrection;
             return parsedTime;
         }
         public string TokenizeEntryType(string line)
         {
             string tmp = string.Empty;
-            if (this.rxEntryType.IsMatch(line))
+            if (_rxEntryType.IsMatch(line))
             {
-                tmp = this.rxEntryType.Match(line).Value;
+                tmp = _rxEntryType.Match(line).Value;
             }
             return tmp;
         }
 
-        public string TokenizeSQLSource(string line)
+        public string TokenizeSqlSource(string line)
         {
             string tmp = string.Empty;
-            if (this.rxMSSQLSource.IsMatch(line))
+            if (_rxMssqlSource.IsMatch(line))
             {
-                tmp = this.rxMSSQLSource.Match(line).Value;
+                tmp = _rxMssqlSource.Match(line).Value;
             }
             return tmp;
         }
@@ -70,8 +66,8 @@ namespace FailoverDetector
             string tmpType = TokenizeEntryType(line);
             line = line.Substring(tmpType.Length).Trim();
 
-            string tmpSQLSource = TokenizeSQLSource(line);
-            line = line.Substring(tmpSQLSource.Length ).Trim();
+            string tmpSqlSource = TokenizeSqlSource(line);
+            line = line.Substring(tmpSqlSource.Length ).Trim();
 
             ErrorLogEntry entry = new ErrorLogEntry(tmpParsedTime, "", line);
             return entry;
