@@ -5,11 +5,25 @@ using System.Text.RegularExpressions;
 
 namespace FailoverDetector
 {
+
     public abstract class LogParser
     {
         private DateTimeOffset _failoverTimeStart;
         private DateTimeOffset _failoverTimeEnd;
 
+
+        enum MessageInfo
+        {
+            NoMatchAnyMessage = 0,
+            StopSqlService,
+            ShutDownServer,
+            LeaseExpired,
+            LeaseTimeout,
+            LeaseFailedToSleep,
+            LeaseRenewFailed,
+            
+            
+        }
         protected LogParser()
         {
         }
@@ -109,7 +123,8 @@ namespace FailoverDetector
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         // SQL Error 17147
-        private readonly Regex _rxErrorServerKill = new Regex(@"SQL Server is terminating because of a system shutdown");
+        private readonly Regex _rxErrorServerKill =
+            new Regex(@"SQL Server is terminating because of a system shutdown");
 
         // SQL Error 19406, show state transition of a replica
         private readonly Regex _rxStateTransition =
@@ -248,47 +263,6 @@ namespace FailoverDetector
                     }
                 }
             }
-        }
-
-        public bool MatchErrorStopService(string msg)
-        {
-            return _rxError17148.IsMatch(msg);
-        }
-
-        public bool MatchErrorServerKill(string msg)
-        {
-            return _rxErrorServerKill.IsMatch(msg);
-        }
-
-        public bool MatchStateTransition(string msg)
-        {
-            return _rxStateTransition.IsMatch(msg);
-        }
-
-        public bool MatchUtcAdjust(string msg)
-        {
-            return _rxUtcAdjust.IsMatch(msg);
-        }
-
-
-        public bool MatchLeaseExpired(string msg)
-        {
-            return _rxLeaeExpired.IsMatch(msg);
-        }
-
-        public bool MatchLeaseTimeout(string msg)
-        {
-            return _rxLeaseTimeout.IsMatch(msg);
-        }
-
-        public bool MatchLeaseFailedToSleep(string msg)
-        {
-            return _rxLeaseFailedToSleep.IsMatch(msg);
-        }
-
-        public bool MatchLeaseRenewFailed(string msg)
-        {
-            return _rxLeaseRenewFailed.IsMatch(msg);
         }
     }
 }

@@ -97,6 +97,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApplicationLogParser.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="ClusterLogParser.cs" />
     <Compile Include="ErrorLogParser.cs" />
     <Compile Include="SystemHealthParser.cs" />

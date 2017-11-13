@@ -33,7 +33,7 @@ namespace FailoverDetector
 
 
     }
-
+    
 
     public class PartialReport : FailoverReport
     {
@@ -70,9 +70,12 @@ namespace FailoverDetector
             OldPrimary = "";
             NewPrimary = "";
             _mSysData = new SystemHealthData();
+            MessageSet = new HashSet<string>();
 
         }
 
+        // TODO use public for now, change to private and use function to wrap it up. 
+        public HashSet<string> MessageSet;
         public DateTimeOffset StartTime { get; set; }
 
         public DateTimeOffset EndTime { get; set; }

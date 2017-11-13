@@ -1,8 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-
-
 namespace FailoverDetector.Tests
 {
     [TestClass]
@@ -58,38 +56,8 @@ namespace FailoverDetector.Tests
 
         }
 
-        [TestMethod]
-        public void TestMatchErrorStopService()
-        {
-            ErrorLogParser parser = new ErrorLogParser();
-            string testString = @"SQL Server is terminating in response to a 'stop' request from Service Control Manager. This is an informational message only. No user action is required";
-            Assert.IsTrue(parser.MatchErrorStopService(testString));
-        }
 
-        [TestMethod]
-        public void TestMatchServerKill()
-        {
-            string testString = @"SQL Server is terminating because of a system shutdown. This is an informational message only. No user action is required.";
-            Assert.IsTrue(_logParser.MatchErrorServerKill(testString));
-        }
-        [TestMethod]
-        public void TestMatchUtcAdjust()
-        {
-            string testString = @"2017-09-10 22:00:00.19 spid191     UTC adjustment: -4:00";
-            Assert.IsTrue(_logParser.MatchUtcAdjust(testString));
-        }
 
-        [TestMethod]
-        public void TestMatchStateTransition()
-        {
-            string testString = @"The state of the local availability replica in " +
-                            "availability group 'ag1023' has changed from 'RESOLVING_NORMAL' to 'SECONDARY_NORMAL'.  " +
-                            "The state changed because the availability group state has changed in Windows Server " +
-                            "Failover Clustering (WSFC).  For more information, see the SQL Server error log or cluster log.  " +
-                            "If this is a Windows Server Failover Clustering (WSFC) availability group, you can also see the " +
-                            "WSFC management console.";
-            Assert.IsTrue(_logParser.MatchStateTransition(testString));
-        }
        
     }
 }
