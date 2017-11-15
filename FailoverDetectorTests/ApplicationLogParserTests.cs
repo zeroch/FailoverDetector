@@ -1,7 +1,8 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
+using FailoverDetector;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace FailoverDetector.Tests
+namespace FailoverDetectorTests
 {
     [TestClass()]
     public class ApplicationLogParserTests

@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FailoverDetector.Utils;
-namespace FailoverDetector.Tests
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace FailoverDetectorTests
 {
     [TestClass()]
     public class MessageExpressionTest

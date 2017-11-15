@@ -1,8 +1,8 @@
 ﻿using System;
+using FailoverDetector;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-
-namespace FailoverDetector.Tests
+namespace FailoverDetectorTests
 {
     [TestClass]
     public class TestClusterLogParser
