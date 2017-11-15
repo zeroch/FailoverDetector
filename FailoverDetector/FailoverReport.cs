@@ -69,6 +69,8 @@ namespace FailoverDetector
             Merged = false;
             OldPrimary = "";
             NewPrimary = "";
+            AgId = String.Empty;
+            AgName = String.Empty;;
             _mSysData = new SystemHealthData();
             MessageSet = new HashSet<string>();
 
@@ -295,7 +297,77 @@ namespace FailoverDetector
         }
 
     }
-    public class AgReportMgr
+
+    // singleton class, only one Report manager existed
+    // no multi thread at this point. Not Thread safe
+    public sealed class ReportMgr
+    {
+        private static ReportMgr instance = null;
+
+        private ReportMgr()
+        {
+        }
+        public static ReportMgr ReportMgrInstance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new ReportMgr();
+                    AgReports = new Dictionary<string, AgReport>();
+                }
+                return instance;
+            }
+        }
+
+        private static Dictionary<string, AgReport> AgReports;
+
+        // iterator
+        public IEnumerable<AgReport> ReportIterator()
+        {
+            foreach (var agReport in AgReports)
+            {
+                yield return agReport.Value;
+            }
+        }
+        public  IEnumerable<KeyValuePair<string, AgReport>> ReportValuePairsIterator()
+        {
+            foreach (var report in AgReports)
+            {
+                yield return report;
+            }
+        }
+
+        public AgReport GetAgReports(string agName)
+        {
+            if (AgReports.ContainsKey(agName))
+            {
+                return AgReports[agName];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public AgReport AddNewAgReport(string agName, string serverName)
+        {
+            if (AgReports.ContainsKey(agName))
+            {
+                return AgReports[agName];
+            }
+            else
+            {
+                // create a new agReport in hashMap
+                AgReport tmpAgReport = new AgReport(agName, serverName);
+                AgReports[agName] = tmpAgReport;
+                return tmpAgReport;
+            }
+        }
+        
+    }
+
+    public class AgReport
     {
         readonly int _defaultInterval = 5;
         readonly List<PartialReport> _mFailoverReport;
@@ -305,39 +377,51 @@ namespace FailoverDetector
 
         public string AgName { get; set; }
 
-        public AgReportMgr(string agName, string instanceName)
+        public AgReport(string agName, string instanceName)
         {
             Reports = new List<PartialReport>();
             _mFailoverReport = new List<PartialReport>();
             AgName = agName;
             _serverName = instanceName;
         }
-        public PartialReport FGetReport(PublishedEvent evt)
+
+        public AgReport(string agName)
         {
-            PartialReport pReport;
-            if (    !Reports.Any() 
-                || ((evt.Timestamp - Reports.Last().EndTime).TotalMinutes > _defaultInterval) 
-                || ((Reports.Last().EndTime - evt.Timestamp).TotalMinutes > _defaultInterval))
-            {
+            AgName = agName;
+             Reports = new List<PartialReport>();
+            _mFailoverReport = new List<PartialReport>();
+         
+        }
 
-                pReport = new PartialReport(_serverName)
+        public PartialReport FGetReport(DateTimeOffset pTimeStamp)
+        {
+            foreach (var report in Reports)
+            {
+                if (((pTimeStamp - report.EndTime).TotalMinutes < _defaultInterval)
+                    && ((report.StartTime - pTimeStamp).TotalMinutes < _defaultInterval))
                 {
-                    StartTime = evt.Timestamp,
-                    EndTime = evt.Timestamp,
-                    AgName = evt.Fields["availability_group_name"].Value.ToString(),
-                    AgId = evt.Fields["availability_group_id"].Value.ToString()
-                };
-
-
-                Reports.Add(pReport);
+                    // update time
+                    if (pTimeStamp < report.StartTime)
+                    {
+                        report.StartTime = pTimeStamp;
+                    }
+                    if (pTimeStamp > report.EndTime)
+                    {
+                        report.EndTime = pTimeStamp;
+                    }
+                    return report;
+                }
             }
-            else
+
+            // no find any overlapped report, so we create a new one
+            PartialReport pReport = new PartialReport(_serverName)
             {
-                pReport = Reports.Last();
-                pReport.EndTime = evt.Timestamp;
-                pReport.AgName = evt.Fields["availability_group_name"].Value.ToString();
-                pReport.AgId = evt.Fields["availability_group_id"].Value.ToString();
-            }
+                // update time
+                StartTime = pTimeStamp,
+                EndTime = pTimeStamp,
+            };
+            Reports.Add(pReport);
+
             return pReport;
         }
 

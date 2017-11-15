@@ -21,10 +21,15 @@ namespace FailoverDetector
                 Console.WriteLine("xel file path is : {0}\n Node name: {1}", xelPath, nodeName);
                 var instance = new AlwaysOnData();
                 instance.LoadData(xelPath, nodeName);
-                if(i != 0 )
-                {
-                    nodeList.First().MergeInstance(instance);
-                }
+
+
+                // actually we use a singlton Report Manager to handle reports
+                // all reports are merged while new insert.
+                // no more merge is needed here. 
+                //if(i != 0 )
+                //{
+                //    nodeList.First().MergeInstance(instance);
+                //}
                 nodeList.Add(instance);
                 i++;
 

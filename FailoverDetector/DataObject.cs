@@ -12,11 +12,10 @@ namespace FailoverDetector
         readonly int _defaultInterval = 5;
         string _instanceName;
 
-        public Dictionary<string, AgReportMgr> AgEventMap { get; set; }
+        public Dictionary<string, AgReport> AgEventMap { get; set; }
 
         public AlwaysOnData()
         {
-            AgEventMap = new Dictionary<string, AgReportMgr>();
         }
         enum AlwaysOnEventType {
             DllExecuted,
@@ -44,14 +43,27 @@ namespace FailoverDetector
                 if (commited)
                 {
                     string agName = evt.Fields["availability_group_name"].Value.ToString();
+                    string agId = evt.Fields["availability_group_id"].Value.ToString();
                     // get List of report for this ag
-                    if (!AgEventMap.TryGetValue(agName, out AgReportMgr mReports))
+                    // get List of report for this ag
+                    ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+                    AgReport mReports = pReportMgr.GetAgReports(agName);
+                    if ( mReports == null)
                     {
-                        mReports = new AgReportMgr(agName, _instanceName);
-                        AgEventMap.Add(agName, mReports);
+                        mReports = pReportMgr.AddNewAgReport(agName, _instanceName);
                     }
-                    PartialReport pReport = mReports.FGetReport(evt);
+
+                    PartialReport pReport = mReports.FGetReport(evt.Timestamp);
+                    // update information
                     pReport.ForceFailoverFound = true;
+                    if(pReport.AgId == string.Empty)
+                    {
+                        pReport.AgId = agId;
+                    }
+                    if (pReport.AgName == string.Empty)
+                    {
+                        pReport.AgName = agName;
+                    }
 
                     mReports.UpdateReport(pReport);
 
@@ -95,14 +107,24 @@ namespace FailoverDetector
         public void HandleAgLeaseExpired(PublishedEvent evt)
         {
             string agName = evt.Fields["availability_group_name"].Value.ToString();
+            string agId = evt.Fields["availability_group_id"].Value.ToString(); 
             // get List of report for this ag
-            if (!AgEventMap.TryGetValue(agName, out AgReportMgr mReports))
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+            AgReport mReports = pReportMgr.GetAgReports(agName);
+            if (mReports == null)
             {
-                mReports = new AgReportMgr(agName, _instanceName);
-                AgEventMap.Add(agName, mReports);
+                mReports = pReportMgr.AddNewAgReport(agName, _instanceName);
             }
-            PartialReport pReport = mReports.FGetReport(evt);
+            PartialReport pReport = mReports.FGetReport(evt.Timestamp);
             pReport.LeaseTimeoutFound = true;
+            if (pReport.AgId == string.Empty)
+            {
+                pReport.AgId = agId;
+            }
+            if (pReport.AgName == string.Empty)
+            {
+                pReport.AgName = agName;
+            }
             mReports.UpdateReport(pReport);
         }
         public void HandleArMgrStateChange(PublishedEvent evt)
@@ -114,20 +136,29 @@ namespace FailoverDetector
         public void HandleArStateChange(PublishedEvent evt)
         {
             string agName = evt.Fields["availability_group_name"].Value.ToString();
+            string agId = evt.Fields["availability_group_id"].Value.ToString(); 
             // get List of report for this ag
-            if (!AgEventMap.TryGetValue(agName, out AgReportMgr mReports))
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+            AgReport mReports = pReportMgr.GetAgReports(agName);
+            if (mReports == null)
             {
-                mReports = new AgReportMgr(agName, _instanceName);
-                AgEventMap.Add(agName, mReports);
+                mReports = pReportMgr.AddNewAgReport(agName, _instanceName);
             }
-            PartialReport pReport = mReports.FGetReport(evt);
+            PartialReport pReport = mReports.FGetReport(evt.Timestamp);
             if(pReport.IsEmptyRole())
             {
                 pReport.AddRoleTransition(evt.Fields["previous_state"].Value.ToString());
             }
             pReport.AddRoleTransition(evt.Fields["current_state"].Value.ToString());
+            if (pReport.AgId == string.Empty)
+            {
+                pReport.AgId = agId;
+            }
+            if (pReport.AgName == string.Empty)
+            {
+                pReport.AgName = agName;
+            }
 
-            mReports.UpdateReport(pReport);
 
         }
 
@@ -245,16 +276,20 @@ namespace FailoverDetector
         }
         public void AnalyzeReports()
         {
-            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = AgEventMap.Values;
-            foreach (AgReportMgr rlMgr in rlMgrColl)
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+
+
+            foreach (AgReport rlMgr in pReportMgr.ReportIterator())
             {
                 rlMgr.AnalyzeReport();
             }
         }
         public void ShowAgRoleTransition()
         {
-            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = AgEventMap.Values;
-            foreach (AgReportMgr rlMgr in rlMgrColl)
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+
+
+            foreach (AgReport rlMgr in pReportMgr.ReportIterator())
             {
                 rlMgr.ShowReportArRoleTransition();
             }
@@ -262,33 +297,37 @@ namespace FailoverDetector
 
         public void ShowFailoverReports()
         {
-            Dictionary<string, AgReportMgr>.ValueCollection rlMgrColl = AgEventMap.Values;
-            foreach (AgReportMgr rlMgr in rlMgrColl)
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+
+
+            foreach (AgReport rlMgr in pReportMgr.ReportIterator())
             {
                 rlMgr.ShowReport();
             }
 
         }
 
+        // FIX IT, we need to fix this method. now ReportMgr is global
         public void MergeInstance(AlwaysOnData nextNode)
         {
 
-            // fetch one AgReportMgr and find same agName from another Data source
-            foreach(KeyValuePair<string,AgReportMgr> kvp in AgEventMap)
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+            // fetch one AgReport and find same agName from another Data source
+            foreach(var kvp in pReportMgr.ReportValuePairsIterator())
             {
                 string pAgName = kvp.Key;
-                AgReportMgr pReportMgr = kvp.Value;
+                AgReport pReport = kvp.Value;
 
                 List<PartialReport> newList = new List<PartialReport>();
 
                 if (nextNode.AgEventMap.TryGetValue(pAgName, out var nReportMgr))
                 {
-                    // pReportMgr vs nReportMgr
+                    // pReport vs nReportMgr
                     // merge these two reportMgr
-                    pReportMgr.SortReports();
+                    pReport.SortReports();
                     nReportMgr.SortReports();
 
-                    List<PartialReport> pReports = pReportMgr.Reports;
+                    List<PartialReport> pReports = pReport.Reports;
                     List<PartialReport> nReports = nReportMgr.Reports;
 
                     int i = 0;
@@ -323,8 +362,8 @@ namespace FailoverDetector
                         }
 
                     }
-                    pReportMgr.Reports.Clear();
-                    pReportMgr.Reports = newList;
+                    pReport.Reports.Clear();
+                    pReport.Reports = newList;
 
                 }
                 
