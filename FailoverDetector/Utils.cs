@@ -86,8 +86,10 @@ namespace FailoverDetector
                     if (mc.Count != 3)
                         return;
                     PReport.AgName = mc[0].Value;
-                    PReport.AddRoleTransition(mc[1].Value);
-                    PReport.AddRoleTransition(mc[2].Value);
+                    // TODO 
+                    // this is AG status ?
+                    //PReport.AddRoleTransition( mc[1].Value);
+                    //PReport.AddRoleTransition(mc[2].Value);
                 }
                 
             }

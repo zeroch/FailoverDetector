@@ -6,39 +6,11 @@ using System.IO;
 
 namespace FailoverDetector
 {
-    public class FailoverReport
-    {
-        // property
-        private DateTimeOffset  _failoverTime;
-        private string          _currentPrimary;
-        private string _previousPrimary;
-        private bool _failoverResult;
-        private string _rootCause;
-        public virtual void BuildReport()
-        {
-            // build dataSource
-        }
 
-        public virtual void AnalyzeData()
-        {
-            // utilize data from container
-            // execute search codepath
-            // fill data to property
-
-        }
-        public virtual void ShowReport()
-        {
-            // simple display data from property
-        }
-
-
-    }
-    
-
-    public class PartialReport : FailoverReport
+    public class PartialReport
     {
         // shameless copy from hadrarstatetransition.h
-        enum EHadrArRole
+        private enum EHadrArRole
         {
             HadrArRoleResolvingNormal = 0,
             HadrArRoleResolvingPendingFailover,
@@ -52,27 +24,31 @@ namespace FailoverDetector
             HadrArRoleCount = HadrArRoleLast
         }
 
-        bool _failoverDetected;
+        private bool _failoverDetected;
 
-        readonly SystemHealthData _mSysData;
+        private SystemHealthData _mSysData;
 
-        readonly Dictionary<string, List<EHadrArRole>> _roleTransition;
+        private Dictionary<string, List<EHadrArRole>> _roleTransition;
 
         public string AgName { get; set; }
 
-        public PartialReport(string serverName)
+        public PartialReport()
         {
             _roleTransition = new Dictionary<string, List<EHadrArRole>>();
-            List<EHadrArRole> tempList = new List<EHadrArRole>();
-            _roleTransition.Add(serverName, tempList);
+
             _failoverDetected = false;
-            Merged = false;
-            OldPrimary = "";
-            NewPrimary = "";
+            OldPrimary = String.Empty;
+            NewPrimary = String.Empty;
             AgId = String.Empty;
-            AgName = String.Empty;;
-            _mSysData = new SystemHealthData();
+            AgName = String.Empty;
+
             MessageSet = new HashSet<string>();
+
+            // TODO
+            // move this sysData into MessageSet
+            _mSysData = new SystemHealthData();
+
+        }
 
         }
 
@@ -88,43 +64,27 @@ namespace FailoverDetector
 
         public string AgId { get; set; }
 
-        public bool Merged { get; private set; }
         public string OldPrimary { get; set; }
 
         public string NewPrimary { get; set; }
 
-        public void MergeReport(PartialReport other)
+
+        public bool IsEmptyRole( string currentNode)
         {
-            // merge timestamp
-            if (StartTime > other.StartTime)
+            if (!_roleTransition.ContainsKey(currentNode) || !_roleTransition[currentNode].Any())
             {
-                StartTime = other.StartTime;
+                return true;
             }
-            if (EndTime < other.EndTime)
+            else
             {
-                EndTime = other.EndTime;
+                return false;
             }
-            
-            // merge boolean property
-            ForceFailoverFound = (ForceFailoverFound | other.ForceFailoverFound);
-            LeaseTimeoutFound = (LeaseTimeoutFound | other.LeaseTimeoutFound);
-
-            // merge another RoleChange set
-            // FIXME: this is not a good expression. 
-            _roleTransition.Add(other._roleTransition.First().Key, other._roleTransition.First().Value);
-            Merged = true;
-
-
-        }
-        public bool IsEmptyRole()
-        {
-            return !_roleTransition.First().Value.Any();
         }
 
-        public void AddRoleTransition(string cRole)
+        private EHadrArRole ParseHadrRole(string cRole)
         {
             EHadrArRole mRole = EHadrArRole.HadrArRoleLast;
-            switch(cRole)
+            switch (cRole)
             {
                 case "RESOLVING_NORMAL":
                     mRole = EHadrArRole.HadrArRoleResolvingNormal;
@@ -153,8 +113,17 @@ namespace FailoverDetector
                 default:
                     break;
             }
+            return mRole;
+        }
+        public void AddRoleTransition(string currentNode, string cRole)
+        {
 
-            _roleTransition.First().Value.Add(mRole);
+            EHadrArRole mRole = ParseHadrRole(cRole);
+            if( IsEmptyRole(currentNode))
+            {
+                _roleTransition.Add(currentNode, new List<EHadrArRole>());
+            }
+            _roleTransition[currentNode].Add(mRole);
 
         }
         public void ShowRoleTransition()
