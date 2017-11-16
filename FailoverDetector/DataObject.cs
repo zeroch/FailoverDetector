@@ -279,7 +279,7 @@ namespace FailoverDetector
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
 
-            foreach (AgReport rlMgr in pReportMgr.ReportIterator())
+            foreach (AgReport rlMgr in pReportMgr.AgReportIterator())
             {
                 rlMgr.AnalyzeReport();
             }
@@ -289,7 +289,7 @@ namespace FailoverDetector
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
 
-            foreach (AgReport rlMgr in pReportMgr.ReportIterator())
+            foreach (AgReport rlMgr in pReportMgr.AgReportIterator())
             {
                 rlMgr.ShowReportArRoleTransition();
             }
@@ -300,76 +300,13 @@ namespace FailoverDetector
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
 
-            foreach (AgReport rlMgr in pReportMgr.ReportIterator())
+            foreach (AgReport rlMgr in pReportMgr.AgReportIterator())
             {
                 rlMgr.ShowReport();
             }
 
         }
 
-        // FIX IT, we need to fix this method. now ReportMgr is global
-        public void MergeInstance(AlwaysOnData nextNode)
-        {
-
-            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
-            // fetch one AgReport and find same agName from another Data source
-            foreach(var kvp in pReportMgr.ReportValuePairsIterator())
-            {
-                string pAgName = kvp.Key;
-                AgReport pReport = kvp.Value;
-
-                List<PartialReport> newList = new List<PartialReport>();
-
-                if (nextNode.AgEventMap.TryGetValue(pAgName, out var nReportMgr))
-                {
-                    // pReport vs nReportMgr
-                    // merge these two reportMgr
-                    pReport.SortReports();
-                    nReportMgr.SortReports();
-
-                    List<PartialReport> pReports = pReport.Reports;
-                    List<PartialReport> nReports = nReportMgr.Reports;
-
-                    int i = 0;
-                    int j = 0;
-
-                    while(i < pReports.Count && j < nReports.Count)
-                    { 
-                        PartialReport left = pReports[i];
-                        PartialReport right = nReports[j];
-                        // NOT in the same time range
-                        if( ((left.StartTime-right.EndTime).TotalMinutes >_defaultInterval) )
-                        {
-                            // push right to new list
-                            newList.Add(right);
-                            j++;
-
-                        }else if 
-                            ((right.StartTime - left.EndTime).TotalMinutes > _defaultInterval)  
-                        {
-                            // push left to new list
-                            newList.Add(left);
-                            i++;
-                        }else
-                        {
-                            // TODO: report that merged compare with next left/right
-                            // merge
-                            // time
-
-                            left.MergeReport(right);
-                            newList.Add(left);
-                            i++;j++;
-                        }
-
-                    }
-                    pReport.Reports.Clear();
-                    pReport.Reports = newList;
-
-                }
-                
-
-            }
-        }
 
     }
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Collections;
 
 namespace FailoverDetector
 {
@@ -50,6 +51,48 @@ namespace FailoverDetector
 
         }
 
+        // compare function 
+        // to compare if two Partial Reports are equal we make sure all content are same at following field
+        //
+        //_roleTransition 
+        //_failoverDetected
+        //OldPrimary 
+        //NewPrimary 
+        //AgId 
+        //AgName 
+        public bool Equals(PartialReport other)
+        {
+            if (! (_failoverDetected == other._failoverDetected &&
+                OldPrimary == other.OldPrimary &&
+                NewPrimary == other.NewPrimary &&
+                AgId == other.AgId &&
+                AgName == other.AgName &&
+                MessageSet.SetEquals(other.MessageSet)))
+            {
+                return false;
+            }
+
+            if (_roleTransition.Count != other._roleTransition.Count)
+                return false;
+            if (!(_roleTransition.Keys.SequenceEqual(other._roleTransition.Keys)))
+                return false;
+
+            foreach (var key in _roleTransition.Keys)
+            {
+                if (!_roleTransition[key].SequenceEqual(other._roleTransition[key]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+            // Morethan function compare two partial Report
+        // return true if this EndTime is lager than other
+        // current Report is older
+        public bool MoreThan(PartialReport other)
+        {
+            return EndTime > other.EndTime;
         }
 
         // TODO use public for now, change to private and use function to wrap it up. 
@@ -126,6 +169,9 @@ namespace FailoverDetector
             _roleTransition[currentNode].Add(mRole);
 
         }
+
+        // helper function that used to show result or debugging.
+
         public void ShowRoleTransition()
         {
             foreach( KeyValuePair<string, List<EHadrArRole>> kvp in _roleTransition)
@@ -291,8 +337,10 @@ namespace FailoverDetector
 
         private static Dictionary<string, AgReport> AgReports;
 
+
+
         // iterator
-        public IEnumerable<AgReport> ReportIterator()
+        public IEnumerable<AgReport> AgReportIterator()
         {
             foreach (var agReport in AgReports)
             {
@@ -305,6 +353,28 @@ namespace FailoverDetector
             {
                 yield return report;
             }
+        }
+
+
+
+        public IEnumerable<PartialReport> ReportIterator()
+        {
+            List<PartialReport> AgIteratorList = new List<PartialReport>();
+            // Each AgReport contains a List of Report
+            // AgIteratorList above will store iterator for each AgReport
+            foreach (var agReport in AgReports)
+            {
+                foreach (PartialReport report in agReport.Value)
+                {
+                    AgIteratorList.Add(report);
+                }
+            }
+            AgIteratorList.Sort((rp1, rp2) => DateTimeOffset.Compare(rp1.EndTime, rp2.EndTime));
+            foreach (PartialReport report in AgIteratorList)
+            {
+                yield return report;
+            }
+
         }
 
         public AgReport GetAgReports(string agName)
@@ -336,13 +406,21 @@ namespace FailoverDetector
         
     }
 
-    public class AgReport
+    public class AgReport : IEnumerable
     {
         readonly int _defaultInterval = 5;
         readonly List<PartialReport> _mFailoverReport;
         readonly string _serverName;
 
         public List<PartialReport> Reports { get; set; }
+
+        public IEnumerable<PartialReport> AgReportIterator()
+        {
+            foreach (var report in Reports)
+            {
+                yield return report;
+            }
+        }
 
         public string AgName { get; set; }
 
@@ -383,7 +461,7 @@ namespace FailoverDetector
             }
 
             // no find any overlapped report, so we create a new one
-            PartialReport pReport = new PartialReport(_serverName)
+            PartialReport pReport = new PartialReport()
             {
                 // update time
                 StartTime = pTimeStamp,
@@ -501,6 +579,57 @@ namespace FailoverDetector
                 }
             }
         }
+
+
+        public ReportEnum GetEnumerator()
+        {
+            return new ReportEnum(Reports);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)Reports).GetEnumerator();
+        }
+    }
+
+    public class ReportEnum : IEnumerator
+    {
+        private List<PartialReport> _reports;
+        private int position = -1;
+
+
+        object IEnumerator.Current { get; }
+
+        public ReportEnum(List<PartialReport> other)
+        {
+            _reports = other;
+        }
+        public bool MoveNext()
+        {
+            position++;
+            return (position < _reports.Count);
+        }
+
+        public void Reset()
+        {
+            position = -1;
+        }
+        public PartialReport Current
+        {
+            get
+            {
+                try
+                {
+                    return _reports[position];
+
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    throw new InvalidOperationException();
+                }
+            }
+        }
+
     }
 
 }

@@ -1,4 +1,7 @@
-﻿using FailoverDetector;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using FailoverDetector;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FailoverDetectorTests
@@ -41,6 +44,90 @@ namespace FailoverDetectorTests
             AlwaysOnData mData = new AlwaysOnData();
             string testStr = @"   ";
             Assert.AreEqual(false, mData.ParseStatement(testStr));
+
+        }
+
+        // naive test that if ag name is same
+        [TestMethod()]
+        public void AgReportIteratorTest()
+        {
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+            pReportMgr.AddNewAgReport("testAG", "ze001");
+            pReportMgr.AddNewAgReport("ag002", "ze002");
+            List<string> actual = new List<string>();
+            foreach (var agReport in pReportMgr.AgReportIterator())
+            {
+                actual.Add(agReport.AgName);
+            }
+            List<string> expected = new List<string>() { "testAG", "ag002" };
+            CollectionAssert.AreEqual(actual, expected);
+        }
+
+        [TestMethod()]
+        public void ReportIteratorTest()
+        {
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+            pReportMgr.AddNewAgReport("testAG", "ze001");
+            pReportMgr.AddNewAgReport("ag002", "ze002");
+
+            DateTimeOffset baseTimeOffset = new DateTimeOffset(2017, 11, 15, 08, 00, 00, TimeSpan.Zero);
+            DateTimeOffset ActualTimeoffset = baseTimeOffset;
+            PartialReport tmpPartialReport;
+            string agname = String.Empty;
+            List<PartialReport> expected = new List<PartialReport>();
+            int i;
+            for (i = 0; i < 4; i++)
+            {
+                if (i / 2 == 0)
+                {
+                    agname = "testAG";
+                }
+                else
+                {
+                    agname = "ag002";
+                }
+                tmpPartialReport = pReportMgr.GetAgReports(agname).FGetReport(ActualTimeoffset);
+                tmpPartialReport.ForceFailoverFound = true;
+                ActualTimeoffset = baseTimeOffset.AddMinutes(15 *(i +1));
+
+                expected.Add(tmpPartialReport);
+            }
+            i = 0;
+
+            foreach (PartialReport report in pReportMgr.ReportIterator())
+            {
+                Assert.IsTrue(report.Equals(expected[i]));
+                i++;
+            }
+            
+        }
+
+        [TestMethod()]
+        public void PartialReportEqualsTest()
+        {
+            PartialReport expected = new PartialReport();
+            DateTimeOffset baseTimeOffset = new DateTimeOffset(2017, 11, 15, 08, 00, 00, TimeSpan.Zero);
+            expected.StartTime = baseTimeOffset;
+            expected.EndTime = baseTimeOffset;
+            expected.AgName = "ag001";
+            expected.AgId = "90001";
+            expected.ForceFailoverFound = true;
+            expected.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL");
+            expected.AddRoleTransition("ze-vm001", "RESOLVING_PENDING_FAILOVER");
+
+            PartialReport actual = new PartialReport
+            {
+                StartTime = baseTimeOffset,
+                EndTime = baseTimeOffset,
+                AgName = "ag001",
+                AgId = "90001",
+                ForceFailoverFound = true
+            };
+            actual.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL");
+            actual.AddRoleTransition("ze-vm001", "RESOLVING_PENDING_FAILOVER");
+
+            Assert.IsTrue(expected.Equals(actual));
+
 
         }
     }
