@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using FailoverDetector;
 using FailoverDetector.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 
 namespace FailoverDetectorTests
 {
@@ -11,25 +13,26 @@ namespace FailoverDetectorTests
         private List<MessageExpression> regexList;
 
         private List<string> TestStringList;
+
         [TestInitialize]
         public void Setup()
         {
             regexList = new List<MessageExpression>()
             {
-                new StopSqlServiceExpression(),
-                new ShutdownServerExpression(),
-                new StateTransitionExpression(),
-                new LeaseExpiredExpression(),
-                new LeaseTimeoutExpression(),
-                new LeaseRenewFailedExpression(),
-                new LeaseFailedToSleepExpression(),
-                new ClusterHaltExpression(),
-                new ResourceFailedExpression(),
-                new NodeOfflineExpression(),
-                new LostQuorumExpression(),
-                new ClusterOfflineExpression(),
-                new FailoverExpression(),
-                new RhsTerminatedExpression()
+                new StopSqlServiceExpression(),     // 17148
+                new ShutdownServerExpression(),     // 17147
+                new StateTransitionExpression(),    // 19406
+                new LeaseExpiredExpression(),       // 19407
+                new LeaseTimeoutExpression(),       // 19421
+                new LeaseRenewFailedExpression(),   // 19422
+                new LeaseFailedToSleepExpression(), // 19423
+                new ClusterHaltExpression(),        // 1006
+                new ResourceFailedExpression(),     // 1069
+                new NodeOfflineExpression(),        // 1135
+                new LostQuorumExpression(),         // 1177
+                new ClusterOfflineExpression(),     // 1205
+                new FailoverExpression(),           // Failover
+                new RhsTerminatedExpression()       // 1146
             };
             TestStringList = new List<string>()
             {
@@ -58,6 +61,38 @@ namespace FailoverDetectorTests
             {
                 Assert.IsTrue(regexList[i].IsMatch(TestStringList[i]));
             }
+        }
+
+        [TestMethod]
+        public void HandleOnceMatchTest()
+        {
+            PartialReport pReport = new PartialReport();
+            for (int i = 0; i < regexList.Count; i++)
+            {
+                if (regexList[i].IsMatch(TestStringList[i]))
+                {
+                    regexList[i].HandleOnceMatch(TestStringList[i], pReport);
+                }
+            }
+            
+            HashSet<string> expected = new HashSet<string>()
+            {
+                "17148",
+                "17147",
+                // Failover roles change, empty here 
+                "19407",
+                "19421",
+                "19422",
+                "19423",
+                "1006",
+                "1069",
+                "1135",
+                "1177",
+                "1205",
+                "Failover",
+                "1146"
+            };
+            Assert.IsTrue(pReport.MessageSet.SetEquals(expected));
         }
     }
 

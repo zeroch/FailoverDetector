@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using FailoverDetector.Utils;
 
 namespace FailoverDetector
 {
@@ -48,6 +50,7 @@ namespace FailoverDetector
 
         public string Spid { get; set; }
 
+
         public ErrorLogEntry()
         {
             Message = String.Empty;
@@ -60,6 +63,7 @@ namespace FailoverDetector
             Timestamp = pTimestamp;
             Spid = pSpid;
             Message = pMessage;
+
         }
 
         public bool Equals(ErrorLogEntry logEntry)
@@ -89,25 +93,25 @@ namespace FailoverDetector
         // get timestamp from each line.
 
         readonly TimeSpan _utCcorrection;
-        List<Regex> _mRegexList;
+        private List<MessageExpression> ErrorLogParserList;
 
         public ErrorLogParser()
         {
             _utCcorrection = new TimeSpan(4, 0, 0);
+            SetupRegexList();
         }
 
         public override void SetupRegexList()
         {
-            _mRegexList = new List<Regex>
+            ErrorLogParserList = new List<MessageExpression>()
             {
-                _rxTimeStamp,
-                _rxSpid,
-                _rxError17148,
-                _rxErrorServerKill,
-                _rxStateTransition,
-                _rxStringInQuote,
-                _rxFirstSentence,
-                _rxUtcAdjust
+                new StopSqlServiceExpression(),
+                new ShutdownServerExpression(),
+                new StateTransitionExpression(),
+                new LeaseExpiredExpression(),
+                new LeaseTimeoutExpression(),
+                new LeaseRenewFailedExpression(),
+                new LeaseFailedToSleepExpression()
             };
         }
 
@@ -238,28 +242,67 @@ namespace FailoverDetector
             {
                 using (StreamReader reader = new StreamReader(stream))
                 {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
+                    string line = reader.ReadLine();
+                    ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+
+                    // I need an interator that I don't care which AG it is
+                    // only iterate through by time.
+                    //pReportMgr.
+                    IEnumerator ReportIterator = pReportMgr.ReportVisitor();
+                    if (!ReportIterator.MoveNext())
+                        return;
+                    while (line != null && ReportIterator.Current != null)
                     {
+
                         var pEntry = ParseLogEntry(line);
-                        if (pEntry.IsEmpty()) continue;
-                        if (pEntry.IsTrancated())
+                        if (pEntry.IsEmpty())
                         {
+                            line = reader.ReadLine();
+                            continue;
+                            
+                        }
+                        if (pEntry.IsTrancated()) 
+                        {
+                            line = reader.ReadLine();
+                            continue;
                             // dont use and access date
                             // append message with last one I think. 
                             // trancated is a special case in our problem.
                         }
+                        DateTimeOffset messageTime = pEntry.Timestamp;
+
+
+                        // compare time
+                        PartialReport reportInstance = (PartialReport) ReportIterator.Current;
+                        
+                        if (messageTime < (reportInstance.StartTime.AddMinutes(-5)))
+                        {
+                            line = reader.ReadLine();
+                            continue;
+                        }
+                        else if ( messageTime > reportInstance.EndTime.AddMinutes(5) )
+                        {
+                            if (!ReportIterator.MoveNext())
+                                break;
+                            else
+                                continue;
+                        }
                         else
                         {
-                            // now we need to check the date in our checking range
+                            // now                         
                             //if (pEntry.Timestamp < sometime upper bound
                             //    && pEntry.Timestamp > sometime lower bound)
                             // parse message, search the pattern we will use. 
-                            if (_rxError17148.IsMatch(pEntry.Message))
+                            foreach (var regexParser in ErrorLogParserList)
                             {
-                                Console.WriteLine("time:{0}, message: {1}", pEntry.Timestamp, pEntry.Message);
+                                if (regexParser.IsMatch(pEntry.Message))
+                                {
+                                    regexParser.HandleOnceMatch(pEntry.Message, reportInstance);
+                                }
                             }
+                            line = reader.ReadLine();
                         }
+
                     }
                 }
             }
