@@ -64,7 +64,7 @@ namespace FailoverDetectorTests
         }
 
         [TestMethod()]
-        public void ReportIteratorTest()
+        public void ReportIteratorForEachTest()
         {
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
             pReportMgr.AddNewAgReport("testAG", "ze001");
@@ -101,7 +101,46 @@ namespace FailoverDetectorTests
             }
             
         }
+        [TestMethod]
+        public void ReportIteratorTest()
+        {
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+            pReportMgr.AddNewAgReport("testAG", "ze001");
+            pReportMgr.AddNewAgReport("ag002", "ze002");
 
+            DateTimeOffset baseTimeOffset = new DateTimeOffset(2017, 11, 15, 08, 00, 00, TimeSpan.Zero);
+            DateTimeOffset ActualTimeoffset = baseTimeOffset;
+            PartialReport tmpPartialReport;
+            string agname = String.Empty;
+            List<PartialReport> expected = new List<PartialReport>();
+            int i;
+            for (i = 0; i < 4; i++)
+            {
+                if (i / 2 == 0)
+                {
+                    agname = "testAG";
+                }
+                else
+                {
+                    agname = "ag002";
+                }
+                tmpPartialReport = pReportMgr.GetAgReports(agname).FGetReport(ActualTimeoffset);
+                tmpPartialReport.ForceFailoverFound = true;
+                ActualTimeoffset = baseTimeOffset.AddMinutes(15 * (i + 1));
+
+                expected.Add(tmpPartialReport);
+            }
+            i = 0;
+
+
+            IEnumerator visitor = pReportMgr.ReportVisitor();
+            while (visitor.MoveNext())
+            {
+                Assert.IsTrue(visitor.Current.Equals(expected[i]));
+                i++;
+            }
+
+        }
         [TestMethod()]
         public void PartialReportEqualsTest()
         {

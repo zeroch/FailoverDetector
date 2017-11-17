@@ -374,7 +374,24 @@ namespace FailoverDetector
             {
                 yield return report;
             }
+        }
 
+        public IEnumerator ReportVisitor()
+        {
+            ReportEnum iterator = null;
+            foreach (var agReport in AgReports)
+            {
+
+                if (iterator== null)
+                {
+                    iterator = new ReportEnum(agReport.Value.Reports);
+                }
+                else
+                {
+                    iterator.MergeMultipleReports(agReport.Value.Reports);
+                }
+            }
+            return iterator;
         }
 
         public AgReport GetAgReports(string agName)
@@ -405,6 +422,8 @@ namespace FailoverDetector
         }
         
     }
+
+
 
     public class AgReport : IEnumerable
     {
@@ -598,11 +617,21 @@ namespace FailoverDetector
         private int position = -1;
 
 
-        object IEnumerator.Current { get; }
+        object IEnumerator.Current
+        {
+            get { return Current; }
+            
+        }
 
         public ReportEnum(List<PartialReport> other)
         {
             _reports = other;
+        }
+        public void MergeMultipleReports(List<PartialReport> other)
+        {
+
+            _reports.AddRange(other);
+            _reports.Sort((rp1, rp2) => DateTimeOffset.Compare(rp1.EndTime, rp2.EndTime));
         }
         public bool MoveNext()
         {
