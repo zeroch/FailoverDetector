@@ -12,7 +12,7 @@ namespace FailoverDetectorTests
         ErrorLogParser _logParser;
 
         private readonly string baseTestPath =
-            @"C:\Users\zeche\Documents\Visual Studio 2017\Projects\FailoverDetector\Data\UnitTest\ErrorLog\";
+            @"ErrorLog\";
         [TestInitialize]
         public void Setup()
         {
@@ -62,6 +62,7 @@ namespace FailoverDetectorTests
         }
 
         [TestMethod()]
+        [DeploymentItem("Data\\UnitTest\\ErrorLog", "ErrorLog")]
         public void ParseLogStopServiceTest()
         {
             string testLogPath = baseTestPath + "TestCase_0.txt";
@@ -85,6 +86,7 @@ namespace FailoverDetectorTests
         }
 
         [TestMethod()]
+        [DeploymentItem("Data\\UnitTest\\ErrorLog", "ErrorLog")]
         public void ParseLogShutdownServerTest()
         {
             string testLogPath = baseTestPath + "TestCase_1.txt";
