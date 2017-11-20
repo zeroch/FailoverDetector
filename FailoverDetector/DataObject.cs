@@ -9,7 +9,6 @@ namespace FailoverDetector
     public class AlwaysOnData
     {
 
-        readonly int _defaultInterval = 5;
         string _instanceName;
 
 

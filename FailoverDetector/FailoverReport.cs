@@ -7,6 +7,11 @@ using System.Collections;
 
 namespace FailoverDetector
 {
+    static class Constants
+    {
+        public const int DefaultInterval = 3;
+    }
+
 
     public class PartialReport
     {
@@ -471,7 +476,7 @@ namespace FailoverDetector
 
     public class AgReport : IEnumerable
     {
-        readonly int _defaultInterval = 5;
+
         readonly List<PartialReport> _mFailoverReport;
         readonly string _serverName;
 
@@ -507,8 +512,8 @@ namespace FailoverDetector
         {
             foreach (var report in Reports)
             {
-                if (((pTimeStamp - report.EndTime).TotalMinutes < _defaultInterval)
-                    && ((report.StartTime - pTimeStamp).TotalMinutes < _defaultInterval))
+                if (((pTimeStamp - report.EndTime).TotalMinutes < Constants.DefaultInterval)
+                    && ((report.StartTime - pTimeStamp).TotalMinutes < Constants.DefaultInterval))
                 {
                     // update time
                     if (pTimeStamp < report.StartTime)

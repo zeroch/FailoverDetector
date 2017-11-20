@@ -29,7 +29,7 @@ namespace FailoverDetectorTests
         [TestMethod]
         public void TestParseTimeStamp()
         {
-            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 16, 19, 57, new TimeSpan(-4, 0, 0));
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 16, 19, 57, new TimeSpan(-7, 0, 0));
 
             string retTime = _logParser.TokenizeTimestamp(_testString);
             DateTimeOffset parsedTime = _logParser.ParseTimeStamp(retTime);
@@ -51,7 +51,7 @@ namespace FailoverDetectorTests
         [TestMethod]
         public void TestErrorLogEntryEquals()
         {
-            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 10, 22, 00, 00, new TimeSpan(-4, 0, 0));
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 10, 22, 00, 00, new TimeSpan(-7, 0, 0));
             ErrorLogEntry pEntry = new ErrorLogEntry(cmp, "spid191", "UTC adjustment: -4:00");
             string testString = @"2017-09-10 22:00:00.19 spid191     UTC adjustment: -4:00";
             ErrorLogEntry entry = new ErrorLogEntry();
@@ -70,7 +70,7 @@ namespace FailoverDetectorTests
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
             // Create a fake report
             pReportMgr.AddNewAgReport("Dummy", "ze-vm001");
-            DateTimeOffset testTimeOffset = new DateTimeOffset(2017,10,23,15,42,31,TimeSpan.Zero);
+            DateTimeOffset testTimeOffset = new DateTimeOffset(2017,10,23,18,42,31,TimeSpan.Zero);
             PartialReport pReport = pReportMgr.GetAgReports("Dummy").FGetReport(testTimeOffset);
             PartialReport expected = new PartialReport()
             {
@@ -94,7 +94,7 @@ namespace FailoverDetectorTests
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
             // Create a fake report
             pReportMgr.AddNewAgReport("Dummy", "ze-vm001");
-            DateTimeOffset testTimeOffset = new DateTimeOffset(2017, 10, 23, 15, 32, 31, TimeSpan.Zero);
+            DateTimeOffset testTimeOffset = new DateTimeOffset(2017, 10, 23, 18, 32, 31, TimeSpan.Zero);
             PartialReport pReport = pReportMgr.GetAgReports("Dummy").FGetReport(testTimeOffset);
             PartialReport expected = new PartialReport()
             {

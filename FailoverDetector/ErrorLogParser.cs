@@ -79,12 +79,12 @@ namespace FailoverDetector
                         // compare time
                         PartialReport reportInstance = (PartialReport)ReportIterator.Current;
 
-                        if (messageTime < (reportInstance.StartTime.AddMinutes(-5)))
+                        if (messageTime < (reportInstance.StartTime.AddMinutes(-1 *Constants.DefaultInterval)))
                         {
                             line = reader.ReadLine();
                             continue;
                         }
-                        else if (messageTime > reportInstance.EndTime.AddMinutes(5))
+                        else if (messageTime > reportInstance.EndTime.AddMinutes(Constants.DefaultInterval))
                         {
                             if (!ReportIterator.MoveNext())
                                 break;
@@ -171,7 +171,7 @@ namespace FailoverDetector
 
         public ErrorLogParser()
         {
-            _utCcorrection = new TimeSpan(4, 0, 0);
+            _utCcorrection = new TimeSpan(7, 0, 0);
             SetupRegexList();
         }
 
