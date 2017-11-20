@@ -177,6 +177,21 @@ namespace FailoverDetector
                     @"(The lease of availability group)(.*)(lease is no longer valid to start the lease renewal process)");
             }
         }
+        public class GenerateDumpExpression : MessageExpression
+        {
+            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            {
+                // TODO
+                // get current Partial Report
+                // fill data into partial report
+                pReport.MessageSet.Add("Dump");
+            }
+
+            public GenerateDumpExpression()
+            {
+                _Regex = new Regex(@"(BEGIN STACK DUMP)");
+            }
+        }
 
         //  cluster log 1006
         public class ClusterHaltExpression : MessageExpression

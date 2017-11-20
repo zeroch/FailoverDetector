@@ -45,6 +45,7 @@ namespace FailoverDetector.UtilsTests
                 @"C:\Temp\FailoverDetector\Data\ze-2016-v1\system_health_0_131532680183430000.xel",
                 @"C:\Temp\FailoverDetector\Data\ze-2016-v1\system_health_0_131532701164070000.xel"
             });
+            expectFileProcessor.NodeList["ze-2016-v1"].ClusterLogPath = @"C:\Temp\FailoverDetector\Data\ze-2016-v1_cluster.log";
 
 
             expectFileProcessor.NodeList["ze-2016-v2"] = new FileProcessor.NodeFileInfo("ze-2016-v2");
@@ -72,6 +73,8 @@ namespace FailoverDetector.UtilsTests
                 @"C:\Temp\FailoverDetector\Data\ze-2016-v2\system_health_0_131532586347860000.xel",
                 @"C:\Temp\FailoverDetector\Data\ze-2016-v2\system_health_0_131532725681930000.xel"
             });
+            expectFileProcessor.NodeList["ze-2016-v2"].ClusterLogPath = @"C:\Temp\FailoverDetector\Data\ze-2016-v2_cluster.log";
+
             Assert.IsTrue(expectFileProcessor.Equals(pFileProcess));
 
         }

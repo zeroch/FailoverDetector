@@ -14,18 +14,6 @@ namespace FailoverDetector
         private DateTimeOffset _failoverTimeEnd;
         protected List<MessageExpression> _logParserList;
 
-        enum MessageInfo
-        {
-            NoMatchAnyMessage = 0,
-            StopSqlService,
-            ShutDownServer,
-            LeaseExpired,
-            LeaseTimeout,
-            LeaseFailedToSleep,
-            LeaseRenewFailed,
-            
-            
-        }
         protected LogParser()
         {
         }
@@ -185,7 +173,8 @@ namespace FailoverDetector
                 new LeaseExpiredExpression(),
                 new LeaseTimeoutExpression(),
                 new LeaseRenewFailedExpression(),
-                new LeaseFailedToSleepExpression()
+                new LeaseFailedToSleepExpression(),
+                new GenerateDumpExpression()
             };
         }
 

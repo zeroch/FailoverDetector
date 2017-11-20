@@ -26,6 +26,7 @@ namespace FailoverDetectorTests
                 new LeaseTimeoutExpression(),       // 19421
                 new LeaseRenewFailedExpression(),   // 19422
                 new LeaseFailedToSleepExpression(), // 19423
+                new GenerateDumpExpression(),       // Dump
                 new ClusterHaltExpression(),        // 1006
                 new ResourceFailedExpression(),     // 1069
                 new NodeOfflineExpression(),        // 1135
@@ -43,6 +44,7 @@ namespace FailoverDetectorTests
                 @"Windows Server Failover Cluster did not receive a process event signal from SQL Server hosting availability group 'ag1023' within the lease timeout period.",
                 @"The renewal of the lease between availability group 'ag1023' and the Windows Server Failover Cluster failed because SQL Server encountered Windows error with error code ('%d').",
                 @"The lease of availability group 'ag1023' lease is no longer valid to start the lease renewal process.",
+                @"* BEGIN STACK DUMP:",
                 @"Cluster service was halted due to incomplete connectivity with other cluster nodes.",
                 @"Cluster resource 'IPv4 Static Address 1 (Cluster Group)' in clustered service or application 'Cluster Group' failed.",
                 @"Cluster node 'ze-2016-v2' was removed from the active failover cluster membership. The Cluster service on this node may have stopped. This could also be due to the node having lost communication with other active nodes in the failover cluster. Run the Validate a Configuration wizard to check your network configuration. If the condition persists, check for hardware or software errors related to the network adapters on this node. Also check for failures in any other network components to which the node is connected such as hubs, switches, or bridges.",
@@ -84,6 +86,7 @@ namespace FailoverDetectorTests
                 "19421",
                 "19422",
                 "19423",
+                "Dump",
                 "1006",
                 "1069",
                 "1135",
