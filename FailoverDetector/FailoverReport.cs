@@ -197,6 +197,16 @@ namespace FailoverDetector
             }
                 
         }
+
+        public void ShowMessageSet()
+        {
+            Console.WriteLine("Following Error Message was detect for this failover:");
+            foreach (string s in MessageSet)
+            {
+                Console.WriteLine("{0}", s);
+            }
+        }
+
         public void IdentifyRoles()
         {
             //  iterate through roleTransition
@@ -551,11 +561,11 @@ namespace FailoverDetector
                 // Lease timeout
                 if (pReport.LeaseTimeoutFound)
                 {
-                    Console.WriteLine("Failover due to AG LeaseTimeout: {0}, Error: 19407", pReport.LeaseTimeoutFound);
-                    Console.WriteLine("Detail:");
-                    Console.WriteLine("Windows Server Failover Cluster did not receive a process event signal from SQL Server hosting availability group {0} within the lease timeout period.", pReport.AgName);
-                    Console.WriteLine("Error: 19419, Severity: 16, State: 1.");
-                    Console.WriteLine();
+                    //Console.WriteLine("Failover due to AG LeaseTimeout: {0}, Error: 19407", pReport.LeaseTimeoutFound);
+                    //Console.WriteLine("Detail:");
+                    //Console.WriteLine("Windows Server Failover Cluster did not receive a process event signal from SQL Server hosting availability group {0} within the lease timeout period.", pReport.AgName);
+                    //Console.WriteLine("Error: 19419, Severity: 16, State: 1.");
+                    //Console.WriteLine();
 
                 }
                 Console.WriteLine("Failover due to AG LeaseTimeout: {0}", pReport.LeaseTimeoutFound);
@@ -567,6 +577,7 @@ namespace FailoverDetector
                 Console.WriteLine("Primary after Failover: {0}", pReport.NewPrimary);
                 // Role Transition
                 pReport.ShowSystemData();
+                pReport.ShowMessageSet();
 
                 pReport.ShowRoleTransition();
 
