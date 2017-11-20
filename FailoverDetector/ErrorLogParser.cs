@@ -12,7 +12,7 @@ namespace FailoverDetector
     {
         private DateTimeOffset _failoverTimeStart;
         private DateTimeOffset _failoverTimeEnd;
-
+        protected List<MessageExpression> _logParserList;
 
         enum MessageInfo
         {
@@ -40,6 +40,77 @@ namespace FailoverDetector
         public abstract DateTimeOffset ParseTimeStamp(string timestamp);
         public abstract ErrorLogEntry ParseLogEntry(string entry);
         public abstract void SetupRegexList();
+        public void ParseLog(string logFilePath)
+        {
+            using (FileStream stream = File.OpenRead(logFilePath))
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    string line = reader.ReadLine();
+                    ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+
+                    // I need an interator that I don't care which AG it is
+                    // only iterate through by time.
+                    //pReportMgr.
+                    IEnumerator ReportIterator = pReportMgr.ReportVisitor();
+                    if (!ReportIterator.MoveNext())
+                        return;
+                    while (line != null && ReportIterator.Current != null)
+                    {
+
+                        var pEntry = ParseLogEntry(line);
+                        if (pEntry.IsEmpty())
+                        {
+                            line = reader.ReadLine();
+                            continue;
+
+                        }
+                        if (pEntry.IsTrancated())
+                        {
+                            line = reader.ReadLine();
+                            continue;
+                            // dont use and access date
+                            // append message with last one I think. 
+                            // trancated is a special case in our problem.
+                        }
+                        DateTimeOffset messageTime = pEntry.Timestamp;
+
+
+                        // compare time
+                        PartialReport reportInstance = (PartialReport)ReportIterator.Current;
+
+                        if (messageTime < (reportInstance.StartTime.AddMinutes(-5)))
+                        {
+                            line = reader.ReadLine();
+                            continue;
+                        }
+                        else if (messageTime > reportInstance.EndTime.AddMinutes(5))
+                        {
+                            if (!ReportIterator.MoveNext())
+                                break;
+                            else
+                                continue;
+                        }
+                        else
+                        {
+                            // now                         
+                            //if (pEntry.Timestamp < sometime upper bound
+                            //    && pEntry.Timestamp > sometime lower bound)
+                            // parse message, search the pattern we will use. 
+                            foreach (var regexParser in _logParserList)
+                            {
+                                if (regexParser.IsMatch(pEntry.Message))
+                                {
+                                    regexParser.HandleOnceMatch(pEntry.Message, reportInstance);
+                                }
+                            }
+                            line = reader.ReadLine();
+                        }
+
+                    }
+                }
+            }
+        }
     }
 
     public class ErrorLogEntry
@@ -86,6 +157,9 @@ namespace FailoverDetector
                    && String.IsNullOrWhiteSpace(Spid)
                    && String.IsNullOrWhiteSpace(Message);
         }
+
+
+
     }
 
     public class ErrorLogParser : LogParser
@@ -93,7 +167,7 @@ namespace FailoverDetector
         // get timestamp from each line.
 
         readonly TimeSpan _utCcorrection;
-        private List<MessageExpression> ErrorLogParserList;
+
 
         public ErrorLogParser()
         {
@@ -103,7 +177,7 @@ namespace FailoverDetector
 
         public override void SetupRegexList()
         {
-            ErrorLogParserList = new List<MessageExpression>()
+            _logParserList = new List<MessageExpression>()
             {
                 new StopSqlServiceExpression(),
                 new ShutdownServerExpression(),
@@ -236,76 +310,5 @@ namespace FailoverDetector
             return entry;
         }
 
-        public void ParseLog(string logFilePath)
-        {
-            using (FileStream stream = File.OpenRead(logFilePath))
-            {
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    string line = reader.ReadLine();
-                    ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
-
-                    // I need an interator that I don't care which AG it is
-                    // only iterate through by time.
-                    //pReportMgr.
-                    IEnumerator ReportIterator = pReportMgr.ReportVisitor();
-                    if (!ReportIterator.MoveNext())
-                        return;
-                    while (line != null && ReportIterator.Current != null)
-                    {
-
-                        var pEntry = ParseLogEntry(line);
-                        if (pEntry.IsEmpty())
-                        {
-                            line = reader.ReadLine();
-                            continue;
-                            
-                        }
-                        if (pEntry.IsTrancated()) 
-                        {
-                            line = reader.ReadLine();
-                            continue;
-                            // dont use and access date
-                            // append message with last one I think. 
-                            // trancated is a special case in our problem.
-                        }
-                        DateTimeOffset messageTime = pEntry.Timestamp;
-
-
-                        // compare time
-                        PartialReport reportInstance = (PartialReport) ReportIterator.Current;
-                        
-                        if (messageTime < (reportInstance.StartTime.AddMinutes(-5)))
-                        {
-                            line = reader.ReadLine();
-                            continue;
-                        }
-                        else if ( messageTime > reportInstance.EndTime.AddMinutes(5) )
-                        {
-                            if (!ReportIterator.MoveNext())
-                                break;
-                            else
-                                continue;
-                        }
-                        else
-                        {
-                            // now                         
-                            //if (pEntry.Timestamp < sometime upper bound
-                            //    && pEntry.Timestamp > sometime lower bound)
-                            // parse message, search the pattern we will use. 
-                            foreach (var regexParser in ErrorLogParserList)
-                            {
-                                if (regexParser.IsMatch(pEntry.Message))
-                                {
-                                    regexParser.HandleOnceMatch(pEntry.Message, reportInstance);
-                                }
-                            }
-                            line = reader.ReadLine();
-                        }
-
-                    }
-                }
-            }
-        }
     }
 }
