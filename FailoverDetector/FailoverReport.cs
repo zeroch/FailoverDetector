@@ -106,6 +106,7 @@ namespace FailoverDetector
 
         public DateTimeOffset EndTime { get; set; }
 
+        // Root cause info
         public bool LeaseTimeoutFound { get; set; }
 
         public bool ForceFailoverFound { get; set; }
@@ -116,6 +117,9 @@ namespace FailoverDetector
 
         public string NewPrimary { get; set; }
 
+        public string RootCause { get; set; }
+        public string RootCauseDescription { get; set; }
+        public bool EstimateResult { get; set; }
 
         public bool IsEmptyRole( string currentNode)
         {
@@ -235,7 +239,8 @@ namespace FailoverDetector
                 {
                     NewPrimary = instanceName;
                 }
-                if (initState == EHadrArRole.HadrArRolePrimaryNormal)
+                if ((initState == EHadrArRole.HadrArRolePrimaryNormal) ||
+                    (restarted && OldPrimary==String.Empty))
                 {
                     OldPrimary = instanceName;
                 }
@@ -445,6 +450,7 @@ namespace FailoverDetector
             foreach (AgReport rlMgr in pReportMgr.AgReportIterator())
             {
                 rlMgr.AnalyzeReport();
+                rlMgr.AnalyzeRootCause();
             }
         }
         public void ShowAgRoleTransition()
@@ -563,31 +569,31 @@ namespace FailoverDetector
             foreach (PartialReport pReport in _mFailoverReport)
             {
                 Console.WriteLine("A report starts at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
-                // Lease timeout
-                if (pReport.LeaseTimeoutFound)
-                {
-                    //Console.WriteLine("Failover due to AG LeaseTimeout: {0}, Error: 19407", pReport.LeaseTimeoutFound);
-                    //Console.WriteLine("Detail:");
-                    //Console.WriteLine("Windows Server Failover Cluster did not receive a process event signal from SQL Server hosting availability group {0} within the lease timeout period.", pReport.AgName);
-                    //Console.WriteLine("Error: 19419, Severity: 16, State: 1.");
-                    //Console.WriteLine();
-
-                }
-                Console.WriteLine("Failover due to AG LeaseTimeout: {0}", pReport.LeaseTimeoutFound);
-                // Force failover
-                Console.WriteLine("Failover due to Force Failover DDL: {0}", pReport.ForceFailoverFound);
+                Console.WriteLine("A report ends at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.EndTime.ToString());
+                Console.WriteLine();
                 // Old Primary
                 Console.WriteLine("Primary before Failover: {0}", pReport.OldPrimary);
                 // New Primary
                 Console.WriteLine("Primary after Failover: {0}", pReport.NewPrimary);
+                Console.WriteLine();
+                // Root Cause:
+                Console.WriteLine("Root Cause: {0}", pReport.RootCause);
+                Console.WriteLine("{0}", pReport.EstimateResult ? "We cannot determine a concrete root cause, This is an estimated result" : "");
+                Console.WriteLine("Descrption: ");
+
+                // Lease timeout
+                Console.WriteLine("Failover due to AG LeaseTimeout: {0}", pReport.LeaseTimeoutFound);
+                // Force failover
+                Console.WriteLine("Failover due to Force Failover DDL: {0}", pReport.ForceFailoverFound);
+
                 // Role Transition
                 pReport.ShowSystemData();
-                pReport.ShowMessageSet();
 
+                Console.WriteLine();
                 pReport.ShowRoleTransition();
 
-                Console.WriteLine("A report ends at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.EndTime.ToString());
-                Console.WriteLine();
+
+
                 Console.ReadLine();
             }
         }
@@ -618,6 +624,18 @@ namespace FailoverDetector
             foreach (PartialReport pReport in Reports)
             {
                 pReport.IdentifyRoles();
+
+                if (pReport.MessageSet.Intersect(new HashSet<string>()
+                {
+                    "19407",
+                    "19421",
+                    "19422",
+                    "19423"
+                }).Any() )
+                {
+                    pReport.LeaseTimeoutFound = true;
+                }
+
                 if (pReport.ForceFailoverFound)
                 {
                     // this report is useful, I will push it into Failover Report for future investigation
@@ -626,9 +644,7 @@ namespace FailoverDetector
                 if (pReport.LeaseTimeoutFound)
                 {
                     _mFailoverReport.Add(pReport);
-                }else 
-                // search roleTransition from Primary Pending to Primary Normal
-                if (pReport.SearchFailoverRole())
+                }else if (pReport.SearchFailoverRole())
                 {
                     // this report is useful, I will push it into Failover Report for future investigation
                     _mFailoverReport.Add(pReport);
@@ -645,7 +661,54 @@ namespace FailoverDetector
                 // search root cause property.
                 if (pReport.ForceFailoverFound)
                 {
+                    pReport.RootCause = "ForceFailover";
+                    pReport.EstimateResult = false;
                 }
+                else if (pReport.MessageSet.Contains("17147"))
+                {
+                    pReport.RootCause = "ShutDownServer";
+                    pReport.EstimateResult = false;
+
+                }
+                else if (pReport.MessageSet.Contains("17148"))
+                {
+                    pReport.RootCause = "StopService";
+                    pReport.EstimateResult = false;
+
+                }
+
+
+                if (pReport.MessageSet.Contains("1205"))
+                {
+                    if (pReport.MessageSet.Contains("Crash"))
+                    {
+                        pReport.RootCause = "Crash";
+                        pReport.EstimateResult = false;
+                    }else if (pReport.MessageSet.Contains("Dump"))
+                    {
+                        pReport.RootCause = "Long Dump";
+                        pReport.EstimateResult = false;
+
+                    }
+                }
+
+                if (pReport.MessageSet.Contains("1135"))
+                {
+                    if (pReport.MessageSet.Contains("1146"))
+                    {
+                        pReport.RootCause = "Network Loss";
+                        pReport.EstimateResult = true;
+                    }
+                    else if (pReport.MessageSet.Contains("1177"))
+                    {
+                        
+                        pReport.RootCause = "Lost Quorum";
+                        pReport.EstimateResult = false;
+
+                    }
+
+                }
+
             }
         }
 
