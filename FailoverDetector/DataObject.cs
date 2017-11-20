@@ -55,7 +55,7 @@ namespace FailoverDetector
                         pReport.AgName = agName;
                     }
 
-                    mReports.UpdateReport(pReport);
+                    //mReports.UpdateReport(pReport);
 
                 }
 
@@ -115,7 +115,7 @@ namespace FailoverDetector
             {
                 pReport.AgName = agName;
             }
-            mReports.UpdateReport(pReport);
+            //mReports.UpdateReport(pReport);
         }
         public void HandleArMgrStateChange(PublishedEvent evt)
         {   
