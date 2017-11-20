@@ -47,7 +47,8 @@ namespace FailoverDetector
             NewPrimary = String.Empty;
             AgId = String.Empty;
             AgName = String.Empty;
-
+            RootCause = String.Empty;
+            EstimateResult = false;
             MessageSet = new HashSet<string>();
 
             // TODO
@@ -577,7 +578,7 @@ namespace FailoverDetector
                 Console.WriteLine("Primary after Failover: {0}", pReport.NewPrimary);
                 Console.WriteLine();
                 // Root Cause:
-                Console.WriteLine("Root Cause: {0}", pReport.RootCause);
+                Console.WriteLine("Root Cause: {0}", pReport.RootCause == String.Empty ? "We cannot determine Failover at this case" : pReport.RootCause);
                 Console.WriteLine("{0}", pReport.EstimateResult ? "We cannot determine a concrete root cause, This is an estimated result" : "");
                 Console.WriteLine("Descrption: ");
 
