@@ -15,11 +15,9 @@ namespace FailoverDetector
             FileProcessor pFileProcess = new FileProcessor(demoPath);
             pFileProcess.RootDirectory(demoPath);
 
-            List<AlwaysOnData> nodeList = new List<AlwaysOnData>();
+            // process AlwaysOn Health 
             foreach( var node in pFileProcess.NodeList)
             {
-
-                
                 string nodeName = node.Key;
                 FileProcessor.NodeFileInfo cNode = node.Value;
                 Console.WriteLine("Node name: {0}",  nodeName);
@@ -28,29 +26,31 @@ namespace FailoverDetector
                 {
                     instance.LoadData(xelPath, nodeName);
                 }
-
-
-
-                // actually we use a singlton Report Manager to handle reports
-                // all reports are merged while new insert.
-                // no more merge is needed here. 
-                //if(i != 0 )
-                //{
-                //    nodeList.First().MergeInstance(instance);
-                //}
-                nodeList.Add(instance);
             }
 
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
 
-            pReportMgr.AnalyzeReports();
-
             // parse ErrorLog
             ErrorLogParser errorLogParser = new ErrorLogParser();
+            ClusterLogParser clusterLogParser = new ClusterLogParser();
 
-            //errorLogParser.ParseLog();
+            foreach (var node in pFileProcess.NodeList)
+            {
+                string nodeName = node.Key;
+                FileProcessor.NodeFileInfo cNode = node.Value;
+                Console.WriteLine("Node name: {0}", nodeName);
+                foreach (var logPath in cNode.ErrorLogFileList)
+                {
+                    errorLogParser.ParseLog(logPath);
+                }
+                Console.WriteLine("Parsing Cluster Log:");
+                clusterLogParser.ParseLog(cNode.ClusterLogPath);
+            }
 
+
+            // determine Failover 
+            pReportMgr.AnalyzeReports();
 
             pReportMgr.ShowFailoverReports();
 

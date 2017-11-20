@@ -350,12 +350,7 @@ namespace FailoverDetector
             // that are found, and process the files they contain.
             public void ProcessDirectory(string targetDirectory)
             {
-                // TODO: we can handle it later
-                // Process the list of files found in the directory.
-                // it should be ClusterLog, 
-                //string[] fileEntries = Directory.GetFiles(targetDirectory);
-                //foreach (string fileName in fileEntries)
-                //    ProcessFile(fileName);
+
 
                 // Recurse into subdirectories of this directory.
                 string[] subdirectoryEntries = Directory.GetDirectories(targetDirectory);
@@ -363,6 +358,22 @@ namespace FailoverDetector
                 {
                     ProcessNodeDirectory(subdirectory);
                 }
+
+                // Process the list of files found in the directory.
+                // it should be ClusterLog, 
+                string[] fileEntries = Directory.GetFiles(targetDirectory);
+                foreach (string nodeName in NodeList.Keys)
+                {
+                    foreach (string fileEntry in fileEntries)
+                    {
+                        string clusterFileName = nodeName + "_cluster.log";
+                        if (fileEntry.Contains(clusterFileName))
+                        {
+                            NodeList[nodeName].ClusterLogPath = fileEntry;
+                        }
+                    }
+                }
+
             }
 
             public void ProcessNodeDirectory(string targetDirectory)
