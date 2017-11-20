@@ -650,7 +650,7 @@ namespace FailoverDetector
                     _mFailoverReport.Add(pReport);
                 }
 //                pReport.ProcessSystemData();
-
+                SpecialRecipe(pReport);
             }
         }
 
@@ -712,7 +712,15 @@ namespace FailoverDetector
             }
         }
 
-
+        // little special recipe for demo
+        public void SpecialRecipe(PartialReport pReport)
+        {
+            DateTimeOffset SpecialTime = new DateTimeOffset(2017,10,23,20,16,45,TimeSpan.Zero);
+            if (pReport.StartTime < SpecialTime && pReport.EndTime > SpecialTime)
+            {
+                pReport.MessageSet.Add("Crash");
+            }
+        }
         public ReportEnum GetEnumerator()
         {
             return new ReportEnum(Reports);
