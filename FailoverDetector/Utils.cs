@@ -1,4 +1,8 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace FailoverDetector
 {
@@ -289,5 +293,160 @@ namespace FailoverDetector
                 _Regex = new Regex(@"The cluster Resource Hosting Subsystem \(RHS\) process was terminated and will be restarted");
             }
         }
+
+        public class FileProcessor
+        {
+            private string rootDirectory;
+            public Dictionary<string,NodeFileInfo> NodeList { get; set; }
+
+
+            public FileProcessor()
+            {
+                rootDirectory = String.Empty;
+                NodeList = new Dictionary<string, NodeFileInfo>();
+            }
+            public FileProcessor(string dirRootDirectory)
+            {
+                rootDirectory = dirRootDirectory;
+                NodeList = new Dictionary<string, NodeFileInfo>();
+            }
+
+            public bool Equals(FileProcessor other)
+            {
+                if (NodeList.Count != other.NodeList.Count)
+                    return false;
+                if (!(NodeList.Keys.SequenceEqual(other.NodeList.Keys)))
+                    return false;
+
+                foreach (var key in NodeList.Keys)
+                {
+                    if (!NodeList[key].Equals(other.NodeList[key]))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            public void RootDirectory(string root)
+            {
+                if (File.Exists(root))
+                {
+                    // This path is a file
+                    Console.WriteLine("{0} is not a File not a valid directory", root);
+                }
+                else if (Directory.Exists(root))
+                {
+                    // This path is a directory
+                    ProcessDirectory(root);
+                }
+                else
+                {
+                    Console.WriteLine("{0} is not a valid file or directory.", root);
+                }
+            }
+
+            // Process all files in the directory passed in, recurse on any directories 
+            // that are found, and process the files they contain.
+            public void ProcessDirectory(string targetDirectory)
+            {
+                // TODO: we can handle it later
+                // Process the list of files found in the directory.
+                // it should be ClusterLog, 
+                //string[] fileEntries = Directory.GetFiles(targetDirectory);
+                //foreach (string fileName in fileEntries)
+                //    ProcessFile(fileName);
+
+                // Recurse into subdirectories of this directory.
+                string[] subdirectoryEntries = Directory.GetDirectories(targetDirectory);
+                foreach (string subdirectory in subdirectoryEntries)
+                {
+                    ProcessNodeDirectory(subdirectory);
+                }
+            }
+
+            public void ProcessNodeDirectory(string targetDirectory)
+            {
+                List<string> Errorlog = new List<string>();
+                List<string> AlwaysOnList = new List<string>();
+                List<string> SystemHealthList = new List<string>();
+
+                string[] fileEntries = Directory.GetFiles(targetDirectory);
+
+                foreach (string fileEntry in fileEntries)
+                {
+                    if (fileEntry.Contains("ERRORLOG"))
+                    {
+                        Errorlog.Add(fileEntry);
+                    }else if (fileEntry.Contains("AlwaysOn_health"))
+                    {
+                        AlwaysOnList.Add(fileEntry);
+                    }else if (fileEntry.Contains("system_health"))
+                    {
+                        SystemHealthList.Add(fileEntry);
+
+                    }
+                }
+
+                // TODO: fix it for windows or linux expression
+                string nodeName = targetDirectory.Substring(targetDirectory.LastIndexOf("\\") + 1);
+                NodeFileInfo pNode = new NodeFileInfo(nodeName);
+                pNode.SetAlwaysOnFile(AlwaysOnList);
+                pNode.SetErrorLogFile(Errorlog);
+                pNode.SetSystemHealthFile(SystemHealthList);
+                NodeList[nodeName] = pNode;
+            }
+
+            public class NodeFileInfo
+            {
+                public List<string> AlwaysOnFileList {  get; set; }
+                public List<string> SystemHealthFileList { get; set; }
+                public List<String> ErrorLogFileList { get; set; }
+                public string NodeName { get; set; }
+                public string ClusterLogPath { get; set; }
+
+                public NodeFileInfo(string name)
+                {
+                    NodeName = name;
+                    ClusterLogPath = String.Empty;
+                    AlwaysOnFileList = new List<string>();
+                    SystemHealthFileList = new List<string>();
+                    ErrorLogFileList = new List<string>();
+                }
+
+                public bool Equals(NodeFileInfo obj)
+                {
+                    return NodeName.Equals(obj.NodeName) &&
+                        ClusterLogPath.Equals(obj.ClusterLogPath) &&
+                           AlwaysOnFileList.Count == obj.AlwaysOnFileList.Count && AlwaysOnFileList.SequenceEqual(obj.AlwaysOnFileList) &&
+                           SystemHealthFileList.Count == obj.SystemHealthFileList.Count && SystemHealthFileList.SequenceEqual(obj.SystemHealthFileList) &&
+                           ErrorLogFileList.Count == obj.ErrorLogFileList.Count && ErrorLogFileList.SequenceEqual(obj.ErrorLogFileList);
+                }
+
+                public void SetAlwaysOnFile(List<string> fileList)
+                {
+                    AlwaysOnFileList = fileList;
+                }
+
+                public void SetSystemHealthFile(List<string> fileList)
+                {
+                    SystemHealthFileList = fileList;
+                }
+
+                public void SetErrorLogFile(List<string> fileList)
+                {
+                    ErrorLogFileList = fileList;
+                }
+
+                public void SetClusterLog(string path)
+                {
+                    ClusterLogPath = path;
+                }
+
+            }
+
+        }
+
+
     }
 }

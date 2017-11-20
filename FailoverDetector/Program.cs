@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using FailoverDetector.Utils;
 
 namespace FailoverDetector
 {
@@ -9,18 +10,25 @@ namespace FailoverDetector
     {
         static void Main(string[] args)
         {
-            string path = Directory.GetCurrentDirectory();
-            path += @"\Data";
-            string[] nodes = Directory.GetDirectories(path);
+            string demoPath = @"C:\Temp\FailoverDetector\Data";
+
+            FileProcessor pFileProcess = new FileProcessor(demoPath);
+            pFileProcess.RootDirectory(demoPath);
+
             List<AlwaysOnData> nodeList = new List<AlwaysOnData>();
-            int i = 0;
-            foreach( string node in nodes)
+            foreach( var node in pFileProcess.NodeList)
             {
-                string xelPath = node + @"\AlwaysOn_health*.xel";
-                string nodeName = node.Remove(0, path.Length + 1);
-                Console.WriteLine("xel file path is : {0}\n Node name: {1}", xelPath, nodeName);
+
+                
+                string nodeName = node.Key;
+                FileProcessor.NodeFileInfo cNode = node.Value;
+                Console.WriteLine("Node name: {0}",  nodeName);
                 var instance = new AlwaysOnData();
-                instance.LoadData(xelPath, nodeName);
+                foreach (var xelPath in cNode.AlwaysOnFileList)
+                {
+                    instance.LoadData(xelPath, nodeName);
+                }
+
 
 
                 // actually we use a singlton Report Manager to handle reports
@@ -31,14 +39,18 @@ namespace FailoverDetector
                 //    nodeList.First().MergeInstance(instance);
                 //}
                 nodeList.Add(instance);
-                i++;
-
             }
 
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
 
             pReportMgr.AnalyzeReports();
+
+            // parse ErrorLog
+            ErrorLogParser errorLogParser = new ErrorLogParser();
+
+            //errorLogParser.ParseLog();
+
 
             pReportMgr.ShowFailoverReports();
 

@@ -57,6 +57,7 @@
   <ItemGroup>
     <Compile Include="AlwaysOnDataTests.cs" />
     <Compile Include="ApplicationLogParserTests.cs" />
+    <Compile Include="FileProcessorTests.cs" />
     <Compile Include="MessageExpressionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestLogParser.cs" />
