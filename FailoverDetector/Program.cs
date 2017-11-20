@@ -34,9 +34,13 @@ namespace FailoverDetector
                 i++;
 
             }
-            AlwaysOnData node001 = nodeList.First();
-            node001.AnalyzeReports();
-            node001.ShowFailoverReports();
+
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+
+
+            pReportMgr.AnalyzeReports();
+
+            pReportMgr.ShowFailoverReports();
 
             Console.ReadLine();
         }

@@ -12,20 +12,11 @@ namespace FailoverDetector
         readonly int _defaultInterval = 5;
         string _instanceName;
 
-        public Dictionary<string, AgReport> AgEventMap { get; set; }
 
         public AlwaysOnData()
         {
         }
-        enum AlwaysOnEventType {
-            DllExecuted,
-            AgLeaseExpired,
-            ArMangerStateChange,
-            ArState,
-            ArStateChange,
-            LockRedoBlocked,
-            Error
-        }
+
         public void HandleDdlExecuted(PublishedEvent evt)
         {
             // find active alter ag failover
@@ -274,38 +265,7 @@ namespace FailoverDetector
 
            
         }
-        public void AnalyzeReports()
-        {
-            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
-
-            foreach (AgReport rlMgr in pReportMgr.AgReportIterator())
-            {
-                rlMgr.AnalyzeReport();
-            }
-        }
-        public void ShowAgRoleTransition()
-        {
-            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
-
-
-            foreach (AgReport rlMgr in pReportMgr.AgReportIterator())
-            {
-                rlMgr.ShowReportArRoleTransition();
-            }
-        }
-
-        public void ShowFailoverReports()
-        {
-            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
-
-
-            foreach (AgReport rlMgr in pReportMgr.AgReportIterator())
-            {
-                rlMgr.ShowReport();
-            }
-
-        }
 
 
     }

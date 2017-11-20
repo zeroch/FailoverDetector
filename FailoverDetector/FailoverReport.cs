@@ -420,7 +420,41 @@ namespace FailoverDetector
                 return tmpAgReport;
             }
         }
-        
+
+
+        public void AnalyzeReports()
+        {
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+
+
+            foreach (AgReport rlMgr in pReportMgr.AgReportIterator())
+            {
+                rlMgr.AnalyzeReport();
+            }
+        }
+        public void ShowAgRoleTransition()
+        {
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+
+
+            foreach (AgReport rlMgr in pReportMgr.AgReportIterator())
+            {
+                rlMgr.ShowReportArRoleTransition();
+            }
+        }
+
+        public void ShowFailoverReports()
+        {
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+
+
+            foreach (AgReport rlMgr in pReportMgr.AgReportIterator())
+            {
+                rlMgr.ShowReport();
+            }
+
+        }
+
     }
 
 
