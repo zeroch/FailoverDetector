@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using FailoverDetector;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -8,6 +9,7 @@ namespace FailoverDetectorTests
     public class TestClusterLogParser
     {
         ClusterLogParser _clusterLogParser;
+        private string baseTestPath = @"ClusterLog\";
         [TestInitialize]
         public void Setup()
         {
@@ -25,7 +27,7 @@ namespace FailoverDetectorTests
         [TestMethod]
         public void TestParseTimeStamp()
         {
-            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 18, 16, 27, new TimeSpan(-4, 0, 0));
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 18, 16, 27, new TimeSpan(0, 0, 0));
 
             string testString = @"0000126c.00001cec::2017/09/14-18:16:27.575 ERR   [RES] SQL Server Availability Group <ag8102017>: [hadrag] SQL server service is not alive";
             string retTime = _clusterLogParser.TokenizeTimestamp(testString);
@@ -55,7 +57,7 @@ namespace FailoverDetectorTests
         [TestMethod]
         public void TestTokenizeChannel()
         {
-            string testString = @"0000126c.00001cec::2017/09/14-18:16:27.575 ERR   [RES] SQL Server Availability Group <ag8102017>: [hadrag] SQL server service is not alive";
+            string testString = @"[RES] SQL Server Availability Group <ag8102017>: [hadrag] SQL server service is not alive";
             string retChannel = _clusterLogParser.TokenizeChannel(testString);
             Console.WriteLine("Test Channel: {0}", retChannel);
             Assert.AreEqual(retChannel, "[RES]");
@@ -65,64 +67,35 @@ namespace FailoverDetectorTests
         {
             string testString = @"0000126c.00001cec::2017/09/14-18:16:27.575 ERR   [RES] SQL Server Availability Group <ag8102017>: [hadrag] SQL server service is not alive";
             ErrorLogEntry ret = _clusterLogParser.ParseLogEntry(testString);
-            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 18, 16, 27, new TimeSpan(-4, 0, 0));
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 18, 16, 27, new TimeSpan(0, 0, 0));
             ErrorLogEntry test = new ErrorLogEntry(cmp, @"0000126c.00001cec::", @"SQL Server Availability Group <ag8102017>: [hadrag] SQL server service is not alive");
             Assert.IsTrue(ret.Equals(test));
         }
 
+
         [TestMethod]
-        public void TestClusterHalt()
+        [DeploymentItem("Data\\UnitTest\\ClusterLog", "ClusterLog")]
+        // this test case includes "1135", "1177", "1146"
+        public void ParseCLusterLogTest_0()
         {
-            string testString = @"Cluster service was halted due to incomplete connectivity with other cluster nodes.";
-            Assert.IsTrue(_clusterLogParser.MatchClusterHalt(testString));
+            string testLogPath = baseTestPath + "TestCase_0.txt";
+            // prepare environment report object
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+            // Create a fake report
+            pReportMgr.AddNewAgReport("Dummy", "ze-vm001");
+            DateTimeOffset testTimeOffset = new DateTimeOffset(2017, 10, 23, 21, 20, 31, TimeSpan.Zero);
+            PartialReport pReport = pReportMgr.GetAgReports("Dummy").FGetReport(testTimeOffset);
+            PartialReport expected = new PartialReport()
+            {
+                StartTime = testTimeOffset,
+                EndTime = testTimeOffset,
+                MessageSet = new HashSet<string>() { "1135", "1177", "1146" }
+            };
+
+            _clusterLogParser.ParseLog(testLogPath);
+
+            Assert.IsTrue(expected.Equals(pReport));
         }
 
-        [TestMethod()]
-        public void MatchResourceFailedTest()
-        {
-            string testString =
-                @"Cluster resource 'IPv4 Static Address 1 (Cluster Group)' in clustered service or application 'Cluster Group' failed.";
-            Assert.IsTrue(_clusterLogParser.MatchResourceFailed(testString));
-        }
-
-        [TestMethod()]
-        public void MatchNodeOfflineTest()
-        {
-            string testString =
-                @"Cluster node 'ze-2016-v2' was removed from the active failover cluster membership. The Cluster service on this node may have stopped. This could also be due to the node having lost communication with other active nodes in the failover cluster. Run the Validate a Configuration wizard to check your network configuration. If the condition persists, check for hardware or software errors related to the network adapters on this node. Also check for failures in any other network components to which the node is connected such as hubs, switches, or bridges.";
-            Assert.IsTrue(_clusterLogParser.MatchNodeOffline(testString));
-        }
-
-        [TestMethod()]
-        public void MatchLossQuorumTest()
-        {
-            string testString =
-                @"The Cluster service is shutting down because quorum was lost. This could be due to the loss of network connectivity between some or all nodes in the cluster, or a failover of the witness disk. 156 Run the Validate a Configuration wizard to check your network configuration. If the condition persists, check for hardware or software errors related to the network adapter. Also check for failures in any other network components to which the node is connected such as hubs, switches, or bridges.";
-            Assert.IsTrue(_clusterLogParser.MatchLossQuorum(testString));
-        }
-
-        [TestMethod()]
-        public void MatchClusterOfflineTest()
-        {
-            string testString =
-                @"The Cluster service failed to bring clustered role 'ag1023' completely online or offline. One or more resources may be in a failed state. This may impact the availability of the clustered role.";
-            Assert.IsTrue(_clusterLogParser.MatchClusterOffline(testString));
-        }
-
-        [TestMethod()]
-        public void MatchFailoverTest()
-        {
-            string testString =
-                @"The Cluster service is attempting to fail over the clustered role 'ag1023' from node 'ze-2016-v1' to node 'ze-2016-v2'.";
-            Assert.IsTrue(_clusterLogParser.MatchFailover(testString));
-        }
-
-        [TestMethod()]
-        public void MatchRhsTerminatedTest()
-        {
-            string testString =
-                @"The cluster Resource Hosting Subsystem (RHS) process was terminated and will be restarted. This is typically associated with cluster health detection and recovery of a resource. Refer to the System event log to determine which resource and resource DLL is causing the issue.";
-            Assert.IsTrue(_clusterLogParser.MatchRhsTerminated(testString));
-        }
     }
 }

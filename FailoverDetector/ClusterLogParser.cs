@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using FailoverDetector.Utils;
 
 
 namespace FailoverDetector
@@ -11,40 +13,31 @@ namespace FailoverDetector
     {
         public ClusterLogParser()
         {
-            // TODO: come back later
-            _utCcorrection = new TimeSpan(4, 0, 0);
+            // Cluster log always read as UTC time
+            _utCcorrection = new TimeSpan(0, 0, 0);
+            SetupRegexList();
         }
 
         public override void SetupRegexList()
         {
-            throw new NotImplementedException();
+            _logParserList = new List<MessageExpression>()
+            {
+                new ClusterHaltExpression(),        // 1006
+                new ResourceFailedExpression(),     // 1069
+                new NodeOfflineExpression(),        // 1135
+                new LostQuorumExpression(),         // 1177
+                new ClusterOfflineExpression(),     // 1205
+                new FailoverExpression(),           // Failover
+                new RhsTerminatedExpression()       // 1146
+            };
         }
 
         readonly TimeSpan _utCcorrection;
         private readonly Regex _rxTimeStamp = new Regex(@"\d{4}/\d{2}/\d{2}-\d{2}:\d{2}:\d{2}.\d{3}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly Regex _rxPid = new Regex(@"[0-9a-f]{8}.[0-9a-f]{8}::", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private readonly Regex _rxEntryType = new Regex(@"ERR|INFO|warn");
+        private readonly Regex _rxEntryType = new Regex(@"ERR|INFO|warn|DBG");
         private readonly Regex _rxBrackets = new Regex(@"\[.*?\]");
 
-        // cluster log 1006
-        private readonly Regex _rxClusterHalt = new Regex(@"Cluster service was halted due to incomplete connectivity with other cluster nodes");
-        // cluster log 1069
-        private readonly Regex _rxResourceFailed = new Regex(@"Cluster resource(.*)in clustered service or application(.*)failed");
-
-        // Cluster log Node Offline, 1135
-        private readonly Regex _rxNodeOffline = new Regex(@"(Cluster node)(.*)(was removed from the active failover cluster membership)");
-
-        // cluster log 1177
-        private readonly Regex _rxLossQuorum = new Regex(@"The Cluster service is shutting down because quorum was lost");
-
-        // cluster log 1205
-        private readonly Regex _rxClusterOffline = new Regex(@"The Cluster service failed to bring clustered role(.*)completely online or offline");
-
-        // failover
-        private readonly Regex _rxFailover = new Regex(@"The Cluster service is attempting to fail over the clustered role(.*)from node(.*)to node (.*)");
-
-        // RHS terminated
-        private readonly Regex _rxRhsTerminated = new Regex(@"The cluster Resource Hosting Subsystem \(RHS\) process was terminated and will be restarted");
 
         // methods
         public override string TokenizeTimestamp(string line)
@@ -98,7 +91,7 @@ namespace FailoverDetector
         public string TokenizeChannel(string line)
         {
             string tmp = string.Empty;
-            if (_rxBrackets.IsMatch(line))
+            if (_rxBrackets.IsMatch(line) && _rxBrackets.Match(line).Index == 0)
             {
                 //  this is not exactly right. we need to match first string inside the brackets
                 tmp = _rxBrackets.Match(line).Value;
@@ -108,6 +101,10 @@ namespace FailoverDetector
 
         public override ErrorLogEntry ParseLogEntry(string line)
         {
+            // channel could be at the beginning or after timestamp
+            string tmpChannel = TokenizeChannel(line);
+            line = line.Substring(tmpChannel.Length).Trim();
+
             string tmpPid = TokenizePidTid(line);
             line = line.Substring(tmpPid.Length).Trim();
 
@@ -118,47 +115,16 @@ namespace FailoverDetector
             string tmpType = TokenizeEntryType(line);
             line = line.Substring(tmpType.Length).Trim();
 
-            string tmpChannel = TokenizeChannel(line);
-            line = line.Substring(tmpChannel.Length ).Trim();
+            if (tmpChannel == string.Empty)
+            {
+                tmpChannel = TokenizeChannel(line);
+                line = line.Substring(tmpChannel.Length).Trim();
+            }
 
             ErrorLogEntry entry = new ErrorLogEntry(tmpParsedTime, tmpPid, line);
             return entry;
 
         }
 
-        public bool MatchClusterHalt(string msg)
-        {
-            return _rxClusterHalt.IsMatch(msg);
-        }
-
-        public bool MatchResourceFailed(string msg)
-        {
-            return _rxResourceFailed.IsMatch(msg);
-        }
-
-        public bool MatchNodeOffline(string msg)
-        {
-            return _rxNodeOffline.IsMatch(msg);
-        }
-
-        public bool MatchLossQuorum(string msg)
-        {
-            return _rxLossQuorum.IsMatch(msg);
-        }
-
-        public bool MatchClusterOffline(string msg)
-        {
-            return _rxClusterOffline.IsMatch(msg);
-        }
-
-        public bool MatchFailover(string msg)
-        {
-            return _rxFailover.IsMatch(msg);
-        }
-
-        public bool MatchRhsTerminated(string msg)
-        {
-            return _rxRhsTerminated.IsMatch(msg);
-        }
     }
 }

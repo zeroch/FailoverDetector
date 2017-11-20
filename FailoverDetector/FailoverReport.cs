@@ -583,7 +583,7 @@ namespace FailoverDetector
                     // this report is useful, I will push it into Failover Report for future investigation
                     _mFailoverReport.Add(pReport);
                 }
-                pReport.ProcessSystemData();
+//                pReport.ProcessSystemData();
 
             }
         }
