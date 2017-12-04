@@ -10,7 +10,7 @@ namespace FailoverDetector
     {
         static void Main(string[] args)
         {
-            string demoPath = @"C:\Temp\FailoverDetector\Data";
+            string demoPath = @"C:\Temp\FailoverDetector\Data\Demo";
 
             FileProcessor pFileProcess = new FileProcessor(demoPath);
             pFileProcess.RootDirectory(demoPath);
