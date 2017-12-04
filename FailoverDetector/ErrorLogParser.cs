@@ -208,28 +208,6 @@ namespace FailoverDetector
         // match UTC adjustment so we can convert all time to UTC time
         private readonly Regex _rxUtcAdjust = new Regex(@"(UTC adjustment:).*");
 
-        // ag lease expired
-        private readonly Regex _rxLeaeExpired =
-            new Regex(
-                @"(The lease between availability group)(.*)(and the Windows Server Failover Cluster has expired)");
-
-        // HADR_AG_LEASE_RENEWAL_TIMEOUT
-        private readonly Regex _rxLeaseTimeout =
-                new Regex(
-                    @"(SQL Server hosting availability group)(.*)(did not receive a process event signal from the Windows Server Failover Cluster within the lease timeout period.)")
-            ;
-
-        // HADR_AG_LEASE_RENEWAL_FAILED_DUE_WINDOWS_ERROR
-        private readonly Regex _rxLeaseRenewFailed =
-                new Regex(
-                    @"(The renewal of the lease between availability group)(.*)(and the Windows Server Failover Cluster failed)")
-            ;
-
-        // HADR_AG_LEASE_FAILED_TO_SLEEP_FOR_EXCESS_LEASE
-        private readonly Regex _rxLeaseFailedToSleep =
-            new Regex(
-                @"(The lease of availability group)(.*)(lease is no longer valid to start the lease renewal process)");
-
         // methods
         public override string TokenizeTimestamp(string line)
         {
