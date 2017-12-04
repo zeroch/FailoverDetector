@@ -7,9 +7,19 @@ using System.Collections;
 
 namespace FailoverDetector
 {
-    static class Constants
+    public static class Constants
     {
         public const int DefaultInterval = 3;
+
+        public enum SourceType
+        {
+            AlwaysOnXevent = 0,
+            SystemHealthXevent,
+            ErrorLog,
+            SystemLog,
+            ClusterLog,
+        }
+
     }
 
 
@@ -36,6 +46,155 @@ namespace FailoverDetector
 
         private Dictionary<string, List<EHadrArRole>> _roleTransition;
 
+
+
+
+
+
+
+        public class MessageMgr
+        {
+            // Raw message section
+            private class RawMessage
+            {
+                public DateTimeOffset Timestamp { get; }
+                public string Message { get; }
+
+                public RawMessage(DateTimeOffset timestamp, string message)
+                {
+                    Timestamp = timestamp;
+                    Message = message;
+                }
+
+
+
+                public void Show()
+                {
+                    Console.WriteLine("{1}", Timestamp, Message);
+                }
+            }
+
+            private class DataSource
+            {
+                public DataSource(string instanceName)
+                {
+                    InstanceName = instanceName;
+                    MessagList = new List<RawMessage>();
+                }
+
+                private string InstanceName { get; }
+                private List<RawMessage> MessagList { get; }
+
+                public void AddMessage(DateTimeOffset timestamp, string msg)
+                {
+                    RawMessage pMessage = new RawMessage(timestamp, msg);
+                    MessagList.Add(pMessage);
+                    MessagList.Sort((msg1, msg2) => DateTimeOffset.Compare(msg1.Timestamp, msg2.Timestamp));
+                }
+
+                public void Show()
+                {
+                    Console.WriteLine("Display log entries at Instance: {0}", InstanceName);
+                    foreach (RawMessage message in MessagList)
+                    {
+                        message.Show();
+                    }
+                }
+
+            }
+
+            private class DataSourceSet
+            {
+                private Dictionary<string, DataSource> DataSources;
+                public Constants.SourceType ResourceType { get; }
+                private bool DataEntryFound { set; get; }
+                public DataSourceSet(Constants.SourceType type)
+                {
+                    DataSources = new Dictionary<string, DataSource>();
+                    ResourceType = type;
+                    DataEntryFound = false;
+                }
+
+                protected internal void AddNewMessage(string instance, DateTimeOffset timestamp, string msg)
+                {
+                    DataSource pDataSource = null;
+                    if (!DataSources.ContainsKey(instance))
+                    {
+                        pDataSource = new DataSource(instance);
+                        DataSources[instance] = pDataSource;
+                    }
+                    else
+                    {
+                        pDataSource = DataSources[instance];
+                    }
+
+                    pDataSource.AddMessage(timestamp, msg);
+                    DataEntryFound = true;
+                }
+
+                public void Show()
+                {
+                    if (DataEntryFound)
+                    {
+                        Console.WriteLine("Display Log Entries for {0}.", ResourceType);
+                        foreach (var datasourcePairs in DataSources)
+                        {
+                            DataSource pDataSource = datasourcePairs.Value;
+                            pDataSource.Show();
+                        }
+                    }
+
+                }
+            }
+
+
+            // MessageMgr part
+            private Dictionary<Constants.SourceType, DataSourceSet> rawDataEntries;
+
+            public MessageMgr()
+            {
+                rawDataEntries = new Dictionary<Constants.SourceType, DataSourceSet>();
+                foreach (Constants.SourceType type in Enum.GetValues(typeof(Constants.SourceType)))
+                {
+                    rawDataEntries[type] = new DataSourceSet(type);
+                }
+            }
+
+            public void AddNewMessage(Constants.SourceType type, string instance, DateTimeOffset timestamp, string msg)
+            {
+                // if current instance log is not existed, we create an dataSource
+
+                DataSourceSet sourceSet = rawDataEntries[type];
+                sourceSet.AddNewMessage(instance, timestamp, msg);
+
+
+            }
+
+            public void Show()
+            {
+                Console.WriteLine("Following log entries are related with Failover.");
+                foreach (KeyValuePair<Constants.SourceType, DataSourceSet> dataSourceSet in rawDataEntries)
+                {
+                    dataSourceSet.Value.Show();
+                }
+            }
+
+        }
+
+
+
+        // Resource Tyep name, and raw message list
+
+        private MessageMgr pMessageMgr;
+
+        // message below should be a full/original message
+        public void AddNewMessage(Constants.SourceType type, string instance, DateTimeOffset timestamp, string msg)
+        {
+            // when we init RawMessageMgr, we make sure all type is initialted
+            pMessageMgr.AddNewMessage(type, instance, timestamp, msg);
+        }
+
+
         public string AgName { get; set; }
 
         public PartialReport()
@@ -50,6 +209,9 @@ namespace FailoverDetector
             RootCause = String.Empty;
             EstimateResult = false;
             MessageSet = new HashSet<string>();
+
+            // contains raw message, coressponding to MessageSet
+            pMessageMgr = new MessageMgr();
 
             // TODO
             // move this sysData into MessageSet
@@ -211,10 +373,8 @@ namespace FailoverDetector
         public void ShowMessageSet()
         {
             Console.WriteLine("Following Error Message was detect for this failover:");
-            foreach (string s in MessageSet)
-            {
-                Console.WriteLine("{0}", s);
-            }
+            pMessageMgr.Show();
+
         }
 
         public void IdentifyRoles()
@@ -593,6 +753,7 @@ namespace FailoverDetector
                 Console.WriteLine();
                 pReport.ShowRoleTransition();
 
+                pReport.ShowMessageSet();
 
 
                 Console.ReadLine();

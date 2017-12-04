@@ -92,7 +92,7 @@ namespace FailoverDetectorTests
                 MessageSet = new HashSet<string>() { "1135", "1177", "1146" }
             };
 
-            _clusterLogParser.ParseLog(testLogPath);
+            _clusterLogParser.ParseLog(testLogPath, "ze-vm001");
 
             Assert.IsTrue(expected.Equals(pReport));
         }

@@ -15,6 +15,7 @@ namespace FailoverDetector
         {
             // Cluster log always read as UTC time
             _utCcorrection = new TimeSpan(0, 0, 0);
+            sourceType = Constants.SourceType.ClusterLog;
             SetupRegexList();
         }
 
