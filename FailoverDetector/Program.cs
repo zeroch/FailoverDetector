@@ -42,10 +42,10 @@ namespace FailoverDetector
                 Console.WriteLine("Node name: {0}", nodeName);
                 foreach (var logPath in cNode.ErrorLogFileList)
                 {
-                    errorLogParser.ParseLog(logPath);
+                    errorLogParser.ParseLog(logPath, nodeName);
                 }
                 Console.WriteLine("Parsing Cluster Log:");
-                clusterLogParser.ParseLog(cNode.ClusterLogPath);
+                clusterLogParser.ParseLog(cNode.ClusterLogPath, nodeName);
             }
 
 

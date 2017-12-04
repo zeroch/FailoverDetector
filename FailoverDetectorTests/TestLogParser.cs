@@ -79,7 +79,7 @@ namespace FailoverDetectorTests
                 MessageSet = new HashSet<string>() { "17148" }
             };
 
-            _logParser.ParseLog(testLogPath);
+            _logParser.ParseLog(testLogPath, "ze-vm001");
 
             Assert.IsTrue(expected.Equals(pReport));
 
@@ -103,7 +103,7 @@ namespace FailoverDetectorTests
                 MessageSet = new HashSet<string>() { "17147" }
             };
 
-            _logParser.ParseLog(testLogPath);
+            _logParser.ParseLog(testLogPath, "ze-vm001");
 
             Assert.IsTrue(expected.Equals(pReport));
 

@@ -13,7 +13,7 @@ namespace FailoverDetector
         private DateTimeOffset _failoverTimeStart;
         private DateTimeOffset _failoverTimeEnd;
         protected List<MessageExpression> _logParserList;
-
+        protected Constants.SourceType sourceType;
         protected LogParser()
         {
         }
@@ -28,7 +28,7 @@ namespace FailoverDetector
         public abstract DateTimeOffset ParseTimeStamp(string timestamp);
         public abstract ErrorLogEntry ParseLogEntry(string entry);
         public abstract void SetupRegexList();
-        public void ParseLog(string logFilePath)
+        public void ParseLog(string logFilePath, string instanceName)
         {
             using (FileStream stream = File.OpenRead(logFilePath))
             {
@@ -90,6 +90,7 @@ namespace FailoverDetector
                                 if (regexParser.IsMatch(pEntry.Message))
                                 {
                                     regexParser.HandleOnceMatch(pEntry.Message, reportInstance);
+                                    reportInstance.AddNewMessage(sourceType, instanceName, pEntry.Timestamp, line);
                                 }
                             }
                             line = reader.ReadLine();
@@ -160,6 +161,7 @@ namespace FailoverDetector
         public ErrorLogParser()
         {
             _utCcorrection = new TimeSpan(7, 0, 0);
+            sourceType = Constants.SourceType.ErrorLog;
             SetupRegexList();
         }
 
