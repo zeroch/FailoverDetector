@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using FailoverDetector.Utils;
 
 namespace FailoverDetector
@@ -10,10 +11,10 @@ namespace FailoverDetector
     {
         static void Main(string[] args)
         {
-            string demoPath = @"C:\Temp\FailoverDetector\Data\Demo";
 
-            FileProcessor pFileProcess = new FileProcessor(demoPath);
-            pFileProcess.RootDirectory(demoPath);
+            FileProcessor pFileProcess = new FileProcessor();
+            // Handle Necessaries Files
+            pFileProcess.ProcessDirectory();
             if (!pFileProcess.ProcessParameter(args))
             {
                 Console.WriteLine("Exit with Error.");

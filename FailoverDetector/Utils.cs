@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace FailoverDetector
@@ -313,12 +314,24 @@ namespace FailoverDetector
         {
             private string rootDirectory;
             public Dictionary<string,NodeFileInfo> NodeList { get; set; }
-
+            private string dataDirectory;
+            private string resultDirectory;
+            private string configureFilePath;
 
             public FileProcessor()
             {
-                rootDirectory = String.Empty;
                 NodeList = new Dictionary<string, NodeFileInfo>();
+                
+
+                // some global value, we put at here first
+                DefaultMode = false;
+                AnalyzeOnly = false;
+                ShowResult = false;
+
+                rootDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                dataDirectory = rootDirectory + @"\Data\Demo";
+                resultDirectory = rootDirectory + @"\Result";
+                configureFilePath = rootDirectory + @"configure.json";
             }
             public FileProcessor(string dirRootDirectory)
             {
@@ -343,7 +356,7 @@ namespace FailoverDetector
                 return true;
             }
 
-            public void RootDirectory(string root)
+            public void ProcessDataDirectory(string root)
             {
                 if (File.Exists(root))
                 {
@@ -363,7 +376,7 @@ namespace FailoverDetector
 
             // Process all files in the directory passed in, recurse on any directories 
             // that are found, and process the files they contain.
-            public void ProcessDirectory(string targetDirectory)
+            private void ProcessDirectory(string targetDirectory)
             {
 
 
@@ -423,6 +436,37 @@ namespace FailoverDetector
                 NodeList[nodeName] = pNode;
             }
 
+            // use use internal Path to validate Data folder
+            public void ProcessDirectory()
+            {
+                // go through data directory to scan all applicatable log files
+                ProcessDataDirectory(dataDirectory);
+                try
+                {
+                    if (File.Exists(configureFilePath))
+                    {
+                        // TODO
+                        // parse configure File
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to locate configuration file.");
+                    }
+
+                    // Create Result folder if it is not existed
+                    if (!Directory.Exists(resultDirectory))
+                    {
+                        DirectoryInfo di = Directory.CreateDirectory(resultDirectory);
+                        Console.WriteLine("The directory was created successfully at {0}.", Directory.GetCreationTime(resultDirectory));
+
+                    }
+
+                } catch (Exception e)
+                {
+                    Console.WriteLine("The process failed: {0}", e.ToString());
+                }
+
+            }
             public class NodeFileInfo
             {
                 public List<string> AlwaysOnFileList {  get; set; }
