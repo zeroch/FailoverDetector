@@ -17,7 +17,7 @@ namespace FailoverDetector.UtilsTests
         {
             string testPath = @"C:\Temp\FailoverDetector\Data\Demo";
             FileProcessor pFileProcess = new FileProcessor(testPath);
-            pFileProcess.RootDirectory(testPath);
+            pFileProcess.ProcessDataDirectory(testPath);
 
             FileProcessor expectFileProcessor = new FileProcessor();
             expectFileProcessor.NodeList["ze-2016-v1"] = new FileProcessor.NodeFileInfo("ze-2016-v1");
@@ -117,6 +117,50 @@ namespace FailoverDetector.UtilsTests
             Assert.IsTrue(expectedNode.Equals(pFileProcess.NodeList["ze-2016-v1"]));
 
 
+        }
+
+        [TestMethod()]
+        public void ProcessParameterFailedTest()
+        {
+            FileProcessor actualfFileProcessor = new FileProcessor(@".\");
+
+            string testParameter = @"-- Analyze  -test";
+            string[] splitStrings = testParameter.Split(' ');
+            
+            //bool actualResult = (actualfFileProcessor.ShowResult == false) &&
+            //                    (actualfFileProcessor.DefaultMode == false) &&
+            //                    (actualfFileProcessor.AnalyzeOnly == false);
+            Assert.IsFalse(actualfFileProcessor.ProcessParameter(splitStrings));
+        }
+        [TestMethod()]
+        public void ProcessParameterAnalyzeOnlyTest()
+        {
+            FileProcessor actualfFileProcessor = new FileProcessor(@".\");
+
+            string testParameter = @"--Analyze";
+            string[] splitStrings = testParameter.Split(' ');
+
+
+            Assert.IsTrue(actualfFileProcessor.ProcessParameter(splitStrings));
+            bool actualResult = (actualfFileProcessor.ShowResult == false) &&
+                                (actualfFileProcessor.DefaultMode == false) &&
+                                (actualfFileProcessor.AnalyzeOnly == true);
+            Assert.IsTrue(actualResult);
+        }
+        [TestMethod()]
+        public void ProcessParameterAnalyzeAndShowTest()
+        {
+            FileProcessor actualfFileProcessor = new FileProcessor(@".\");
+
+            string testParameter = @"--Analyze --Show";
+            string[] splitStrings = testParameter.Split(' ');
+
+
+            Assert.IsTrue(actualfFileProcessor.ProcessParameter(splitStrings));
+            bool actualResult = (actualfFileProcessor.ShowResult == true) &&
+                                (actualfFileProcessor.DefaultMode == false) &&
+                                (actualfFileProcessor.AnalyzeOnly == true);
+            Assert.IsTrue(actualResult);
         }
     }
 }

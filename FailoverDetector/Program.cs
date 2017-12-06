@@ -14,6 +14,11 @@ namespace FailoverDetector
 
             FileProcessor pFileProcess = new FileProcessor(demoPath);
             pFileProcess.RootDirectory(demoPath);
+            if (!pFileProcess.ProcessParameter(args))
+            {
+                Console.WriteLine("Exit with Error.");
+                return;
+            }
 
             // process AlwaysOn Health 
             foreach( var node in pFileProcess.NodeList)

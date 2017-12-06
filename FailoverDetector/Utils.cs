@@ -471,8 +471,47 @@ namespace FailoverDetector
 
             }
 
+
+            public bool DefaultMode { set; get; }   // default mode is copy file and run analyze
+            public bool AnalyzeOnly { set; get; }   // doesn't run copy file but analyze data directly
+            public bool ShowResult { set; get; }   // show Result at the end
+            public bool ProcessParameter(string[] args)
+            {
+                int argsNumber = args.Length;
+
+                if (argsNumber == 0)
+                {
+                    DefaultMode = true;
+                }
+                else
+                {
+                    foreach (string s in args)
+                    {
+                        switch (s)
+                        {
+                            case @"--Analyze":
+                                AnalyzeOnly = true;
+                                break;
+                            case "--Show":
+                                ShowResult = true;
+                                break;
+                            default:
+                                Console.WriteLine("{0} is an invalide parameter.", s);
+                                Console.WriteLine("Please check valid Parameter input:");
+                                Console.WriteLine("--Analyze");
+                                Console.WriteLine("--Show");
+                                return false;
+                        }
+                    }
+                }
+                return true;
+            }
         }
 
 
+
+
     }
+
+
 }
