@@ -409,7 +409,11 @@ namespace FailoverDetector
                 List<string> Errorlog = new List<string>();
                 List<string> AlwaysOnList = new List<string>();
                 List<string> SystemHealthList = new List<string>();
-
+                // TODO: fix it for windows or linux expression
+                string nodeName = targetDirectory.Substring(targetDirectory.LastIndexOf("\\") + 1);
+                NodeFileInfo pNode = new NodeFileInfo(nodeName);
+                
+                
                 string[] fileEntries = Directory.GetFiles(targetDirectory);
 
                 foreach (string fileEntry in fileEntries)
@@ -424,12 +428,13 @@ namespace FailoverDetector
                     {
                         SystemHealthList.Add(fileEntry);
 
+                    }else if (fileEntry.Contains("cluster.log"))
+                    {
+                        pNode.ClusterLogPath = fileEntry;
                     }
                 }
 
-                // TODO: fix it for windows or linux expression
-                string nodeName = targetDirectory.Substring(targetDirectory.LastIndexOf("\\") + 1);
-                NodeFileInfo pNode = new NodeFileInfo(nodeName);
+
                 pNode.SetAlwaysOnFile(AlwaysOnList);
                 pNode.SetErrorLogFile(Errorlog);
                 pNode.SetSystemHealthFile(SystemHealthList);
