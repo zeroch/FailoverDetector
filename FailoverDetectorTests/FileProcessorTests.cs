@@ -1,10 +1,32 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FailoverDetector.Utils;
-using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Serialization.Json;
+
+namespace FailoverDetector.Utils.FileProcessor.ConfigurationTests
+{
+    [TestClass()]
+    public class FileProcessorTests
+    {
+        [TestMethod()]
+        public void EqualsTest()
+        {
+            MetaAgInfo actualAgInfo = new MetaAgInfo("test")
+            {
+                InstanceName = new List<string>() {"ze-vm001", "ze-vm003"}
+            };
+
+            MetaAgInfo expectedAgInfo = new MetaAgInfo("test")
+            {
+                InstanceName = new List<string>() { "ze-vm001", "ze-vm003" }
+            };
+            Assert.IsTrue(actualAgInfo.Equals(expectedAgInfo));
+        }
+    }
+}
 
 namespace FailoverDetector.UtilsTests
 {
@@ -126,7 +148,7 @@ namespace FailoverDetector.UtilsTests
 
             string testParameter = @"-- Analyze  -test";
             string[] splitStrings = testParameter.Split(' ');
-            
+
             //bool actualResult = (actualfFileProcessor.ShowResult == false) &&
             //                    (actualfFileProcessor.DefaultMode == false) &&
             //                    (actualfFileProcessor.AnalyzeOnly == false);
@@ -161,6 +183,33 @@ namespace FailoverDetector.UtilsTests
                                 (actualfFileProcessor.DefaultMode == false) &&
                                 (actualfFileProcessor.AnalyzeOnly == true);
             Assert.IsTrue(actualResult);
+        }
+
+        [DeploymentItem("Configuration.json")]
+        [TestMethod()]
+        public void ParseConfigurationFileTest()
+        {
+            FileProcessor actualFileProcessor = new FileProcessor();
+            actualFileProcessor.ProcessDirectory();
+            Assert.IsTrue(actualFileProcessor.FoundConfiguration);
+            Configuration expectedConfiguration = new Configuration
+            {
+                SourcePath = @"\zechen-d1\dbshare\Temp\Data",
+                AgInfo = new List<MetaAgInfo>()
+                {
+                    new MetaAgInfo("ag1023")
+                    {
+                        InstanceName = new List<string>() { "ze-2016-v1", "ze-2016-v3" }
+                    }
+                }
+            };
+
+            MemoryStream ms = new MemoryStream();
+
+
+            actualFileProcessor.ParseConfigurationFile();
+            Assert.IsTrue(expectedConfiguration.Equals(actualFileProcessor.ConfigInfo));
+
         }
     }
 }

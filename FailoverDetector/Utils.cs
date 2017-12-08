@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Linq.Mapping;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Runtime.Serialization;
+using System.Text;
+using System.Runtime.Serialization.Json;
 
 namespace FailoverDetector
 {
@@ -327,11 +331,12 @@ namespace FailoverDetector
                 DefaultMode = false;
                 AnalyzeOnly = false;
                 ShowResult = false;
+                FoundConfiguration = false;
 
                 rootDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 dataDirectory = rootDirectory + @"\Data\Demo";
                 resultDirectory = rootDirectory + @"\Result";
-                configureFilePath = rootDirectory + @"configure.json";
+                configureFilePath = rootDirectory + @"\Configuration.json";
             }
             public FileProcessor(string dirRootDirectory)
             {
@@ -448,14 +453,14 @@ namespace FailoverDetector
                 ProcessDataDirectory(dataDirectory);
                 try
                 {
-                    if (File.Exists(configureFilePath))
+                    // if we doesn't find configuration file, we will return failed. at this moment. Which means parse configuration alwasy after ProcessDirectory called and passed. 
+                    if (!File.Exists(configureFilePath))
                     {
-                        // TODO
-                        // parse configure File
+                        Console.WriteLine("Failed to locate configuration file.");
                     }
                     else
                     {
-                        Console.WriteLine("Failed to locate configuration file.");
+                        FoundConfiguration = true;
                     }
 
                     // Create Result folder if it is not existed
@@ -524,6 +529,9 @@ namespace FailoverDetector
             public bool DefaultMode { set; get; }   // default mode is copy file and run analyze
             public bool AnalyzeOnly { set; get; }   // doesn't run copy file but analyze data directly
             public bool ShowResult { set; get; }   // show Result at the end
+            public bool FoundConfiguration { set; get; } // Configuration is located
+            public Configuration ConfigInfo { set; get; }
+
             public bool ProcessParameter(string[] args)
             {
                 int argsNumber = args.Length;
@@ -555,9 +563,79 @@ namespace FailoverDetector
                 }
                 return true;
             }
+
+            public bool ParseConfigurationFile()
+            {
+                if (!FoundConfiguration)
+                {
+                    Console.WriteLine("Configuration File is not located at {0}", configureFilePath);
+                    return false;
+                }
+
+                using ( StreamReader reader = new StreamReader(configureFilePath))
+                {
+                    string json = reader.ReadToEnd();
+                    MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                    ConfigInfo = new Configuration();
+                    var res = new DataContractJsonSerializer(typeof(Configuration));
+                    ConfigInfo = (Configuration) res.ReadObject(ms);
+              
+                    ms.Close();
+                }
+
+                return true;
+            }
         }
 
+        [DataContract]
+        public class Configuration
+        {
+            [DataMember(Name = "Data Source Path")]
+            public string SourcePath { get; set; }
+            [DataMember(Name = "AG")]
+            public List<MetaAgInfo> AgInfo { get; set; }
 
+            public Configuration() { }
+            public override bool Equals(object obj)
+            {
+                if (!(obj is Configuration other))
+                    return false;
+                return this.SourcePath == other.SourcePath &&
+                       this.AgInfo.SequenceEqual(other.AgInfo);
+            }
+        }
+        
+        [DataContract]
+        public class MetaAgInfo
+        {
+            public MetaAgInfo()
+            {
+            }
+
+            public MetaAgInfo(string agName)
+            {
+                Name = agName;
+            }
+            [DataMember(Name = "AG Name")]
+            public string Name { get; set; }
+            [DataMember(Name = "Instances")]
+            public List<string> InstanceName { get; set; }
+
+            public override bool Equals(object obj)
+            {
+
+                if (!(obj is MetaAgInfo other))
+                    return false;
+                return this.Name == other.Name &&
+                       this.InstanceName.SequenceEqual(other.InstanceName);
+
+            }
+
+            public override int GetHashCode()
+            {
+                return 0;
+            }
+        }
 
 
     }
