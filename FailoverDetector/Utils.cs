@@ -317,15 +317,15 @@ namespace FailoverDetector
         public class FileProcessor
         {
             private string rootDirectory;
-            public Dictionary<string,NodeFileInfo> NodeList { get; set; }
-            private string dataDirectory;
-            private string resultDirectory;
-            private string configureFilePath;
+            public Dictionary<string, NodeFileInfo> NodeList { get; set; }
+            private readonly string dataDirectory;
+            private readonly string resultDirectory;
+            private readonly string configureFilePath;
 
             public FileProcessor()
             {
                 NodeList = new Dictionary<string, NodeFileInfo>();
-                
+
 
                 // some global value, we put at here first
                 DefaultMode = false;
@@ -338,6 +338,7 @@ namespace FailoverDetector
                 resultDirectory = rootDirectory + @"\Result";
                 configureFilePath = rootDirectory + @"\Configuration.json";
             }
+
             public FileProcessor(string dirRootDirectory)
             {
                 rootDirectory = dirRootDirectory;
@@ -411,38 +412,41 @@ namespace FailoverDetector
 
             public void ProcessNodeDirectory(string targetDirectory)
             {
-                List<string> Errorlog = new List<string>();
-                List<string> AlwaysOnList = new List<string>();
-                List<string> SystemHealthList = new List<string>();
+                List<string> errorlog = new List<string>();
+                List<string> alwaysOnList = new List<string>();
+                List<string> systemHealthList = new List<string>();
                 // TODO: fix it for windows or linux expression
                 string nodeName = targetDirectory.Substring(targetDirectory.LastIndexOf("\\") + 1);
                 NodeFileInfo pNode = new NodeFileInfo(nodeName);
-                
-                
+
+
                 string[] fileEntries = Directory.GetFiles(targetDirectory);
 
                 foreach (string fileEntry in fileEntries)
                 {
                     if (fileEntry.Contains("ERRORLOG"))
                     {
-                        Errorlog.Add(fileEntry);
-                    }else if (fileEntry.Contains("AlwaysOn_health"))
+                        errorlog.Add(fileEntry);
+                    }
+                    else if (fileEntry.Contains("AlwaysOn_health"))
                     {
-                        AlwaysOnList.Add(fileEntry);
-                    }else if (fileEntry.Contains("system_health"))
+                        alwaysOnList.Add(fileEntry);
+                    }
+                    else if (fileEntry.Contains("system_health"))
                     {
-                        SystemHealthList.Add(fileEntry);
+                        systemHealthList.Add(fileEntry);
 
-                    }else if (fileEntry.Contains("cluster.log"))
+                    }
+                    else if (fileEntry.Contains("cluster.log"))
                     {
-                        pNode.ClusterLogPath = fileEntry;
+                        pNode.SetClusterLog(fileEntry);
                     }
                 }
 
 
-                pNode.SetAlwaysOnFile(AlwaysOnList);
-                pNode.SetErrorLogFile(Errorlog);
-                pNode.SetSystemHealthFile(SystemHealthList);
+                pNode.SetAlwaysOnFile(alwaysOnList);
+                pNode.SetErrorLogFile(errorlog);
+                pNode.SetSystemHealthFile(systemHealthList);
                 NodeList[nodeName] = pNode;
             }
 
@@ -467,23 +471,27 @@ namespace FailoverDetector
                     if (!Directory.Exists(resultDirectory))
                     {
                         DirectoryInfo di = Directory.CreateDirectory(resultDirectory);
-                        Console.WriteLine("The directory was created successfully at {0}.", Directory.GetCreationTime(resultDirectory));
-
                     }
 
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     Console.WriteLine("The process failed: {0}", e.ToString());
                 }
 
             }
+
             public class NodeFileInfo
             {
-                public List<string> AlwaysOnFileList {  get; set; }
+                public List<string> AlwaysOnFileList { get; set; }
+                public bool FoundAlwaysOnFile { get; set; }
                 public List<string> SystemHealthFileList { get; set; }
+                public bool FoundSystemHealthFile { get; set; }
                 public List<String> ErrorLogFileList { get; set; }
+                public bool FoundErrologLogFile { get; set; }
                 public string NodeName { get; set; }
                 public string ClusterLogPath { get; set; }
+                public bool FoundClusterLogFile { get; set; }
 
                 public NodeFileInfo(string name)
                 {
@@ -497,38 +505,45 @@ namespace FailoverDetector
                 public bool Equals(NodeFileInfo obj)
                 {
                     return NodeName.Equals(obj.NodeName) &&
-                        ClusterLogPath.Equals(obj.ClusterLogPath) &&
-                           AlwaysOnFileList.Count == obj.AlwaysOnFileList.Count && AlwaysOnFileList.SequenceEqual(obj.AlwaysOnFileList) &&
-                           SystemHealthFileList.Count == obj.SystemHealthFileList.Count && SystemHealthFileList.SequenceEqual(obj.SystemHealthFileList) &&
-                           ErrorLogFileList.Count == obj.ErrorLogFileList.Count && ErrorLogFileList.SequenceEqual(obj.ErrorLogFileList);
+                           ClusterLogPath.Equals(obj.ClusterLogPath) &&
+                           AlwaysOnFileList.Count == obj.AlwaysOnFileList.Count &&
+                           AlwaysOnFileList.SequenceEqual(obj.AlwaysOnFileList) &&
+                           SystemHealthFileList.Count == obj.SystemHealthFileList.Count &&
+                           SystemHealthFileList.SequenceEqual(obj.SystemHealthFileList) &&
+                           ErrorLogFileList.Count == obj.ErrorLogFileList.Count &&
+                           ErrorLogFileList.SequenceEqual(obj.ErrorLogFileList);
                 }
 
                 public void SetAlwaysOnFile(List<string> fileList)
                 {
                     AlwaysOnFileList = fileList;
+                    FoundAlwaysOnFile = AlwaysOnFileList.Any();
                 }
 
                 public void SetSystemHealthFile(List<string> fileList)
                 {
                     SystemHealthFileList = fileList;
+                    FoundSystemHealthFile = SystemHealthFileList.Any();
                 }
 
                 public void SetErrorLogFile(List<string> fileList)
                 {
                     ErrorLogFileList = fileList;
+                    FoundErrologLogFile = ErrorLogFileList.Any();
                 }
 
                 public void SetClusterLog(string path)
                 {
                     ClusterLogPath = path;
+                    FoundClusterLogFile = true;
                 }
 
             }
 
 
-            public bool DefaultMode { set; get; }   // default mode is copy file and run analyze
-            public bool AnalyzeOnly { set; get; }   // doesn't run copy file but analyze data directly
-            public bool ShowResult { set; get; }   // show Result at the end
+            public bool DefaultMode { set; get; } // default mode is copy file and run analyze
+            public bool AnalyzeOnly { set; get; } // doesn't run copy file but analyze data directly
+            public bool ShowResult { set; get; } // show Result at the end
             public bool FoundConfiguration { set; get; } // Configuration is located
             public Configuration ConfigInfo { set; get; }
 
@@ -572,20 +587,81 @@ namespace FailoverDetector
                     return false;
                 }
 
-                using ( StreamReader reader = new StreamReader(configureFilePath))
+                using (StreamReader reader = new StreamReader(configureFilePath))
                 {
                     string json = reader.ReadToEnd();
                     MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
                     ConfigInfo = new Configuration();
                     var res = new DataContractJsonSerializer(typeof(Configuration));
                     ConfigInfo = (Configuration) res.ReadObject(ms);
-              
+
                     ms.Close();
                 }
 
                 return true;
             }
+
+            /*  1. Configuration File should processed
+     2. Data Directory should processed
+
+     result: provide vebal information about log data mismatch
+             between user addressed at configuration file and 
+             tool scanned from Data folder. 
+  */
+            public void ValidateFileCoverage()
+            {
+
+                if (!FoundConfiguration)
+                {
+                    return;
+                }
+                ParseConfigurationFile();
+                foreach (MetaAgInfo agInfo in ConfigInfo.AgInfo)
+                {
+                    Console.WriteLine("Validating log provided for AG: {0}", agInfo.Name);
+                    foreach (string instance in agInfo.InstanceName)
+                    {
+                        if (!NodeList.ContainsKey(instance))
+                        {
+                            Console.WriteLine(
+                                "All data about instance: {0} is missing. Please check files that you provided.",
+                                instance);
+                            continue;
+                        }
+                        // instance folder is existed. Check each log now. 
+                        FileProcessor.NodeFileInfo pInstanceFileInfo = NodeList[instance];
+                        Console.WriteLine("For Instance: {0}.", instance);
+
+                        if (pInstanceFileInfo.FoundAlwaysOnFile && pInstanceFileInfo.FoundErrologLogFile &&
+                            pInstanceFileInfo.FoundClusterLogFile && pInstanceFileInfo.FoundSystemHealthFile)
+                        {
+                            Console.WriteLine("All data is ready.");
+                        }
+                        else
+                        {
+                            if (!pInstanceFileInfo.FoundAlwaysOnFile)
+                            {
+                                Console.WriteLine(
+                                    "AlwaysOn XEvent Data is not existed. We may not be able to detect failover at all");
+                            }
+                            if (!pInstanceFileInfo.FoundErrologLogFile)
+                            {
+                                Console.WriteLine(
+                                    "For Instance: {0}. ErrorLog Data is not existed. We may not be able to detect some root cause.");
+                            }
+                            if (!pInstanceFileInfo.FoundClusterLogFile)
+                            {
+                                Console.WriteLine(
+                                    "For Instance: {0}. Cluster log Data is not existed. We may not be able to detect some root cause.");
+                            }
+                        }
+
+                    }
+                }
+            }
         }
+
+
 
         [DataContract]
         public class Configuration

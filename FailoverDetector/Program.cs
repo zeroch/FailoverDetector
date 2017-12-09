@@ -13,16 +13,23 @@ namespace FailoverDetector
         {
 
             FileProcessor pFileProcess = new FileProcessor();
-            // Handle Necessaries Files
-            pFileProcess.ProcessDirectory();
+
             if (!pFileProcess.ProcessParameter(args))
             {
                 Console.WriteLine("Exit with Error.");
                 return;
             }
 
+            // Handle Necessaries Files
+            pFileProcess.ProcessDirectory();
+            if (!pFileProcess.FoundConfiguration)
+            {
+                return;
+            }
+            pFileProcess.ValidateFileCoverage();
+
             // process AlwaysOn Health 
-            foreach( var node in pFileProcess.NodeList)
+            foreach ( var node in pFileProcess.NodeList)
             {
                 string nodeName = node.Key;
                 FileProcessor.NodeFileInfo cNode = node.Value;

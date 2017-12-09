@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FailoverDetector.Utils;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Runtime.Serialization.Json;
 
@@ -210,6 +211,56 @@ namespace FailoverDetector.UtilsTests
             actualFileProcessor.ParseConfigurationFile();
             Assert.IsTrue(expectedConfiguration.Equals(actualFileProcessor.ConfigInfo));
 
+        }
+
+        [DeploymentItem("Data\\Demo", "Data\\Demo")]
+        [DeploymentItem("Data\\UnitTest\\Configuration\\TestCase_Failed\\Configuration.json")]
+        [TestMethod]
+        public void ValidateFileConverageFaiedTest()
+        {
+            
+            // Init Output
+            using (StringWriter sw = new StringWriter())
+            {
+                Console.SetOut(sw);
+
+                FileProcessor actualFileProcessor = new FileProcessor();
+                actualFileProcessor.ProcessDirectory();
+                Assert.IsTrue(actualFileProcessor.FoundConfiguration);
+
+                actualFileProcessor.ValidateFileCoverage();
+
+                string expected = string.Format(
+                    "Validating log provided for AG: ag1023{0}For Instance: ze-2016-v1.{0}All data is ready.{0}All data about instance: ze-2016-v3 is missing. Please check files that you provided.{0}",
+                    Environment.NewLine);
+                Assert.AreEqual<string>(expected, sw.ToString());
+
+            }
+        }
+
+        [DeploymentItem("Data\\Demo", "Data\\Demo")]
+        [DeploymentItem("Data\\UnitTest\\Configuration\\TestCase_Pass\\Configuration.json")]
+        [TestMethod]
+        public void ValidateFileConveragePassTest()
+        {
+
+            // Init Output
+            using (StringWriter sw = new StringWriter())
+            {
+                Console.SetOut(sw);
+
+                FileProcessor actualFileProcessor = new FileProcessor();
+                actualFileProcessor.ProcessDirectory();
+                Assert.IsTrue(actualFileProcessor.FoundConfiguration);
+
+                actualFileProcessor.ValidateFileCoverage();
+
+                string expected = string.Format(
+                    "Validating log provided for AG: ag1023{0}For Instance: ze-2016-v1.{0}All data is ready.{0}For Instance: ze-2016-v2.{0}All data is ready.{0}",
+                    Environment.NewLine);
+                Assert.AreEqual<string>(expected, sw.ToString());
+
+            }
         }
     }
 }
