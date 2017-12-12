@@ -1,11 +1,11 @@
 {
-	"Data Source Path" : "\\zechen-d1\\dbshare\\Temp\\Data",
+	"Data Source Path" : "\\\\zechen-d1\\dbshare\\Temp\\Data",
 	"AG" : [
         {
             "AG Name": "ag1023",
             "Instances": [
                 "ze-2016-v1",
-                "ze-2016-v3"
+                "ze-2016-v2"
             ]
         }
 

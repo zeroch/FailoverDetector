@@ -26,6 +26,9 @@ namespace FailoverDetector
             {
                 return;
             }
+            pFileProcess.ParseConfigurationFile();
+            pFileProcess.CopySourceDataFromRemote();
+            pFileProcess.ProcessDirectory();
             pFileProcess.ValidateFileCoverage();
 
             // process AlwaysOn Health 

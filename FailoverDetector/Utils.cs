@@ -579,6 +579,7 @@ namespace FailoverDetector
                 return true;
             }
 
+            // we should located Configuration file before this call
             public bool ParseConfigurationFile()
             {
                 if (!FoundConfiguration)
@@ -615,7 +616,10 @@ namespace FailoverDetector
                 {
                     return;
                 }
-                ParseConfigurationFile();
+
+
+                // We need to validate /data dir if there are data logs existed
+
                 foreach (MetaAgInfo agInfo in ConfigInfo.AgInfo)
                 {
                     Console.WriteLine("Validating log provided for AG: {0}", agInfo.Name);
@@ -659,7 +663,108 @@ namespace FailoverDetector
                     }
                 }
             }
+
+
+            // Copy Data direcotry from remote source path
+            // Note: Configuration File should processed
+            public void CopySourceDataFromRemote()
+             {
+                // not default mode then we only run analyze, skip copying data
+                if (!DefaultMode)
+                {
+                    return;
+                }
+                // check remote directory if valid
+                string sourcePath = ConfigInfo.SourcePath;
+                if (!Directory.Exists(sourcePath))
+                {
+                    Console.WriteLine("Data Source Path: {0} at configuration file is invalid, Please check your configuration or Data Source Path.");
+                    Console.WriteLine("We won't be able to copy data logs from Data Source Path: {0}. We will use data at current workspace for continue. Y/N");
+                    // let's do yes
+                    //Console.ReadLine();
+
+                }
+                else
+                {
+                    string targetPath = dataDirectory;
+                    if (!Directory.Exists(targetPath))
+                    {
+                        System.IO.Directory.CreateDirectory(targetPath);
+                    }
+                    DirectoryCopy(sourcePath, targetPath);
+
+                }
+                
+            }
+            public void DirectoryCopy(string sourceDirPath, string destDirPath)
+            {
+                DirectoryInfo dir = new DirectoryInfo(sourceDirPath);
+                DirectoryInfo[] subDirs = null;
+                FileInfo[] files = null;
+
+                if (!dir.Exists)
+                {
+                    Console.WriteLine("Source directory does not exist or could not be found: {0}", sourceDirPath);
+                    return;
+                }
+
+                // Start copy current dir
+                // create dir at destination
+                if (!Directory.Exists(destDirPath))
+                {
+                    Directory.CreateDirectory(destDirPath);
+                }
+                // get Files under current dir
+                try
+                {
+                    files = dir.GetFiles();
+                    foreach (FileInfo file in files)
+                    {
+                        string tempPath = Path.Combine(destDirPath, file.Name);
+                        // overwrite existed file
+                        file.CopyTo(tempPath, true);
+                    }
+                }
+                catch (DirectoryNotFoundException e)
+                {
+
+                    Console.WriteLine(e.Message);
+                    return;
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    Console.WriteLine(e.Message);
+                    return;
+                }
+
+                // get sub directory
+                try
+                {
+                    subDirs = dir.GetDirectories();
+                }
+                catch (DirectoryNotFoundException e)
+                {
+
+                    Console.WriteLine(e.Message);
+                    return;
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    Console.WriteLine(e.Message);
+                    return;
+                }
+                // copy Subdirectories to new location
+                foreach (DirectoryInfo subdir in subDirs)
+                {
+                    string tempPath = Path.Combine(destDirPath, subdir.Name);
+                    DirectoryCopy(subdir.FullName, tempPath);
+                }
+
+            }
+
+
         }
+
 
 
 

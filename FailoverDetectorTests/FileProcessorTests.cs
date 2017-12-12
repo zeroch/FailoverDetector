@@ -195,12 +195,12 @@ namespace FailoverDetector.UtilsTests
             Assert.IsTrue(actualFileProcessor.FoundConfiguration);
             Configuration expectedConfiguration = new Configuration
             {
-                SourcePath = @"\zechen-d1\dbshare\Temp\Data",
+                SourcePath = @"\\zechen-d1\dbshare\Temp\Data",
                 AgInfo = new List<MetaAgInfo>()
                 {
                     new MetaAgInfo("ag1023")
                     {
-                        InstanceName = new List<string>() { "ze-2016-v1", "ze-2016-v3" }
+                        InstanceName = new List<string>() { "ze-2016-v1", "ze-2016-v2" }
                     }
                 }
             };
@@ -218,7 +218,7 @@ namespace FailoverDetector.UtilsTests
         [TestMethod]
         public void ValidateFileConverageFaiedTest()
         {
-            
+
             // Init Output
             using (StringWriter sw = new StringWriter())
             {
@@ -228,6 +228,7 @@ namespace FailoverDetector.UtilsTests
                 actualFileProcessor.ProcessDirectory();
                 Assert.IsTrue(actualFileProcessor.FoundConfiguration);
 
+                actualFileProcessor.ParseConfigurationFile();
                 actualFileProcessor.ValidateFileCoverage();
 
                 string expected = string.Format(
@@ -253,6 +254,7 @@ namespace FailoverDetector.UtilsTests
                 actualFileProcessor.ProcessDirectory();
                 Assert.IsTrue(actualFileProcessor.FoundConfiguration);
 
+                actualFileProcessor.ParseConfigurationFile();
                 actualFileProcessor.ValidateFileCoverage();
 
                 string expected = string.Format(
@@ -261,6 +263,74 @@ namespace FailoverDetector.UtilsTests
                 Assert.AreEqual<string>(expected, sw.ToString());
 
             }
+        }
+
+        [DeploymentItem("Data\\Demo", "Data\\Expected")]
+        [DeploymentItem("Data\\Demo", "Data\\Source")]
+        [TestMethod()]
+        public void DirectoryCopyTest()
+        {
+            FileProcessor actualFileProcessor = new FileProcessor();
+            actualFileProcessor.DirectoryCopy("Data\\Source", "Data\\Actual");
+            Assert.IsTrue(ComparetwoFolder("Data\\Expected", "Data\\Actual"));
+
+        }
+
+        [TestMethod()]
+        [DeploymentItem("Data\\UnitTest", "Data\\Expected")]
+        [DeploymentItem("Data\\UnitTest", "Data\\Actual")]
+        public void ComparetwoFolderTest()
+        {
+            Assert.IsTrue(ComparetwoFolder("Data\\Expected", "Data\\Actual"));
+        }
+        public bool ComparetwoFolder(string pathA, string pathB)
+        {
+            try
+            {
+                var filesA = from file in Directory.EnumerateFiles(pathA, "*.*", SearchOption.AllDirectories)
+                             select new
+                             {
+                                 File = file.Remove(0, pathA.Length)
+                             };
+                var filesB = from file in Directory.EnumerateFiles(pathB, "*.*", SearchOption.AllDirectories)
+                             select new
+                             {
+                                 File = file.Remove(0, pathB.Length)
+                             };
+                return filesA.SequenceEqual(filesB);
+
+            }
+            catch (UnauthorizedAccessException UAEx)
+            {
+                Console.WriteLine(UAEx.Message);
+            }
+            catch (PathTooLongException PathEx)
+            {
+                Console.WriteLine(PathEx.Message);
+            }
+            return false;
+        }
+
+
+        
+        [DeploymentItem("Data\\UnitTest\\Configuration\\TestCase_Pass\\Configuration.json")]
+        [TestMethod()]
+        // Test Copy folder from remote destination
+        // this remote located at  \\zechen-d1\\dbshare\\Temp\\Data
+        public void CopySourceDataFromRemoteTest()
+        {
+            // parse configuration file
+            FileProcessor fileProcessor = new FileProcessor();
+
+            // manual set parameter is true for default mode
+            fileProcessor.DefaultMode = true;
+
+            fileProcessor.ProcessDirectory();
+            Assert.IsTrue(fileProcessor.FoundConfiguration);
+            fileProcessor.ParseConfigurationFile();
+            fileProcessor.CopySourceDataFromRemote();
+            Assert.IsTrue(ComparetwoFolder("Data\\Demo", "\\\\zechen-d1\\dbshare\\Temp\\Data"));
+
         }
     }
 }
