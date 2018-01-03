@@ -1,0 +1,61 @@
+﻿<queryProcessing maxWorkers="512" workersCreated="49" workersIdle="15" tasksCompletedWithinInterval="2390" pendingTasks="0" oldestPendingTaskWaitingTime="0" hasUnresolvableDeadlockOccurred="0" hasDeadlockedSchedulersOccurred="0" trackingNonYieldingScheduler="0x0">
+  <topWaits>
+    <nonPreemptive>
+      <byCount>
+        <wait waitType="MEMORY_ALLOCATION_EXT" waits="30399" averageWaitTime="0" maxWaitTime="10" />
+        <wait waitType="HADR_CLUSAPI_CALL" waits="2019" averageWaitTime="151" maxWaitTime="4981" />
+        <wait waitType="HADR_FILESTREAM_IOMGR_IOCOMPLETION" waits="589" averageWaitTime="505" maxWaitTime="1407" />
+        <wait waitType="PAGEIOLATCH_SH" waits="336" averageWaitTime="3" maxWaitTime="83" />
+        <wait waitType="RESERVED_MEMORY_ALLOCATION_EXT" waits="97" averageWaitTime="0" maxWaitTime="0" />
+        <wait waitType="IO_COMPLETION" waits="93" averageWaitTime="3" maxWaitTime="26" />
+        <wait waitType="THREADPOOL" waits="81" averageWaitTime="10" maxWaitTime="106" />
+        <wait waitType="ASYNC_NETWORK_IO" waits="59" averageWaitTime="0" maxWaitTime="0" />
+        <wait waitType="MSQL_XP" waits="53" averageWaitTime="2" maxWaitTime="64" />
+        <wait waitType="WRITE_COMPLETION" waits="36" averageWaitTime="7" maxWaitTime="28" />
+      </byCount>
+      <byDuration>
+        <wait waitType="HADR_CLUSAPI_CALL" waits="2019" averageWaitTime="151" maxWaitTime="4981" />
+        <wait waitType="HADR_FILESTREAM_IOMGR_IOCOMPLETION" waits="589" averageWaitTime="505" maxWaitTime="1407" />
+        <wait waitType="PWAIT_ALL_COMPONENTS_INITIALIZED" waits="3" averageWaitTime="3731" maxWaitTime="3772" />
+        <wait waitType="WAIT_XTP_HOST_WAIT" waits="3" averageWaitTime="1949" maxWaitTime="2924" />
+        <wait waitType="LCK_M_S" waits="3" averageWaitTime="458" maxWaitTime="1249" />
+        <wait waitType="PAGEIOLATCH_SH" waits="336" averageWaitTime="3" maxWaitTime="83" />
+        <wait waitType="LCK_M_X" waits="1" averageWaitTime="1268" maxWaitTime="1268" />
+        <wait waitType="SLEEP_MASTERDBREADY" waits="1" averageWaitTime="914" maxWaitTime="914" />
+        <wait waitType="THREADPOOL" waits="81" averageWaitTime="10" maxWaitTime="106" />
+        <wait waitType="PERFORMANCE_COUNTERS_RWLOCK" waits="12" averageWaitTime="59" maxWaitTime="269" />
+      </byDuration>
+    </nonPreemptive>
+    <preemptive>
+      <byCount>
+        <wait waitType="PREEMPTIVE_XE_CALLBACKEXECUTE" waits="591" averageWaitTime="0" maxWaitTime="1" />
+        <wait waitType="PREEMPTIVE_OS_AUTHENTICATIONOPS" waits="153" averageWaitTime="9" maxWaitTime="236" />
+        <wait waitType="PREEMPTIVE_OS_FILEOPS" waits="69" averageWaitTime="17" maxWaitTime="389" />
+        <wait waitType="PREEMPTIVE_OS_REPORTEVENT" waits="56" averageWaitTime="17" maxWaitTime="311" />
+        <wait waitType="PREEMPTIVE_OS_GETPROCADDRESS" waits="53" averageWaitTime="0" maxWaitTime="0" />
+        <wait waitType="PREEMPTIVE_OS_QUERYREGISTRY" waits="45" averageWaitTime="18" maxWaitTime="676" />
+        <wait waitType="PREEMPTIVE_OS_CRYPTACQUIRECONTEXT" waits="41" averageWaitTime="2" maxWaitTime="19" />
+        <wait waitType="PREEMPTIVE_OS_AUTHORIZATIONOPS" waits="40" averageWaitTime="0" maxWaitTime="11" />
+        <wait waitType="PREEMPTIVE_OS_CREATEFILE" waits="34" averageWaitTime="2" maxWaitTime="32" />
+        <wait waitType="PREEMPTIVE_XE_GETTARGETSTATE" waits="33" averageWaitTime="0" maxWaitTime="18" />
+      </byCount>
+      <byDuration>
+        <wait waitType="PREEMPTIVE_OS_AUTHENTICATIONOPS" waits="153" averageWaitTime="9" maxWaitTime="236" />
+        <wait waitType="PREEMPTIVE_OS_FILEOPS" waits="69" averageWaitTime="17" maxWaitTime="389" />
+        <wait waitType="PREEMPTIVE_OS_REPORTEVENT" waits="56" averageWaitTime="17" maxWaitTime="311" />
+        <wait waitType="PREEMPTIVE_OS_QUERYREGISTRY" waits="45" averageWaitTime="18" maxWaitTime="676" />
+        <wait waitType="PREEMPTIVE_OS_DOMAINSERVICESOPS" waits="1" averageWaitTime="662" maxWaitTime="662" />
+        <wait waitType="PREEMPTIVE_OS_CRYPTOPS" waits="3" averageWaitTime="101" maxWaitTime="291" />
+        <wait waitType="PREEMPTIVE_OS_GETFILEATTRIBUTES" waits="28" averageWaitTime="7" maxWaitTime="53" />
+        <wait waitType="PREEMPTIVE_OS_CRYPTACQUIRECONTEXT" waits="41" averageWaitTime="2" maxWaitTime="19" />
+        <wait waitType="PREEMPTIVE_OS_LOADLIBRARY" waits="2" averageWaitTime="44" maxWaitTime="81" />
+        <wait waitType="PREEMPTIVE_OS_CREATEFILE" waits="34" averageWaitTime="2" maxWaitTime="32" />
+      </byDuration>
+    </preemptive>
+  </topWaits>
+  <cpuIntensiveRequests>
+    <request sessionId="57" requestId="0" command="EXECUTE" taskAddress="0x1c1f0315468" cpuUtilization="0" cpuTimeMs="15" />
+  </cpuIntensiveRequests>
+  <pendingTasks></pendingTasks>
+  <blockingTasks></blockingTasks>
+</queryProcessing>

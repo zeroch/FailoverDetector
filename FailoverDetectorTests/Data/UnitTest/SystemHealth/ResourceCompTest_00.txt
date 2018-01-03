@@ -1,0 +1,32 @@
+﻿<resource lastNotification="RESOURCE_MEMPHYSICAL_HIGH" outOfMemoryExceptions="0" isAnyPoolOutOfMemory="0" processOutOfMemoryPeriod="0">
+  <memoryReport name="Process/System Counts" unit="Value">
+    <entry description="Available Physical Memory" value="2502770688" />
+    <entry description="Available Virtual Memory" value="140727325802496" />
+    <entry description="Available Paging File" value="2439725056" />
+    <entry description="Working Set" value="248676352" />
+    <entry description="Percent of Committed Memory in WS" value="100" />
+    <entry description="Page Faults" value="135530" />
+    <entry description="System physical memory high" value="1" />
+    <entry description="System physical memory low" value="0" />
+    <entry description="Process physical memory low" value="0" />
+    <entry description="Process virtual memory low" value="0" />
+  </memoryReport>
+  <memoryReport name="Memory Manager" unit="KB">
+    <entry description="VM Reserved" value="9493848" />
+    <entry description="VM Committed" value="185892" />
+    <entry description="Locked Pages Allocated" value="0" />
+    <entry description="Large Pages Allocated" value="0" />
+    <entry description="Emergency Memory" value="1024" />
+    <entry description="Emergency Memory In Use" value="16" />
+    <entry description="Target Committed" value="2296072" />
+    <entry description="Current Committed" value="185896" />
+    <entry description="Pages Allocated" value="128560" />
+    <entry description="Pages Reserved" value="0" />
+    <entry description="Pages Free" value="3888" />
+    <entry description="Pages In Use" value="160320" />
+    <entry description="Page Alloc Potential" value="2217312" />
+    <entry description="NUMA Growth Phase" value="0" />
+    <entry description="Last OOM Factor" value="0" />
+    <entry description="Last OS Error" value="0" />
+  </memoryReport>
+</resource>

@@ -2,165 +2,313 @@
 using System.Text;
 using System.Xml;
 using System.IO;
-
+using Microsoft.SqlServer.XEvent.Linq;
+using System.Collections.Generic;
+using System.Collections;
+using System.Runtime.Serialization;
+using System.Xml.Serialization;
 
 namespace FailoverDetector
 {
-    public class SystemHealthData
+
+    public class SystemHealthParser : XeventParser
     {
-        // system component
-        // QP component
-        // Resource component
-        public SystemHealthData()
+
+        public SystemHealthParser()
         {
-            SysComp = new SystemComponent();
+           
         }
-
-        public SystemComponent SysComp { get; set; }
-
-        public class SystemComponent
+        PartialReport pCurrentReport;
+        public void LoadXevents(string xelFileName, string serverName)
         {
-            public SystemComponent()
+            _instanceName = serverName;
+            // load xel File
+            using (QueryableXEventData events = new QueryableXEventData(xelFileName))
             {
-                 TotalDump = 0;
-                 IntervalDump = 0;
-                 MemoryScribblerCount = 0;
-                 Detected = false;
-                 Timestamp = DateTimeOffset.MinValue;
-            }
+                ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
-            public uint TotalDump { get; set; }
+                // I need an interator that I don't care which AG it is
+                // only iterate through by time.
+                //pReportMgr.
+                IEnumerator ReportIterator = pReportMgr.ReportVisitor();
+                if (!ReportIterator.MoveNext())
+                    return;
 
-            public uint IntervalDump { get; set; }
+                IEnumerator pXEventIterator = events.GetEnumerator();
 
-            public uint MemoryScribblerCount { get; set; }
-
-            public bool Detected { get; set; }
-
-            public DateTimeOffset Timestamp { get; set; }
-        }
-        public bool IsSystemHealth()
-        {
-            if (SysComp.Detected)
-                return true;
-            else
-                return false;
-        }
-
-
-    }
-
-
-    public class SystemHealthParser
-    {
-        readonly SystemHealthData _mSysData;
-        public SystemHealthParser(SystemHealthData pSysData)
-        {
-            _mSysData = pSysData;
-        }
-        public bool ParseSystemComponent(String xmlString)
-        {
-            bool ret = false;
-            StringBuilder output = new StringBuilder();
-            using (XmlReader reader = XmlReader.Create(new StringReader(xmlString)))
-            {
-                while(reader.Read())
+                foreach (PublishedEvent evt in events)
                 {
-                    // copy from diagnose.cpp void SystemDiagComp::GetData()
-                    // XML format: 
-                    //  <system spinlockBackoffs="u" sickSpinlockType="s" sickSpinlockTypeAfterAv="s" latchWarnings="u"
-                    //      isAccessViolationOccurred="u" memoryScribblerCount="u" totalDumpRequests="u" periodDumpRequests="u"
-                    //      nonYieldingTasksReported="u" pageFaultRate="u" systemCpuUtilization="u" sqlCpuUtilization="u" />
-                    //
-                    if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("system"))
+                    // dispatch event and handle by own method.
+                    DateTimeOffset messageTime = evt.Timestamp;
+                    // compare time
+                    PartialReport reportInstance = (PartialReport)ReportIterator.Current;
+
+                    // find a report later than current message
+                    
+                    while (reportInstance != null &&  (messageTime > reportInstance.EndTime.AddMinutes(Constants.DefaultInterval)) )
                     {
-
-                        string sickSpinlockType = reader.GetAttribute("sickSpinlockType");
-                        string sickSpinlockTypeAfterAv = reader.GetAttribute("sickSpinlockTypeAfterAv");
-                        string badPagesDetected = reader.GetAttribute("BadPagesDetected");
-                        string badPagesFixed = reader.GetAttribute("BadPagesFixed");
-                        string lastBadPageAddress = reader.GetAttribute("LastBadPageAddress");
-                        UInt32 spinlockBackoffs = UInt32.TryParse(reader.GetAttribute("spinlockBackoffs"), out var temp) ? temp : 0;
-                        UInt32 latchWarnings = UInt32.TryParse(reader.GetAttribute("latchWarnings"), out temp) ? temp : 0;
-                        UInt32 isAccessViolationOccurred = UInt32.TryParse(reader.GetAttribute("isAccessViolationOccurred"), out temp) ? temp : 0;
-                        UInt32 writeAccessViolationCount = UInt32.TryParse(reader.GetAttribute("writeAccessViolationCount"), out temp) ? temp : 0;
-                        UInt32 memoryScribblerCount = UInt32.TryParse(reader.GetAttribute("memoryScribblerCount"), out temp) ? temp : 0;
-                        UInt32 totalDumpRequests = UInt32.TryParse(reader.GetAttribute("totalDumpRequests"), out temp) ? temp : 0;
-                        UInt32 intervalDumpRequests = UInt32.TryParse(reader.GetAttribute("intervalDumpRequests"), out temp) ? temp : 0;
-                        UInt32 nonYieldingTasksReported = UInt32.TryParse(reader.GetAttribute("nonYieldingTasksReported"), out temp) ? temp : 0;
-                        UInt32 pageFaults = UInt32.TryParse(reader.GetAttribute("pageFaults"), out temp) ? temp : 0;
-                        UInt32 systemCpuUtilization = UInt32.TryParse(reader.GetAttribute("systemCpuUtilization"), out temp) ? temp : 0;
-                        UInt32 sqlCpuUtilization = UInt32.TryParse(reader.GetAttribute("sqlCpuUtilization"), out temp) ? temp : 0;
-
-                        if ( (totalDumpRequests > 100 && intervalDumpRequests > 1) ||
-                             memoryScribblerCount > 3)
+                        // if we go through all reports but cannot find a report is older than this message
+                        // we know all evetns behinds it are too late. 
+                        if (!ReportIterator.MoveNext())
                         {
-                            _mSysData.SysComp.Detected = true;
-
-                            _mSysData.SysComp.MemoryScribblerCount = memoryScribblerCount;
-                            _mSysData.SysComp.TotalDump = totalDumpRequests;
-                            _mSysData.SysComp.IntervalDump = intervalDumpRequests;
-                            ret = true;
+                            return;
                         }
-                        //Console.WriteLine("systemCpuUtilization: {0}", systemCpuUtilization);
-                        //Console.WriteLine("Detail: spinlockBackoffs: {0} \t totalDumpRequests: {1}", spinlockBackoffs, totalDumpRequests);
+                        reportInstance = (PartialReport)ReportIterator.Current;
                     }
-                }
-            }
-            return ret;
-        }
 
-        public bool ParseQpComponent(String xmlString)
-        {
-            bool ret = true;
-            using (XmlReader reader = XmlReader.Create(new StringReader(xmlString)))
-            {
-                while (reader.Read())
-                {
-                    // copy from diagnose.cpp void SystemDiagComp::GetData()
-                    // XML format: 
-                    // XML format: 
-                    //	<queryProcessing maxWorkers="u" workersCreated="u" workersIdle="u" tasksCompletedWithinInterval="u"
-                    //		pendingTasks="u" oldestPendingTaskWaitingTime="u" hasUnresolvableDeadlockOccurred="b"
-                    //		hasDeadlockedSchedulersOccurred="b" trackingNonYieldingScheduler="p">
-
-                    if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("queryProcessing"))
+                    // now we iterate events to meet time interval. 
+                    if (messageTime < (reportInstance.StartTime.AddMinutes(-1 * Constants.DefaultInterval)))
                     {
-                        UInt32 maxWorkers = UInt32.TryParse(reader.GetAttribute("maxWorkers"), out var temp) ? temp : 0;
-                        UInt32 workersCreated = UInt32.TryParse(reader.GetAttribute("workersCreated"), out temp) ? temp : 0;
-                        UInt32 workersIdle = UInt32.TryParse(reader.GetAttribute("workersIdle"), out temp) ? temp : 0;
-                        UInt32 tasksCompletedWithinInterval = UInt32.TryParse(reader.GetAttribute("tasksCompletedWithinInterval"), out temp) ? temp : 0;
-                        UInt32 pendingTasks = UInt32.TryParse(reader.GetAttribute("pendingTasks"), out temp) ? temp : 0;
-                        UInt32 oldestPendingTaskWaitingTime = UInt32.TryParse(reader.GetAttribute("oldestPendingTaskWaitingTime"), out temp) ? temp : 0;
-
-                        //UInt32 trackingNonYieldingScheduler = UInt32.TryParse(reader.GetAttribute("trackingNonYieldingScheduler"), out temp) ? temp : 0;
-                        UInt32 hasUnresolvableDeadlockOccurred = UInt32.TryParse(reader.GetAttribute("hasUnresolvableDeadlockOccurred"), out temp) ? temp : 0;
-                        UInt32 hasDeadlockedSchedulersOccurred = UInt32.TryParse(reader.GetAttribute("hasDeadlockedSchedulersOccurred"), out temp) ? temp : 0;
-                        bool bHasUnresolvableDeadlockOccurred = (hasUnresolvableDeadlockOccurred != 0);
-                        bool bHasDeadlockedSchedulersOccurred = (hasDeadlockedSchedulersOccurred != 0);
-                        if (bHasDeadlockedSchedulersOccurred)
+                        continue;
+                    }else
+                    {
+                        
+                        //if (messageTime < sometime upper bound
+                        //    && messageTime > sometime lower bound)
+                        // it is time to dispatch event, but we only care about sp_server_diag at this point. 
+                        if (evt.Name == "sp_server_diagnostics_component_result")
                         {
-                            //Console.WriteLine("Query Processing Error: Deadlocked Scheduler Occurred");
-                            ret = false;
-                        }
-                        if (bHasUnresolvableDeadlockOccurred)
-                        {
-                            //Console.WriteLine("Query Processing Error: unresolvable Deadlock Occurred");
-                            ret = false;
-                        }
-
-                        if (pendingTasks > 0)
-                        {
-                            //Console.WriteLine("Query Processing Warning: Pending Task more than 0.");
-                            ret = false;
+                            // we know that we want to handle this event, and it is working with a report. use pCurrentReport to hold this pointer. 
+                            pCurrentReport = reportInstance;
+                            DispatchEvent(evt);
                         }
                     }
                 }
             }
-            return ret;
+        }
+        public override void DispatchEvent(PublishedEvent evt)
+        {
+            string t_component = evt.Fields["component"].Value.ToString();
+            string t_data = evt.Fields["data"].Value.ToString();
+
+            switch (t_component)
+            {
+                case "SYSTEM":
+                    ParseSystemComponent(t_data);
+                    break;
+                case "RESOURCE":
+                    ParseResource(t_data);
+                    break;
+                case "QUERY_PROCESSING":
+                    ParseQpComponent(t_data);
+                    break;
+                case "IO_SUBSYSTEM":
+                    ParseIoSubsytem(t_data);
+                    break;
+                default:
+                    break;
+            }
+
+            // insert data to raw message
+            pCurrentReport.AddNewMessage(Constants.SourceType.SystemHealthXevent, _instanceName, evt.Timestamp, t_data);
         }
 
-        public void ParseResource(String xmlString) { }
-        public void ParseIoSubsytem(String xmlString) { }
+        // Data structure used to parse xml and json format
+        // IExtensibleDataObject is used to bypass invalide namespace issue. 
+        [XmlRootAttribute("system", Namespace = "",
+IsNullable = false)]
+//        [DataContract(Name = "system", Namespace ="")]
+        public class SystemComponent : IExtensibleDataObject
+        {
+
+            public ExtensionDataObject ExtensionData { get; set; }
+            [XmlAttribute("sickSpinlockType")]
+            public string sickSpinlockType { get; set; }
+
+            [XmlAttribute("sickSpinlockTypeAfterAv")]
+            public string sickSpinlockTypeAfterAv { get; set; }
+
+            [XmlAttribute("BadPagesDetected")]
+            public string badPagesDetected { get; set; }
+
+            [XmlAttribute("BadPagesFixed")]
+            public string badPagesFixed { get; set; }
+
+            [XmlAttribute("LastBadPageAddress")]
+            public string lastBadPageAddress { get; set; }
+
+            [XmlAttribute("spinlockBackoffs")]
+            public UInt32 spinlockBackoffs { get; set; }
+
+            [XmlAttribute("latchWarnings")]
+            public UInt32 latchWarnings { get; set; }
+
+            [XmlAttribute("isAccessViolationOccurred")]
+            public UInt32 isAccessViolationOccurred { get; set; }
+
+            [XmlAttribute("writeAccessViolationCount")]
+            public UInt32 writeAccessViolationCount { get; set; }
+
+            [XmlAttribute("memoryScribblerCount")]
+            public UInt32 memoryScribblerCount { get; set; }
+
+            [XmlAttribute("totalDumpRequests")]
+            public UInt32 totalDumpRequests { get; set; }
+
+            [XmlAttribute("intervalDumpRequests")]
+            public UInt32 intervalDumpRequests { get; set; }
+
+            [XmlAttribute("nonYieldingTasksReported")]
+            public UInt32 nonYieldingTasksReported { get; set; }
+
+            [XmlAttribute("pageFaults")]
+            public UInt32 pageFaults { get; set; }
+
+            [XmlAttribute("systemCpuUtilization")]
+            public UInt32 systemCpuUtilization { get; set; }
+
+            [XmlAttribute("sqlCpuUtilization")]
+            public UInt32 sqlCpuUtilization { get; set; }
+
+        }
+
+        [XmlRootAttribute("queryProcessing", Namespace = "",
+IsNullable = false)]
+        public class QPComponent: IExtensibleDataObject
+        {
+            public ExtensionDataObject ExtensionData { get; set; }
+            [XmlAttribute("maxWorkers")]
+            public UInt32 maxWorkers { get; set; }
+            [XmlAttribute("workersCreated")]
+            public UInt32 workersCreated { get; set; }
+            [XmlAttribute("workersIdle")]
+            public UInt32 workersIdle { get; set; }
+            [XmlAttribute("tasksCompletedWithinInterval")]
+            public UInt32 tasksCompletedWithinInterval { get; set; }
+            [XmlAttribute("pendingTasks")]
+            public UInt32 pendingTasks { get; set; }
+            [XmlAttribute("oldestPendingTaskWaitingTime")]
+            public UInt32 oldestPendingTaskWaitingTime { get; set; }
+
+            [XmlAttribute("hasUnresolvableDeadlockOccurred")]
+            public bool hasUnresolvableDeadlockOccurred { get; set; }
+            [XmlAttribute("hasDeadlockedSchedulersOccurred")]
+            public bool hasDeadlockedSchedulersOccurred { get; set; }
+
+            [XmlAttribute("trackingNonYieldingScheduler")]
+            public string trackingNonYieldingScheduler { get; set; }
+        }
+
+        [XmlRootAttribute("resource", Namespace = "",
+IsNullable = false)]
+        public class ResourceComponent : IExtensibleDataObject
+        {
+            public ExtensionDataObject ExtensionData { get; set; }
+
+            [XmlAttribute("lastNotification")]
+            public string lastNotification { get; set; }
+            [XmlAttribute("outOfMemoryExceptions")]
+            public UInt32 outOfMemoryExceptions { get; set; }
+            [XmlAttribute("isAnyPoolOutOfMemory")]
+            public bool isAnyPoolOutOfMemory { get; set; }
+            [XmlAttribute("processOutOfMemoryPeriod")]
+            public int processOutOfMemoryPeriod { get; set; }
+            
+        }
+
+        [XmlRootAttribute("ioSubsystem", Namespace = "",
+IsNullable = false)]
+        public class IoComponent
+        {
+            public ExtensionDataObject ExtensionData { get; set; }
+
+            [XmlAttribute("ioLatchTimeouts")]
+            public UInt32 ioLatchTimeouts { get; set; }
+            [XmlAttribute("intervalLongIos")]
+            public UInt32 intervalLongIos { get; set; }
+            [XmlAttribute("totalLongIos")]
+            public UInt32 totalLongIos { get; set; }
+
+        }
+
+        public void ParseSystemComponent(string xmlString)
+        {
+            // copy from diagnose.cpp void SystemDiagComp::GetData()
+            // XML format: 
+            //  <system spinlockBackoffs="u" sickSpinlockType="s" sickSpinlockTypeAfterAv="s" latchWarnings="u"
+            //      isAccessViolationOccurred="u" memoryScribblerCount="u" totalDumpRequests="u" periodDumpRequests="u"
+            //      nonYieldingTasksReported="u" pageFaultRate="u" systemCpuUtilization="u" sqlCpuUtilization="u" />
+            //
+            MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(xmlString));
+
+            XmlSerializer serializer = new XmlSerializer(typeof(SystemComponent));
+            SystemComponent systemComp = new SystemComponent();
+            systemComp = (SystemComponent)serializer.Deserialize(ms);
+
+            if (systemComp.totalDumpRequests > 100 && systemComp.intervalDumpRequests > 1)
+            {
+                pCurrentReport.SystemUnhealthFound = true;
+                pCurrentReport.ExceedDumpThreshold = true;
+            }
+ 
+            if(systemComp.memoryScribblerCount > 3)
+            {
+                pCurrentReport.SystemUnhealthFound = true;
+                pCurrentReport.Memorycribbler = true;
+            }
+
+
+
+        }
+
+        public void ParseQpComponent(String xmlString)
+        {
+
+            // copy from diagnose.cpp void SystemDiagComp::GetData()
+            // XML format: 
+            // XML format: 
+            //	<queryProcessing maxWorkers="u" workersCreated="u" workersIdle="u" tasksCompletedWithinInterval="u"
+            //		pendingTasks="u" oldestPendingTaskWaitingTime="u" hasUnresolvableDeadlockOccurred="b"
+            //		hasDeadlockedSchedulersOccurred="b" trackingNonYieldingScheduler="p">
+
+            MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(xmlString));
+
+            XmlSerializer serializer = new XmlSerializer(typeof(QPComponent));
+            QPComponent qPComponent = new QPComponent();
+            qPComponent = (QPComponent)serializer.Deserialize(ms);
+
+
+
+            if (qPComponent.hasDeadlockedSchedulersOccurred || qPComponent.hasUnresolvableDeadlockOccurred)
+            {
+
+                pCurrentReport.SystemUnhealthFound = true;
+            }
+        }
+
+        public void ParseResource(String xmlString)
+        {
+            MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(xmlString));
+
+            XmlSerializer serializer = new XmlSerializer(typeof(ResourceComponent));
+            ResourceComponent resourceComponent = new ResourceComponent();
+            resourceComponent = (ResourceComponent)serializer.Deserialize(ms);
+
+            if (resourceComponent.processOutOfMemoryPeriod > 12000)
+            {
+                pCurrentReport.SystemUnhealthFound = true;
+                pCurrentReport.SqlOOM = true;
+            }
+            if (resourceComponent.Equals("RESOURCE_MEMPHYSICAL_LOW") || resourceComponent.Equals("RESOURCE_MEMVIRTUAL_LOW"))
+            {
+                pCurrentReport.SqlLowMemory = true;
+            }
+
+        }
+        public void ParseIoSubsytem(String xmlString)
+        {
+            MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(xmlString));
+
+            XmlSerializer serializer = new XmlSerializer(typeof(IoComponent));
+            IoComponent ioComponent = new IoComponent();
+            ioComponent = (IoComponent)serializer.Deserialize(ms);
+            if (ioComponent.intervalLongIos > 0)
+            {
+                pCurrentReport.LongIO = true;
+            }
+        }
+
+
+
     }
 }

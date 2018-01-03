@@ -37,10 +37,10 @@ namespace FailoverDetector
                 string nodeName = node.Key;
                 FileProcessor.NodeFileInfo cNode = node.Value;
                 Console.WriteLine("Node name: {0}",  nodeName);
-                var instance = new AlwaysOnData();
+                var instance = new AlwaysOnXeventParser();
                 foreach (var xelPath in cNode.AlwaysOnFileList)
                 {
-                    instance.LoadData(xelPath, nodeName);
+                    instance.LoadXevent(xelPath, nodeName);
                 }
             }
 
@@ -50,6 +50,7 @@ namespace FailoverDetector
             // parse ErrorLog
             ErrorLogParser errorLogParser = new ErrorLogParser();
             ClusterLogParser clusterLogParser = new ClusterLogParser();
+            SystemHealthParser systemHealthParser = new SystemHealthParser();
 
             foreach (var node in pFileProcess.NodeList)
             {
@@ -62,13 +63,24 @@ namespace FailoverDetector
                 }
                 Console.WriteLine("Parsing Cluster Log:");
                 clusterLogParser.ParseLog(cNode.ClusterLogPath, nodeName);
+
+                // parse System Health XEvent
+                Console.WriteLine("Parsing System Health XEvents:");
+                foreach (var systemXEventFile in cNode.SystemHealthFileList)
+                {
+                    systemHealthParser.LoadXevents(systemXEventFile, nodeName);
+                }
+
             }
 
 
             // determine Failover 
             pReportMgr.AnalyzeReports();
 
-            pReportMgr.ShowFailoverReports();
+            if (pFileProcess.ShowResult)
+            {
+                pReportMgr.ShowFailoverReports();
+            }
 
             Console.ReadLine();
         }

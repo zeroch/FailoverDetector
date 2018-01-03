@@ -1,21 +1,77 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.SqlServer.XEvent.Linq;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.SqlServer.XEvent.Linq;
 
 namespace FailoverDetector
 {
-    
-    public class AlwaysOnData
+    public abstract class XeventParser
     {
-
-        string _instanceName;
-
-
-        public AlwaysOnData()
+        protected Constants.SourceType sourceType;
+        protected string _instanceName;
+        protected XeventParser()
         {
+
         }
 
+        // derived classh should implement it's own DispatchEvent
+        public abstract void DispatchEvent(PublishedEvent evt);
+
+        // entry point to process xevent files
+        // #TODO find out the way that dotnet core handle xevent.
+        public void LoadXevent(string xelFileName, string serverName)
+        {
+            _instanceName = serverName;
+            // load xel File
+            using (QueryableXEventData events = new QueryableXEventData(xelFileName))
+            {
+                foreach (PublishedEvent evt in events)
+                {
+                    // dispatch event and handle by own method.
+
+                    DispatchEvent(evt);
+                }
+            }
+        }
+    }
+
+    public class AlwaysOnXeventParser : XeventParser
+    {
+        public AlwaysOnXeventParser()
+        {
+            
+        }
+        public override void DispatchEvent(PublishedEvent evt)
+        {
+            switch (evt.Name)
+            {
+                case "alwayson_ddl_executed":
+                    HandleDdlExecuted(evt);
+                    break;
+                case "availability_group_lease_expired":
+                    HandleAgLeaseExpired(evt);
+                    break;
+                case "availability_replica_manager_state_change":
+                    HandleArMgrStateChange(evt);
+                    break;
+                case "availability_replica_state":
+                    HandleArState(evt);
+                    break;
+                case "availability_replica_state_change":
+                    HandleArStateChange(evt);
+                    break;
+                case "lock_redo_blocked":
+                    HandleLockRedoBlocked(evt);
+                    break;
+                case "error_reported":
+                    HandleErrorReported(evt);
+                    break;
+                default:
+                    break;
+            }
+        }
         public void HandleDdlExecuted(PublishedEvent evt)
         {
             // find active alter ag failover
@@ -35,10 +91,10 @@ namespace FailoverDetector
                     string agName = evt.Fields["availability_group_name"].Value.ToString();
                     string agId = evt.Fields["availability_group_id"].Value.ToString();
                     // get List of report for this ag
-                    // get List of report for this ag
+                    // TODO use a method to wrap getReport 
                     ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
                     AgReport mReports = pReportMgr.GetAgReports(agName);
-                    if ( mReports == null)
+                    if (mReports == null)
                     {
                         mReports = pReportMgr.AddNewAgReport(agName, _instanceName);
                     }
@@ -46,7 +102,10 @@ namespace FailoverDetector
                     PartialReport pReport = mReports.FGetReport(evt.Timestamp);
                     // update information
                     pReport.ForceFailoverFound = true;
-                    if(pReport.AgId == string.Empty)
+                    
+                    // it is possible that it is a new pReort instance
+                    // then AgId and Agname may not filled.
+                    if (pReport.AgId == string.Empty)
                     {
                         pReport.AgId = agId;
                     }
@@ -54,8 +113,6 @@ namespace FailoverDetector
                     {
                         pReport.AgName = agName;
                     }
-
-                    //mReports.UpdateReport(pReport);
 
                 }
 
@@ -69,12 +126,12 @@ namespace FailoverDetector
         {
 
             string[] wds = str.Split(' ');
-            List<string> words = wds.Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ;
+            List<string> words = wds.Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
 
             // sanity check, if words count is less than 3
             // we have to check strings that after trim space.
 
-            if(words.Count < 3)
+            if (words.Count < 3)
             {
                 return false;
             }
@@ -83,7 +140,7 @@ namespace FailoverDetector
             string parameter = words.LastOrDefault().ToLower().TrimEnd(';');
             // HANDEL case like 
             // "failover;" we need to trim the ';'
-            
+
             if (command.Equals("alter availability group"))
             {
                 if (parameter.Equals("failover") || parameter.Equals("force_failover_allow_data_loss"))
@@ -94,10 +151,11 @@ namespace FailoverDetector
             return false;
         }
 
+
         public void HandleAgLeaseExpired(PublishedEvent evt)
         {
             string agName = evt.Fields["availability_group_name"].Value.ToString();
-            string agId = evt.Fields["availability_group_id"].Value.ToString(); 
+            string agId = evt.Fields["availability_group_id"].Value.ToString();
             // get List of report for this ag
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
             AgReport mReports = pReportMgr.GetAgReports(agName);
@@ -118,15 +176,16 @@ namespace FailoverDetector
             //mReports.UpdateReport(pReport);
         }
         public void HandleArMgrStateChange(PublishedEvent evt)
-        {   
+        {
             // TODO: add it later
-;
+            ;
         }
+
         public void HandleArState(PublishedEvent evt) { }
         public void HandleArStateChange(PublishedEvent evt)
         {
             string agName = evt.Fields["availability_group_name"].Value.ToString();
-            string agId = evt.Fields["availability_group_id"].Value.ToString(); 
+            string agId = evt.Fields["availability_group_id"].Value.ToString();
             // get List of report for this ag
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
             AgReport mReports = pReportMgr.GetAgReports(agName);
@@ -135,7 +194,7 @@ namespace FailoverDetector
                 mReports = pReportMgr.AddNewAgReport(agName, _instanceName);
             }
             PartialReport pReport = mReports.FGetReport(evt.Timestamp);
-            if(pReport.IsEmptyRole(_instanceName))
+            if (pReport.IsEmptyRole(_instanceName))
             {
                 pReport.AddRoleTransition(_instanceName, evt.Fields["previous_state"].Value.ToString());
             }
@@ -149,13 +208,11 @@ namespace FailoverDetector
                 pReport.AgName = agName;
             }
 
-
         }
 
 
         public void HandleLockRedoBlocked(PublishedEvent evt) { }
-
-
+        
         // error code reported in this event. 
 
         // --alwayson connection timeout information
@@ -185,7 +242,7 @@ namespace FailoverDetector
             //read error code
             string errCode = evt.Fields["error_number"].Value.ToString();
 
-            switch(errCode)
+            switch (errCode)
             {
                 case "41144":
                     break;
@@ -219,53 +276,6 @@ namespace FailoverDetector
             }
 
         }
-        private void DispatchEvent(PublishedEvent evt)
-        {
-            switch(evt.Name)
-            {
-                case "alwayson_ddl_executed":
-                    HandleDdlExecuted(evt);
-                    break;
-                case "availability_group_lease_expired":
-                    HandleAgLeaseExpired(evt);
-                    break;
-                case "availability_replica_manager_state_change":
-                    HandleArMgrStateChange(evt);
-                    break;
-                case "availability_replica_state":
-                    HandleArState(evt);
-                    break;
-                case "availability_replica_state_change":
-                    HandleArStateChange(evt);
-                    break;
-                case "lock_redo_blocked":
-                    HandleLockRedoBlocked(evt);
-                    break;
-                case "error_reported":
-                    HandleErrorReported(evt);
-                    break;
-                default:
-                    break;
-            }
-        }
-        public void LoadData(string xelFileName, string serverName)
-        {
-            _instanceName = serverName;
-            // load xel File
-            using (QueryableXEventData events = new QueryableXEventData(xelFileName))
-            {
-                foreach(PublishedEvent evt in events)
-                {
-                    // dispatch event and handle by own method.
-
-                        DispatchEvent(evt);
-                }
-            }
-
-           
-        }
-
-
-
     }
+
 }

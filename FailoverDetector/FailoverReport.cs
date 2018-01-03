@@ -42,13 +42,7 @@ namespace FailoverDetector
 
         private bool _failoverDetected;
 
-        private SystemHealthData _mSysData;
-
         private Dictionary<string, List<EHadrArRole>> _roleTransition;
-
-
-
-
 
 
 
@@ -213,10 +207,6 @@ namespace FailoverDetector
             // contains raw message, coressponding to MessageSet
             pMessageMgr = new MessageMgr();
 
-            // TODO
-            // move this sysData into MessageSet
-            _mSysData = new SystemHealthData();
-
         }
 
         // compare function 
@@ -273,6 +263,14 @@ namespace FailoverDetector
         public bool LeaseTimeoutFound { get; set; }
 
         public bool ForceFailoverFound { get; set; }
+
+        public bool SystemUnhealthFound { get; set; }
+        public bool ExceedDumpThreshold { get; set; }
+        public bool Memorycribbler { get; set; }
+        public bool SqlOOM { get; set; }
+        public bool LongIO { get; set; }
+
+        public bool SqlLowMemory { get; set; }
 
         public string AgId { get; set; }
 
@@ -358,18 +356,6 @@ namespace FailoverDetector
             
         }
         
-        public void ShowSystemData()
-        {
-            if (_mSysData.IsSystemHealth())
-            {
-                Console.WriteLine("sp_server_diagnostics is in unhealthy state.");
-                Console.Write("System Component is in Error: ");
-                Console.WriteLine("Too much Dump");
-                Console.WriteLine("TotalDumps Request: {0}, Interval Dump Request: {1}", _mSysData.SysComp.TotalDump, _mSysData.SysComp.IntervalDump);
-            }
-                
-        }
-
         public void ShowMessageSet()
         {
             Console.WriteLine("Following Error Message was detect for this failover:");
@@ -409,64 +395,64 @@ namespace FailoverDetector
             }
         }
 
-        public void ProcessSystemData()
-        {
-            // open the system xevent, search sp_server_diagnostics_component_result
-            // in the timeline, this is a bit brute force, but we can optimize  later time
-            string url = "C:\\Users\\zeche\\Documents\\WorkItems\\POC\\SYS001_0.xel";
-            // we should have a prev primary at this point now. 
-            // use primary name to determine which .xel file to open
-            if ( OldPrimary.Length != 0)
-            {
-                url = Directory.GetCurrentDirectory();
-                url += @"\Data\";
-                url += OldPrimary;
-                url += @"\";
-                url += @"system_health*.xel";
-            }
-            SystemHealthParser parser = new SystemHealthParser(_mSysData);
-            TimeSpan diff = new TimeSpan(0, 5, 0);
-            using (QueryableXEventData evts = new QueryableXEventData(url))
-            {
-                foreach (PublishedEvent evt in evts)
-                {
-                    if (evt.Timestamp > (StartTime - diff) && evt.Timestamp < (EndTime + diff))
-                    {
-                        if (evt.Name == "sp_server_diagnostics_component_result")
-                        {
-                            String tComponent = evt.Fields["component"].Value.ToString();
-                            String tData = evt.Fields["data"].Value.ToString();
-                            switch (tComponent)
-                            {
-                                case "QUERY_PROCESSING":
-                                    // fix it later
-                                    if (!parser.ParseQpComponent(tData))
-                                    {
-                                        //Console.WriteLine("Event: {0}, time:{1} ", evt.Name, evt.Timestamp);
-                                    }
-                                    break;
-                                case "SYSTEM":
-                                    // component data should written in side parser, pass by reference
-                                    if (parser.ParseSystemComponent(tData))
-                                    {
-                                        // mark the time stamp, since inside parser doesn't come with time. 
-                                        _mSysData.SysComp.Timestamp = evt.Timestamp;
-                                    }
-                                    break;
-                                case "RESOURCE":
-                                    parser.ParseResource(tData);
-                                    break;
-                                case "IO_SUBSYSTEM":
-                                    parser.ParseIoSubsytem(tData);
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
-                    }
-                    }
-                }
-            }
+        //public void ProcessSystemData()
+        //{
+        //    // open the system xevent, search sp_server_diagnostics_component_result
+        //    // in the timeline, this is a bit brute force, but we can optimize  later time
+        //    string url = "C:\\Users\\zeche\\Documents\\WorkItems\\POC\\SYS001_0.xel";
+        //    // we should have a prev primary at this point now. 
+        //    // use primary name to determine which .xel file to open
+        //    if ( OldPrimary.Length != 0)
+        //    {
+        //        url = Directory.GetCurrentDirectory();
+        //        url += @"\Data\";
+        //        url += OldPrimary;
+        //        url += @"\";
+        //        url += @"system_health*.xel";
+        //    }
+        //    SystemHealthParser parser = new SystemHealthParser(_mSysData);
+        //    TimeSpan diff = new TimeSpan(0, 5, 0);
+        //    using (QueryableXEventData evts = new QueryableXEventData(url))
+        //    {
+        //        foreach (PublishedEvent evt in evts)
+        //        {
+        //            if (evt.Timestamp > (StartTime - diff) && evt.Timestamp < (EndTime + diff))
+        //            {
+        //                if (evt.Name == "sp_server_diagnostics_component_result")
+        //                {
+        //                    String tComponent = evt.Fields["component"].Value.ToString();
+        //                    String tData = evt.Fields["data"].Value.ToString();
+        //                    switch (tComponent)
+        //                    {
+        //                        case "QUERY_PROCESSING":
+        //                            // fix it later
+        //                            if (!parser.ParseQpComponent(tData))
+        //                            {
+        //                                //Console.WriteLine("Event: {0}, time:{1} ", evt.Name, evt.Timestamp);
+        //                            }
+        //                            break;
+        //                        case "SYSTEM":
+        //                            // component data should written in side parser, pass by reference
+        //                            if (parser.ParseSystemComponent(tData))
+        //                            {
+        //                                // mark the time stamp, since inside parser doesn't come with time. 
+        //                                _mSysData.SysComp.Timestamp = evt.Timestamp;
+        //                            }
+        //                            break;
+        //                        case "RESOURCE":
+        //                            parser.ParseResource(tData);
+        //                            break;
+        //                        case "IO_SUBSYSTEM":
+        //                            parser.ParseIoSubsytem(tData);
+        //                            break;
+        //                        default:
+        //                            break;
+        //                    }
+        //                }
+        //            }
+        //            }
+        //        }
+        //    }
         
         public bool SearchFailoverRole()
         {
@@ -747,8 +733,6 @@ namespace FailoverDetector
                 // Force failover
                 Console.WriteLine("Failover due to Force Failover DDL: {0}", pReport.ForceFailoverFound);
 
-                // Role Transition
-                pReport.ShowSystemData();
 
                 Console.WriteLine();
                 pReport.ShowRoleTransition();
@@ -766,16 +750,6 @@ namespace FailoverDetector
             ShowReportFailoverArRoleTransition();
         }
 
-        // we should always has pReport populate from list
-        // but I will check list anyway
-        public void UpdateReport(PartialReport pReport)
-        {
-            if (Reports.Any())
-            {
-                Reports.Remove(Reports.Last());
-                Reports.Add(pReport);
-            }
-        }
         // before you call this method, you should finish parsing all AlwaysOn Xevent
         // you have a list of partialReport
         // search signs of failover from these report
