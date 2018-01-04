@@ -634,7 +634,7 @@ namespace FailoverDetector
                         }
                         // instance folder is existed. Check each log now. 
                         FileProcessor.NodeFileInfo pInstanceFileInfo = NodeList[instance];
-                        Console.WriteLine("For Instance: {0}.", instance);
+
 
                         if (pInstanceFileInfo.FoundAlwaysOnFile && pInstanceFileInfo.FoundErrologLogFile &&
                             pInstanceFileInfo.FoundClusterLogFile && pInstanceFileInfo.FoundSystemHealthFile)
@@ -646,17 +646,22 @@ namespace FailoverDetector
                             if (!pInstanceFileInfo.FoundAlwaysOnFile)
                             {
                                 Console.WriteLine(
-                                    "AlwaysOn XEvent Data is not existed. We may not be able to detect failover at all");
+                                    "For Instance: {0}. AlwaysOn XEvent Data is not existed. We may not be able to detect failover at all", instance);
                             }
                             if (!pInstanceFileInfo.FoundErrologLogFile)
                             {
                                 Console.WriteLine(
-                                    "For Instance: {0}. ErrorLog Data is not existed. We may not be able to detect some root cause.");
+                                    "For Instance: {0}. ErrorLog Data is not existed. We may not be able to detect some root cause.", instance);
                             }
                             if (!pInstanceFileInfo.FoundClusterLogFile)
                             {
                                 Console.WriteLine(
                                     "For Instance: {0}. Cluster log Data is not existed. We may not be able to detect some root cause.");
+                            }
+                            if (!pInstanceFileInfo.FoundSystemHealthFile)
+                            {
+                                Console.WriteLine(
+                                    "For Instance: {0}. System Health XEvents Data is not existed. We may not be able to detect some root cause.", instance);
                             }
                         }
 
