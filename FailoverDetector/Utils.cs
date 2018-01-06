@@ -672,6 +672,7 @@ namespace FailoverDetector
                 // not default mode then we only run analyze, skip copying data
                 if (!DefaultMode)
                 {
+                    Console.WriteLine("Run Analyze tool without copying log data");
                     return;
                 }
                 // check remote directory if valid
@@ -681,7 +682,7 @@ namespace FailoverDetector
                     Console.WriteLine("Data Source Path: {0} at configuration file is invalid, Please check your configuration or Data Source Path.");
                     Console.WriteLine("We won't be able to copy data logs from Data Source Path: {0}. We will use data at current workspace for continue. Y/N");
                     // let's do yes
-                    //Console.ReadLine();
+                    Console.ReadLine(); 
 
                 }
                 else
@@ -691,8 +692,9 @@ namespace FailoverDetector
                     {
                         System.IO.Directory.CreateDirectory(targetPath);
                     }
+                    Console.WriteLine("Copying log data from {0} to workspace.", sourcePath);
                     DirectoryCopy(sourcePath, targetPath);
-
+                   
                 }
                 
             }

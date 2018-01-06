@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using FailoverDetector;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace FailoverDetectorTests
 {
@@ -169,6 +172,49 @@ namespace FailoverDetectorTests
 
 
         }
+
+        // Test function to serialize Partial report to Json Format 
+        [TestMethod]
+        public void SerializePartialReport()
+        {
+            DateTimeOffset baseTimeOffset = new DateTimeOffset(2017, 11, 15, 08, 00, 00, TimeSpan.Zero);
+
+            PartialReport pReport = new PartialReport()
+            {
+                OldPrimary = "ze-vm001",
+                NewPrimary = "ze-vm002",
+                AgId = "1234567",
+                AgName = "Happy Ending",
+                RootCause = "Newton's Apple",
+                EstimateResult = true,
+                RootCauseDescription = "It is just a joke",
+                StartTime = baseTimeOffset,
+                EndTime = baseTimeOffset
+        };
+            pReport.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL");
+            pReport.AddRoleTransition("ze-vm001", "RESOLVING_PENDING_FAILOVER");
+            pReport.AddRoleTransition("ze-vm002", "RESOLVING_PENDING_FAILOVER");
+            pReport.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL");
+            string _testString = @"2017-09-14 16:19:57.05 spid24s     Always On: The availability replica manager is going offline because the local Windows Server Failover Clustering (WSFC) node has lost quorum. This is an informational message only. No user action is required.";
+
+            pReport.AddNewMessage(Constants.SourceType.ErrorLog, "ze-vm001", baseTimeOffset, _testString);
+            
+            // serialize to json stream
+            string output = JsonConvert.SerializeObject(pReport);
+            Console.WriteLine(output);
+
+
+            using (var stringReader = new StringReader(output))
+            using (StreamWriter sw = new StreamWriter(@"C:\temp\json.txt"))
+            {
+                var jsonReader = new JsonTextReader(stringReader);
+                var jsonWriter = new JsonTextWriter(sw) { Formatting = Formatting.Indented };
+                jsonWriter.WriteToken(jsonReader);
+                
+            }
+        }
+
+
     }
 }
 

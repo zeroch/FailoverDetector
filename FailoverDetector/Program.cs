@@ -68,9 +68,13 @@ namespace FailoverDetector
             // determine Failover 
             pReportMgr.AnalyzeReports();
 
-            pReportMgr.ShowFailoverReports();
+            if (pFileProcess.ShowResult)
+            {
+                pReportMgr.ShowFailoverReports();
+            }
 
             Console.ReadLine();
+            pReportMgr.SaveReportsToJson();
         }
 
     }
