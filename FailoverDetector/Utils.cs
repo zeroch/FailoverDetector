@@ -634,7 +634,7 @@ namespace FailoverDetector
                         }
                         // instance folder is existed. Check each log now. 
                         FileProcessor.NodeFileInfo pInstanceFileInfo = NodeList[instance];
-
+                        Console.WriteLine("For Instance: {0}.", instance);
 
                         if (pInstanceFileInfo.FoundAlwaysOnFile && pInstanceFileInfo.FoundErrologLogFile &&
                             pInstanceFileInfo.FoundClusterLogFile && pInstanceFileInfo.FoundSystemHealthFile)
@@ -646,22 +646,22 @@ namespace FailoverDetector
                             if (!pInstanceFileInfo.FoundAlwaysOnFile)
                             {
                                 Console.WriteLine(
-                                    "For Instance: {0}. AlwaysOn XEvent Data is not existed. We may not be able to detect failover at all", instance);
+                                    "AlwaysOn XEvent Data is not existed. We may not be able to detect failover at all");
                             }
                             if (!pInstanceFileInfo.FoundErrologLogFile)
                             {
                                 Console.WriteLine(
-                                    "For Instance: {0}. ErrorLog Data is not existed. We may not be able to detect some root cause.", instance);
+                                    "ErrorLog Data is not existed. We may not be able to detect some root cause.");
                             }
                             if (!pInstanceFileInfo.FoundClusterLogFile)
                             {
                                 Console.WriteLine(
-                                    "For Instance: {0}. Cluster log Data is not existed. We may not be able to detect some root cause.");
+                                    "Cluster log Data is not existed. We may not be able to detect some root cause.");
                             }
                             if (!pInstanceFileInfo.FoundSystemHealthFile)
                             {
                                 Console.WriteLine(
-                                    "For Instance: {0}. System Health XEvents Data is not existed. We may not be able to detect some root cause.", instance);
+                                    "System Health XEvents Data is not existed. We may not be able to detect some root cause.", instance);
                             }
                         }
 
@@ -763,10 +763,10 @@ namespace FailoverDetector
                 {
                     string tempPath = Path.Combine(destDirPath, subdir.Name);
                     DirectoryCopy(subdir.FullName, tempPath);
+
                 }
-
+                
             }
-
 
         }
 

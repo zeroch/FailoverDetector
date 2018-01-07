@@ -83,6 +83,7 @@ namespace FailoverDetector
             }
 
             Console.ReadLine();
+            pReportMgr.SaveReportsToJson();
         }
 
     }

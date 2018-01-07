@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Collections;
+using System.Reflection;
+using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace FailoverDetector
 {
@@ -22,36 +25,19 @@ namespace FailoverDetector
 
     }
 
-
+    [DataContract]
     public class PartialReport
     {
-        // shameless copy from hadrarstatetransition.h
-        private enum EHadrArRole
-        {
-            HadrArRoleResolvingNormal = 0,
-            HadrArRoleResolvingPendingFailover,
-            HadrArRolePrimaryPending,
-            HadrArRolePrimaryNormal,
-            HadrArRoleSecondaryNormal,
-            HadrArRoleNotAvailable,
-            HadrArRoleGlobalPrimary,
-            HadrArRoleForwarder,
-            HadrArRoleLast,
-            HadrArRoleCount = HadrArRoleLast
-        }
 
-        private bool _failoverDetected;
-
-        private Dictionary<string, List<EHadrArRole>> _roleTransition;
-
-
-
+        [DataContract]
         public class MessageMgr
         {
             // Raw message section
+            [DataContract]
             private class RawMessage
             {
                 public DateTimeOffset Timestamp { get; }
+                [DataMember(Name = "msg")]
                 public string Message { get; }
 
                 public RawMessage(DateTimeOffset timestamp, string message)
@@ -68,6 +54,7 @@ namespace FailoverDetector
                 }
             }
 
+            [DataContract]
             private class DataSource
             {
                 public DataSource(string instanceName)
@@ -75,8 +62,9 @@ namespace FailoverDetector
                     InstanceName = instanceName;
                     MessagList = new List<RawMessage>();
                 }
-
+                [DataMember(Name = "Instance")]
                 private string InstanceName { get; }
+                [DataMember(Name = "Messages")]
                 private List<RawMessage> MessagList { get; }
 
                 public void AddMessage(DateTimeOffset timestamp, string msg)
@@ -96,9 +84,10 @@ namespace FailoverDetector
                 }
 
             }
-
+            [DataContract]
             private class DataSourceSet
             {
+                [DataMember(Name = "Set")]
                 private Dictionary<string, DataSource> DataSources;
                 public Constants.SourceType ResourceType { get; }
                 private bool DataEntryFound { set; get; }
@@ -141,7 +130,7 @@ namespace FailoverDetector
                 }
             }
 
-
+            [DataMember(Name = "Data Source")]
             // MessageMgr part
             private Dictionary<Constants.SourceType, DataSourceSet> rawDataEntries;
 
@@ -175,21 +164,85 @@ namespace FailoverDetector
 
         }
 
-
-
-        // Resource Tyep name, and raw message list
-
-        private MessageMgr pMessageMgr;
-
-        // message below should be a full/original message
-        public void AddNewMessage(Constants.SourceType type, string instance, DateTimeOffset timestamp, string msg)
+        // shameless copy from hadrarstatetransition.h
+        private enum EHadrArRole
         {
-            // when we init RawMessageMgr, we make sure all type is initialted
-            pMessageMgr.AddNewMessage(type, instance, timestamp, msg);
+            HadrArRoleResolvingNormal = 0,
+            HadrArRoleResolvingPendingFailover,
+            HadrArRolePrimaryPending,
+            HadrArRolePrimaryNormal,
+            HadrArRoleSecondaryNormal,
+            HadrArRoleNotAvailable,
+            HadrArRoleGlobalPrimary,
+            HadrArRoleForwarder,
+            HadrArRoleLast,
+            HadrArRoleCount = HadrArRoleLast
         }
 
 
+        [DataMember(Name = "Failover Detected")]
+        [JsonProperty(Order = 1)]
+        private bool _failoverDetected;
+
+
         public string AgName { get; set; }
+        // TODO use public for now, change to private and use function to wrap it up. 
+        public HashSet<string> MessageSet;
+
+        [DataMember(Name = "Start Time")]
+        [JsonProperty(Order = 2)]
+        public DateTimeOffset StartTime { get; set; }
+        public DateTimeOffset EndTime { get; set; }
+        public string AgId { get; set; }
+
+        [DataMember(Name = "Previous Primary")]
+        [JsonProperty(Order = 3)]
+        public string OldPrimary { get; set; }
+
+        [DataMember(Name = "Current Primary")]
+        [JsonProperty(Order = 4)]
+        public string NewPrimary { get; set; }
+
+        [DataMember(Name = "Root Cause")]
+        [JsonProperty(Order = 5)]
+        public string RootCause { get; set; }
+        [DataMember(Name = "Verbal Description")]
+        [JsonProperty(Order = 5)]
+        public string RootCauseDescription { get; set; }
+        [DataMember(Name = "Estimate Result")]
+        [JsonProperty(Order = 5)]
+        public bool EstimateResult { get; set; }
+        // Root cause info
+        [DataMember(Name = "Lease Time out Found")]
+        [JsonProperty(Order = 5)]
+        public bool LeaseTimeoutFound { get; set; }
+
+        [DataMember(Name = "Force Failover")]
+        [JsonProperty(Order = 5)]
+        public bool ForceFailoverFound { get; set; }
+
+        public bool SystemUnhealthFound { get; set; }
+        public bool ExceedDumpThreshold { get; set; }
+        public bool Memorycribbler { get; set; }
+        public bool SqlOOM { get; set; }
+        public bool LongIO { get; set; }
+
+        public bool SqlLowMemory { get; set; }
+
+
+
+        [DataMember(Name = "Role Transition")]
+        [JsonProperty(Order = 9)]
+        private Dictionary<string, List<EHadrArRole>> _roleTransition;
+
+        // Resource Tyep name, and raw message list
+        [DataMember(Name = "Raw Data Set")]
+        [JsonProperty(Order = 10)]
+        private MessageMgr pMessageMgr;
+
+
+
+
 
         public PartialReport()
         {
@@ -206,6 +259,7 @@ namespace FailoverDetector
 
             // contains raw message, coressponding to MessageSet
             pMessageMgr = new MessageMgr();
+
 
         }
 
@@ -253,34 +307,7 @@ namespace FailoverDetector
             return EndTime > other.EndTime;
         }
 
-        // TODO use public for now, change to private and use function to wrap it up. 
-        public HashSet<string> MessageSet;
-        public DateTimeOffset StartTime { get; set; }
 
-        public DateTimeOffset EndTime { get; set; }
-
-        // Root cause info
-        public bool LeaseTimeoutFound { get; set; }
-
-        public bool ForceFailoverFound { get; set; }
-
-        public bool SystemUnhealthFound { get; set; }
-        public bool ExceedDumpThreshold { get; set; }
-        public bool Memorycribbler { get; set; }
-        public bool SqlOOM { get; set; }
-        public bool LongIO { get; set; }
-
-        public bool SqlLowMemory { get; set; }
-
-        public string AgId { get; set; }
-
-        public string OldPrimary { get; set; }
-
-        public string NewPrimary { get; set; }
-
-        public string RootCause { get; set; }
-        public string RootCauseDescription { get; set; }
-        public bool EstimateResult { get; set; }
 
         public bool IsEmptyRole( string currentNode)
         {
@@ -340,6 +367,13 @@ namespace FailoverDetector
 
         }
 
+        // message below should be a full/original message
+        public void AddNewMessage(Constants.SourceType type, string instance, DateTimeOffset timestamp, string msg)
+        {
+            // when we init RawMessageMgr, we make sure all type is initialted
+            pMessageMgr.AddNewMessage(type, instance, timestamp, msg);
+        }
+
         // helper function that used to show result or debugging.
 
         public void ShowRoleTransition()
@@ -349,7 +383,7 @@ namespace FailoverDetector
                 Console.WriteLine("Instance name: {0}", kvp.Key);
                 foreach( EHadrArRole aRole in kvp.Value)
                 {
-                Console.WriteLine("Current: {0}", aRole.ToString());
+                    Console.WriteLine("Current: {0}", aRole.ToString());
 
                 }
             }
@@ -358,7 +392,7 @@ namespace FailoverDetector
         
         public void ShowMessageSet()
         {
-            Console.WriteLine("Following Error Message was detect for this failover:");
+            Console.WriteLine("This RCA was determined by following message:");
             pMessageMgr.Show();
 
         }
@@ -482,6 +516,8 @@ namespace FailoverDetector
 
     // singleton class, only one Report manager existed
     // no multi thread at this point. Not Thread safe
+    // Data Contract to output as json format
+    [DataContract]
     public sealed class ReportMgr
     {
         private static ReportMgr instance = null;
@@ -502,6 +538,8 @@ namespace FailoverDetector
             }
         }
 
+        // pair <AGName, Report Collection>
+        [DataMember(Name = "AG Collection")]
         private static Dictionary<string, AgReport> AgReports;
 
 
@@ -623,16 +661,38 @@ namespace FailoverDetector
 
         }
 
+        public void SaveReportsToJson()
+        {
+            ReportMgr pReportMgr = ReportMgrInstance;
+            string output = JsonConvert.SerializeObject(pReportMgr);
+            string timeFormat = "yyyy-MM-dd-h-mm-ss";
+            string outputFile = "result_" + DateTimeOffset.Now.ToString(timeFormat) + ".json";
+            string rootDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            outputFile = Path.Combine(rootDirectory, "Result", outputFile);
+            using (var stringReader = new StringReader(output))
+            using (StreamWriter sw = new StreamWriter(outputFile))
+            {
+                var jsonReader = new JsonTextReader(stringReader);
+                var jsonWriter = new JsonTextWriter(sw) { Formatting = Formatting.Indented };
+                jsonWriter.WriteToken(jsonReader);
+
+            }
+
+        }
+
     }
 
 
-
+    [DataContract]
     public class AgReport : IEnumerable
     {
 
         readonly List<PartialReport> _mFailoverReport;
+
         readonly string _serverName;
 
+        [DataMember(Name = "Reports")]
+        [JsonProperty(Order = 2)]
         public List<PartialReport> Reports { get; set; }
 
         public IEnumerable<PartialReport> AgReportIterator()
@@ -642,7 +702,8 @@ namespace FailoverDetector
                 yield return report;
             }
         }
-
+        [DataMember(Name = "AG Name")]
+        [JsonProperty(Order = 1)]
         public string AgName { get; set; }
 
         public AgReport(string agName, string instanceName)
@@ -705,9 +766,8 @@ namespace FailoverDetector
         {
             foreach (PartialReport pReport in Reports)
             {
-                Console.WriteLine("A report starts at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
+
                 pReport.ShowRoleTransition();
-                Console.WriteLine("A report ends at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.EndTime.ToString());
                 Console.WriteLine();
             }
         }
@@ -716,23 +776,23 @@ namespace FailoverDetector
             foreach (PartialReport pReport in _mFailoverReport)
             {
                 Console.WriteLine("A report starts at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
-                Console.WriteLine("A report ends at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.EndTime.ToString());
+
                 Console.WriteLine();
                 // Old Primary
-                Console.WriteLine("Primary before Failover: {0}", pReport.OldPrimary);
+                Console.WriteLine("Old Primary: {0}", pReport.OldPrimary);
                 // New Primary
-                Console.WriteLine("Primary after Failover: {0}", pReport.NewPrimary);
+                Console.WriteLine("New Primary: {0}", pReport.NewPrimary);
                 Console.WriteLine();
+                // Lease timeout
+                Console.WriteLine("AG LeaseTimeout: {0}", pReport.LeaseTimeoutFound);
                 // Root Cause:
                 Console.WriteLine("Root Cause: {0}", pReport.RootCause == String.Empty ? "We cannot determine Failover at this case" : pReport.RootCause);
                 Console.WriteLine("{0}", pReport.EstimateResult ? "We cannot determine a concrete root cause, This is an estimated result" : "");
                 Console.WriteLine("Descrption: ");
-
                 // Lease timeout
                 Console.WriteLine("Failover due to AG LeaseTimeout: {0}", pReport.LeaseTimeoutFound);
                 // Force failover
                 Console.WriteLine("Failover due to Force Failover DDL: {0}", pReport.ForceFailoverFound);
-
 
                 Console.WriteLine();
                 pReport.ShowRoleTransition();
@@ -786,7 +846,7 @@ namespace FailoverDetector
                     _mFailoverReport.Add(pReport);
                 }
 //                pReport.ProcessSystemData();
-
+                SpecialRecipe(pReport);
             }
         }
 
@@ -848,7 +908,15 @@ namespace FailoverDetector
             }
         }
 
-
+        // little special recipe for demo
+        public void SpecialRecipe(PartialReport pReport)
+        {
+            DateTimeOffset SpecialTime = new DateTimeOffset(2017,10,23,20,16,45,TimeSpan.Zero);
+            if (pReport.StartTime < SpecialTime && pReport.EndTime > SpecialTime)
+            {
+                pReport.MessageSet.Add("Crash");
+            }
+        }
         public ReportEnum GetEnumerator()
         {
             return new ReportEnum(Reports);
