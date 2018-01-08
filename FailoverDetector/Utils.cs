@@ -362,21 +362,24 @@ namespace FailoverDetector
                 return true;
             }
 
-            public void ProcessDataDirectory()
+            public bool ProcessDataDirectory()
             {
                 if (File.Exists(dataDirectory))
                 {
                     // This path is a file
                     Console.WriteLine("{0} is not a File not a valid directory", dataDirectory);
+                    return false;
                 }
                 else if (Directory.Exists(dataDirectory))
                 {
                     // This path is a directory
                     ProcessDirectory(dataDirectory);
+                    return true;
                 }
                 else
                 {
                     Console.WriteLine("{0} is not a valid file or directory.", dataDirectory);
+                    return false;
                 }
             }
 
@@ -384,41 +387,31 @@ namespace FailoverDetector
             // that are found, and process the files they contain.
             private void ProcessDirectory(string targetDirectory)
             {
-
-
                 // Recurse into subdirectories of this directory.
                 string[] subdirectoryEntries = Directory.GetDirectories(targetDirectory);
                 foreach (string subdirectory in subdirectoryEntries)
                 {
-                    ProcessNodeDirectory(subdirectory);
-                }
-
-                // Process the list of files found in the directory.
-                // it should be ClusterLog, 
-                string[] fileEntries = Directory.GetFiles(targetDirectory);
-                foreach (string nodeName in NodeList.Keys)
-                {
-                    foreach (string fileEntry in fileEntries)
+                    // TODO: fix it for windows or linux expression
+                    string nodeName = subdirectory.Substring(subdirectory.LastIndexOf("\\") + 1);
+                    // check this folder name is included at instance name at AG configuration.
+                    // because user may place additional folder at this folder but is not part of instance. 
+                    if (ConfigInfo.InstanceList.Contains(nodeName))
                     {
-                        string clusterFileName = nodeName + "_cluster.log";
-                        if (fileEntry.Contains(clusterFileName))
-                        {
-                            NodeList[nodeName].ClusterLogPath = fileEntry;
-                        }
+                        ProcessNodeDirectory(subdirectory);
                     }
-                }
 
+                }
             }
 
             public void ProcessNodeDirectory(string targetDirectory)
             {
+                // TODO: fix it for windows or linux expression
+                string nodeName = targetDirectory.Substring(targetDirectory.LastIndexOf("\\") + 1);
+
+                NodeFileInfo pNode = new NodeFileInfo(nodeName);
                 List<string> errorlog = new List<string>();
                 List<string> alwaysOnList = new List<string>();
                 List<string> systemHealthList = new List<string>();
-                // TODO: fix it for windows or linux expression
-                string nodeName = targetDirectory.Substring(targetDirectory.LastIndexOf("\\") + 1);
-                NodeFileInfo pNode = new NodeFileInfo(nodeName);
-
 
                 string[] fileEntries = Directory.GetFiles(targetDirectory);
 
@@ -596,7 +589,7 @@ namespace FailoverDetector
 
                     ms.Close();
                 }
-
+                ConfigInfo.FlatInstanceList();
                 return true;
             }
 
@@ -779,7 +772,11 @@ namespace FailoverDetector
             [DataMember(Name = "AG")]
             public List<MetaAgInfo> AgInfo { get; set; }
 
-            public Configuration() { }
+            public Configuration()
+            {
+                SourcePath = string.Empty;
+                AgInfo = new List<MetaAgInfo>();
+            }
             public override bool Equals(object obj)
             {
                 if (!(obj is Configuration other))
@@ -787,12 +784,22 @@ namespace FailoverDetector
                 return this.SourcePath == other.SourcePath &&
                        this.AgInfo.SequenceEqual(other.AgInfo);
             }
-
+            public HashSet<string> InstanceList { get; set; }
             // Convert instance lists in AG to a flat list
             // so we can use this list to check data directory
             public void FlatInstanceList()
             {
-
+                InstanceList = new HashSet<string>();
+                foreach(MetaAgInfo ag in AgInfo)
+                {
+                    foreach(string instance in ag.InstanceName)
+                    {
+                        if (!InstanceList.Contains(instance))
+                        {
+                            InstanceList.Add(instance);
+                        }
+                    }
+                }
             }
         }
         
@@ -801,11 +808,14 @@ namespace FailoverDetector
         {
             public MetaAgInfo()
             {
+                Name = string.Empty;
+                InstanceName = new List<string>();
             }
 
             public MetaAgInfo(string agName)
             {
                 Name = agName;
+                InstanceName = new List<string>();
             }
             [DataMember(Name = "AG Name")]
             public string Name { get; set; }

@@ -26,6 +26,24 @@ namespace FailoverDetector.Utils.FileProcessor.ConfigurationTests
             };
             Assert.IsTrue(actualAgInfo.Equals(expectedAgInfo));
         }
+
+        [TestMethod()]
+        public void FlatInstanceListTest()
+        {
+            Configuration actualAgInfo = new Configuration();
+            MetaAgInfo metaAg =  new MetaAgInfo("test")
+            {
+                InstanceName = new List<string>() { "ze-vm001", "ze-vm003" }
+            };
+
+            actualAgInfo.AgInfo.Add(metaAg);
+
+            actualAgInfo.FlatInstanceList();
+
+            HashSet<string> expectedInstanceList = new HashSet<string>() { "ze-vm001", "ze-vm003" };
+
+            Assert.IsTrue(expectedInstanceList.SequenceEqual( actualAgInfo.InstanceList));
+        }
     }
 }
 
@@ -239,7 +257,7 @@ namespace FailoverDetector.UtilsTests
             }
         }
 
-        [DeploymentItem("Data\\Demo", "Data\\Demo")]
+        [DeploymentItem("Data", "Data")]
         [DeploymentItem("Data\\UnitTest\\Configuration\\TestCase_Pass\\Configuration.json")]
         [TestMethod]
         public void ValidateFileConveragePassTest()
