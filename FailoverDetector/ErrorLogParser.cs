@@ -30,74 +30,88 @@ namespace FailoverDetector
         public abstract void SetupRegexList();
         public void ParseLog(string logFilePath, string instanceName)
         {
-            using (FileStream stream = File.OpenRead(logFilePath))
+            try
             {
-                using (StreamReader reader = new StreamReader(stream))
+                using (FileStream stream = File.OpenRead(logFilePath))
                 {
-                    string line = reader.ReadLine();
-                    ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
-
-                    // I need an interator that I don't care which AG it is
-                    // only iterate through by time.
-                    //pReportMgr.
-                    IEnumerator ReportIterator = pReportMgr.ReportVisitor();
-                    if (!ReportIterator.MoveNext())
-                        return;
-                    while (line != null && ReportIterator.Current != null)
+                    using (StreamReader reader = new StreamReader(stream))
                     {
+                        string line = reader.ReadLine();
+                        ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
-                        var pEntry = ParseLogEntry(line);
-                        if (pEntry.IsEmpty())
+                        // I need an interator that I don't care which AG it is
+                        // only iterate through by time.
+                        //pReportMgr.
+                        IEnumerator ReportIterator = pReportMgr.ReportVisitor();
+                        if (!ReportIterator.MoveNext())
+                            return;
+                        while (line != null && ReportIterator.Current != null)
                         {
-                            line = reader.ReadLine();
-                            continue;
 
-                        }
-                        if (pEntry.IsTrancated())
-                        {
-                            line = reader.ReadLine();
-                            continue;
-                            // dont use and access date
-                            // append message with last one I think. 
-                            // trancated is a special case in our problem.
-                        }
-                        DateTimeOffset messageTime = pEntry.Timestamp;
-
-
-                        // compare time
-                        PartialReport reportInstance = (PartialReport)ReportIterator.Current;
-
-                        if (messageTime < (reportInstance.StartTime.AddMinutes(-1 *Constants.DefaultInterval)))
-                        {
-                            line = reader.ReadLine();
-                            continue;
-                        }
-                        else if (messageTime > reportInstance.EndTime.AddMinutes(Constants.DefaultInterval))
-                        {
-                            if (!ReportIterator.MoveNext())
-                                break;
-                            else
-                                continue;
-                        }
-                        else
-                        {
-                            // now                         
-                            //if (pEntry.Timestamp < sometime upper bound
-                            //    && pEntry.Timestamp > sometime lower bound)
-                            // parse message, search the pattern we will use. 
-                            foreach (var regexParser in _logParserList)
+                            var pEntry = ParseLogEntry(line);
+                            if (pEntry.IsEmpty())
                             {
-                                if (regexParser.IsMatch(pEntry.Message))
-                                {
-                                    regexParser.HandleOnceMatch(pEntry.Message, reportInstance);
-                                    reportInstance.AddNewMessage(sourceType, instanceName, pEntry.Timestamp, line);
-                                }
-                            }
-                            line = reader.ReadLine();
-                        }
+                                line = reader.ReadLine();
+                                continue;
 
+                            }
+                            if (pEntry.IsTrancated())
+                            {
+                                line = reader.ReadLine();
+                                continue;
+                                // dont use and access date
+                                // append message with last one I think. 
+                                // trancated is a special case in our problem.
+                            }
+                            DateTimeOffset messageTime = pEntry.Timestamp;
+
+
+                            // compare time
+                            PartialReport reportInstance = (PartialReport)ReportIterator.Current;
+
+                            if (messageTime < (reportInstance.StartTime.AddMinutes(-1 * Constants.DefaultInterval)))
+                            {
+                                line = reader.ReadLine();
+                                continue;
+                            }
+                            else if (messageTime > reportInstance.EndTime.AddMinutes(Constants.DefaultInterval))
+                            {
+                                if (!ReportIterator.MoveNext())
+                                    break;
+                                else
+                                    continue;
+                            }
+                            else
+                            {
+                                // now                         
+                                //if (pEntry.Timestamp < sometime upper bound
+                                //    && pEntry.Timestamp > sometime lower bound)
+                                // parse message, search the pattern we will use. 
+                                foreach (var regexParser in _logParserList)
+                                {
+                                    if (regexParser.IsMatch(pEntry.Message))
+                                    {
+                                        regexParser.HandleOnceMatch(pEntry.Message, reportInstance);
+                                        reportInstance.AddNewMessage(sourceType, instanceName, pEntry.Timestamp, line);
+                                    }
+                                }
+                                line = reader.ReadLine();
+                            }
+
+                        }
                     }
                 }
+            }
+            catch (DirectoryNotFoundException e)
+            {
+
+                Console.WriteLine(e.Message);
+                return;
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.WriteLine(e.Message);
+                return;
             }
         }
     }

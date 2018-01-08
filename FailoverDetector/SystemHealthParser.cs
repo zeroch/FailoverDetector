@@ -23,58 +23,74 @@ namespace FailoverDetector
         {
             _instanceName = serverName;
             // load xel File
-            using (QueryableXEventData events = new QueryableXEventData(xelFileName))
+            try
             {
-                ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
-
-                // I need an interator that I don't care which AG it is
-                // only iterate through by time.
-                //pReportMgr.
-                IEnumerator ReportIterator = pReportMgr.ReportVisitor();
-                if (!ReportIterator.MoveNext())
-                    return;
-
-                IEnumerator pXEventIterator = events.GetEnumerator();
-
-                foreach (PublishedEvent evt in events)
+                using (QueryableXEventData events = new QueryableXEventData(xelFileName))
                 {
-                    // dispatch event and handle by own method.
-                    DateTimeOffset messageTime = evt.Timestamp;
-                    // compare time
-                    PartialReport reportInstance = (PartialReport)ReportIterator.Current;
+                    ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
-                    // find a report later than current message
-                    
-                    while (reportInstance != null &&  (messageTime > reportInstance.EndTime.AddMinutes(Constants.DefaultInterval)) )
+                    // I need an interator that I don't care which AG it is
+                    // only iterate through by time.
+                    //pReportMgr.
+                    IEnumerator ReportIterator = pReportMgr.ReportVisitor();
+                    if (!ReportIterator.MoveNext())
+                        return;
+
+                    IEnumerator pXEventIterator = events.GetEnumerator();
+
+                    foreach (PublishedEvent evt in events)
                     {
-                        // if we go through all reports but cannot find a report is older than this message
-                        // we know all evetns behinds it are too late. 
-                        if (!ReportIterator.MoveNext())
+                        // dispatch event and handle by own method.
+                        DateTimeOffset messageTime = evt.Timestamp;
+                        // compare time
+                        PartialReport reportInstance = (PartialReport)ReportIterator.Current;
+
+                        // find a report later than current message
+
+                        while (reportInstance != null && (messageTime > reportInstance.EndTime.AddMinutes(Constants.DefaultInterval)))
                         {
-                            return;
+                            // if we go through all reports but cannot find a report is older than this message
+                            // we know all evetns behinds it are too late. 
+                            if (!ReportIterator.MoveNext())
+                            {
+                                return;
+                            }
+                            reportInstance = (PartialReport)ReportIterator.Current;
                         }
-                        reportInstance = (PartialReport)ReportIterator.Current;
-                    }
 
-                    // now we iterate events to meet time interval. 
-                    if (messageTime < (reportInstance.StartTime.AddMinutes(-1 * Constants.DefaultInterval)))
-                    {
-                        continue;
-                    }else
-                    {
-                        
-                        //if (messageTime < sometime upper bound
-                        //    && messageTime > sometime lower bound)
-                        // it is time to dispatch event, but we only care about sp_server_diag at this point. 
-                        if (evt.Name == "sp_server_diagnostics_component_result")
+                        // now we iterate events to meet time interval. 
+                        if (messageTime < (reportInstance.StartTime.AddMinutes(-1 * Constants.DefaultInterval)))
                         {
-                            // we know that we want to handle this event, and it is working with a report. use pCurrentReport to hold this pointer. 
-                            pCurrentReport = reportInstance;
-                            DispatchEvent(evt);
+                            continue;
+                        }
+                        else
+                        {
+
+                            //if (messageTime < sometime upper bound
+                            //    && messageTime > sometime lower bound)
+                            // it is time to dispatch event, but we only care about sp_server_diag at this point. 
+                            if (evt.Name == "sp_server_diagnostics_component_result")
+                            {
+                                // we know that we want to handle this event, and it is working with a report. use pCurrentReport to hold this pointer. 
+                                pCurrentReport = reportInstance;
+                                DispatchEvent(evt);
+                            }
                         }
                     }
                 }
             }
+            catch (DirectoryNotFoundException e)
+            {
+
+                Console.WriteLine(e.Message);
+                return;
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
+
         }
         public override void DispatchEvent(PublishedEvent evt)
         {

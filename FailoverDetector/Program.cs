@@ -28,7 +28,7 @@ namespace FailoverDetector
             }
             pFileProcess.ParseConfigurationFile();
             pFileProcess.CopySourceDataFromRemote();
-            pFileProcess.ProcessDirectory();
+            pFileProcess.ProcessDataDirectory();
             pFileProcess.ValidateFileCoverage();
 
             // process AlwaysOn Health 
@@ -40,7 +40,10 @@ namespace FailoverDetector
                 var instance = new AlwaysOnXeventParser();
                 foreach (var xelPath in cNode.AlwaysOnFileList)
                 {
-                    instance.LoadXevent(xelPath, nodeName);
+                    if (File.Exists(xelPath))
+                    {
+                        instance.LoadXevent(xelPath, nodeName);
+                    }
                 }
             }
 
@@ -54,21 +57,31 @@ namespace FailoverDetector
 
             foreach (var node in pFileProcess.NodeList)
             {
+                // Direcotry
                 string nodeName = node.Key;
                 FileProcessor.NodeFileInfo cNode = node.Value;
                 Console.WriteLine("Node name: {0}", nodeName);
                 foreach (var logPath in cNode.ErrorLogFileList)
                 {
-                    errorLogParser.ParseLog(logPath, nodeName);
+                    if (File.Exists(logPath))
+                    {
+                        errorLogParser.ParseLog(logPath, nodeName);
+                    }
                 }
                 Console.WriteLine("Parsing Cluster Log:");
-                clusterLogParser.ParseLog(cNode.ClusterLogPath, nodeName);
+                if (File.Exists(cNode.ClusterLogPath))
+                {
+                    clusterLogParser.ParseLog(cNode.ClusterLogPath, nodeName);
+                }
 
                 // parse System Health XEvent
                 Console.WriteLine("Parsing System Health XEvents:");
                 foreach (var systemXEventFile in cNode.SystemHealthFileList)
                 {
-                    systemHealthParser.LoadXevents(systemXEventFile, nodeName);
+                    if (File.Exists(systemXEventFile))
+                    {
+                        systemHealthParser.LoadXevents(systemXEventFile, nodeName);
+                    }
                 }
 
             }

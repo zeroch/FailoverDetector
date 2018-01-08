@@ -334,7 +334,7 @@ namespace FailoverDetector
                 FoundConfiguration = false;
 
                 rootDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                dataDirectory = rootDirectory + @"\Data\Demo";
+                dataDirectory = rootDirectory + @"\Data";
                 resultDirectory = rootDirectory + @"\Result";
                 configureFilePath = rootDirectory + @"\Configuration.json";
             }
@@ -362,21 +362,21 @@ namespace FailoverDetector
                 return true;
             }
 
-            public void ProcessDataDirectory(string root)
+            public void ProcessDataDirectory()
             {
-                if (File.Exists(root))
+                if (File.Exists(dataDirectory))
                 {
                     // This path is a file
-                    Console.WriteLine("{0} is not a File not a valid directory", root);
+                    Console.WriteLine("{0} is not a File not a valid directory", dataDirectory);
                 }
-                else if (Directory.Exists(root))
+                else if (Directory.Exists(dataDirectory))
                 {
                     // This path is a directory
-                    ProcessDirectory(root);
+                    ProcessDirectory(dataDirectory);
                 }
                 else
                 {
-                    Console.WriteLine("{0} is not a valid file or directory.", root);
+                    Console.WriteLine("{0} is not a valid file or directory.", dataDirectory);
                 }
             }
 
@@ -453,8 +453,6 @@ namespace FailoverDetector
             // use use internal Path to validate Data folder
             public void ProcessDirectory()
             {
-                // go through data directory to scan all applicatable log files
-                ProcessDataDirectory(dataDirectory);
                 try
                 {
                     // if we doesn't find configuration file, we will return failed. at this moment. Which means parse configuration alwasy after ProcessDirectory called and passed. 
@@ -683,8 +681,8 @@ namespace FailoverDetector
                 string sourcePath = ConfigInfo.SourcePath;
                 if (!Directory.Exists(sourcePath))
                 {
-                    Console.WriteLine("Data Source Path: {0} at configuration file is invalid, Please check your configuration or Data Source Path.");
-                    Console.WriteLine("We won't be able to copy data logs from Data Source Path: {0}. We will use data at current workspace for continue. Y/N");
+                   
+                    Console.WriteLine("We won't be able to copy data logs from Data Source Path: {0}. We will use data at current workspace for continue.", sourcePath);
                     // let's do yes
                     //Console.ReadLine();
 
@@ -788,6 +786,13 @@ namespace FailoverDetector
                     return false;
                 return this.SourcePath == other.SourcePath &&
                        this.AgInfo.SequenceEqual(other.AgInfo);
+            }
+
+            // Convert instance lists in AG to a flat list
+            // so we can use this list to check data directory
+            public void FlatInstanceList()
+            {
+
             }
         }
         

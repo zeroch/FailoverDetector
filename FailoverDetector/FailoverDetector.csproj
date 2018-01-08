@@ -114,7 +114,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Configuration.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="FailoverDetector_TemporaryKey.pfx" />
     <None Include="packages.config" />

@@ -40,7 +40,7 @@ namespace FailoverDetector.UtilsTests
         {
             string testPath = @"C:\Temp\FailoverDetector\Data\Demo";
             FileProcessor pFileProcess = new FileProcessor(testPath);
-            pFileProcess.ProcessDataDirectory(testPath);
+            pFileProcess.ProcessDataDirectory();
 
             FileProcessor expectFileProcessor = new FileProcessor();
             expectFileProcessor.NodeList["ze-2016-v1"] = new FileProcessor.NodeFileInfo("ze-2016-v1");
@@ -318,6 +318,26 @@ namespace FailoverDetector.UtilsTests
         // Test Copy folder from remote destination
         // this remote located at  \\zechen-d1\\dbshare\\Temp\\Data
         public void CopySourceDataFromRemoteTest()
+        {
+            // parse configuration file
+            FileProcessor fileProcessor = new FileProcessor();
+
+            // manual set parameter is true for default mode
+            fileProcessor.DefaultMode = true;
+
+            fileProcessor.ProcessDirectory();
+            Assert.IsTrue(fileProcessor.FoundConfiguration);
+            fileProcessor.ParseConfigurationFile();
+            fileProcessor.CopySourceDataFromRemote();
+            Assert.IsTrue(ComparetwoFolder("Data\\Demo", "\\\\zechen-d1\\dbshare\\Temp\\Data"));
+
+        }
+
+        [DeploymentItem("Data\\UnitTest\\Configuration\\TestCase_Pass\\Configuration.json")]
+        [TestMethod()]
+        // Test Copy folder from remote destination
+        // this remote located at  \\zechen-d1\\dbshare\\Temp\\Data
+        public void CopySourceDataFromRemoteFailedTest()
         {
             // parse configuration file
             FileProcessor fileProcessor = new FileProcessor();

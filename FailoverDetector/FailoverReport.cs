@@ -62,7 +62,7 @@ namespace FailoverDetector
                     InstanceName = instanceName;
                     MessagList = new List<RawMessage>();
                 }
-                [DataMember(Name = "Instance")]
+
                 private string InstanceName { get; }
                 [DataMember(Name = "Messages")]
                 private List<RawMessage> MessagList { get; }
