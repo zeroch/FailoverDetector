@@ -50,7 +50,7 @@ namespace FailoverDetector
 
                 public void Show()
                 {
-                    Console.WriteLine("{1}", Timestamp, Message);
+                    Console.WriteLine("{0}{1}", Timestamp, Message);
                 }
             }
 
@@ -76,7 +76,7 @@ namespace FailoverDetector
 
                 public void Show()
                 {
-                    Console.WriteLine("Display log entries at Instance: {0}", InstanceName);
+                    Console.WriteLine("Log recorded at {0}", InstanceName);
                     foreach (RawMessage message in MessagList)
                     {
                         message.Show();
@@ -119,7 +119,7 @@ namespace FailoverDetector
                 {
                     if (DataEntryFound)
                     {
-                        Console.WriteLine("Display Log Entries for {0}.", ResourceType);
+                        Console.WriteLine("{0} entries that related with this failover", ResourceType);
                         foreach (var datasourcePairs in DataSources)
                         {
                             DataSource pDataSource = datasourcePairs.Value;
@@ -182,7 +182,7 @@ namespace FailoverDetector
 
         [DataMember(Name = "Failover Detected")]
         [JsonProperty(Order = 1)]
-        private bool _failoverDetected;
+        public bool FailoverDetected;
 
 
         public string AgName { get; set; }
@@ -248,7 +248,7 @@ namespace FailoverDetector
         {
             _roleTransition = new Dictionary<string, List<EHadrArRole>>();
 
-            _failoverDetected = false;
+            FailoverDetected = false;
             OldPrimary = String.Empty;
             NewPrimary = String.Empty;
             AgId = String.Empty;
@@ -267,14 +267,14 @@ namespace FailoverDetector
         // to compare if two Partial Reports are equal we make sure all content are same at following field
         //
         //_roleTransition 
-        //_failoverDetected
+        //FailoverDetected
         //OldPrimary 
         //NewPrimary 
         //AgId 
         //AgName 
         public bool Equals(PartialReport other)
         {
-            if (! (_failoverDetected == other._failoverDetected &&
+            if (! (FailoverDetected == other.FailoverDetected &&
                 OldPrimary == other.OldPrimary &&
                 NewPrimary == other.NewPrimary &&
                 AgId == other.AgId &&
@@ -393,7 +393,7 @@ namespace FailoverDetector
         public void ShowMessageSet()
         {
             Console.WriteLine("This RCA was determined by following message:");
-            pMessageMgr.Show();
+            //pMessageMgr.Show();
 
         }
 
@@ -494,16 +494,20 @@ namespace FailoverDetector
             foreach(List<EHadrArRole> pList in vRoleTransition)
             {
                 EHadrArRole prevRole = pList.FirstOrDefault();
+
+                // role transition always is a pair. 
+
                 foreach(EHadrArRole currentRole in pList)
                 {
                     if( currentRole == EHadrArRole.HadrArRoleResolvingPendingFailover)
                     {
-                        _failoverDetected = true;
+                        FailoverDetected = true;
                         ForceFailoverFound = true;
+                        return true;
                     }
                     if (prevRole.Equals(EHadrArRole.HadrArRolePrimaryPending) && currentRole.Equals(EHadrArRole.HadrArRolePrimaryNormal))
                     {
-                        _failoverDetected = true;
+                        FailoverDetected = true;
                         return true;
                     }
                     prevRole = currentRole;
@@ -687,13 +691,10 @@ namespace FailoverDetector
     public class AgReport : IEnumerable
     {
 
-        readonly List<PartialReport> _mFailoverReport;
 
         readonly string _serverName;
 
-        [DataMember(Name = "Reports")]
-        [JsonProperty(Order = 2)]
-        public List<PartialReport> Reports { get; set; }
+
 
         public IEnumerable<PartialReport> AgReportIterator()
         {
@@ -706,10 +707,15 @@ namespace FailoverDetector
         [JsonProperty(Order = 1)]
         public string AgName { get; set; }
 
+        [DataMember(Name = "Reports")]
+        [JsonProperty(Order = 2)]
+
+        public List<PartialReport> Reports { get; set; }
+
+
         public AgReport(string agName, string instanceName)
         {
             Reports = new List<PartialReport>();
-            _mFailoverReport = new List<PartialReport>();
             AgName = agName;
             _serverName = instanceName;
         }
@@ -718,7 +724,6 @@ namespace FailoverDetector
         {
             AgName = agName;
              Reports = new List<PartialReport>();
-            _mFailoverReport = new List<PartialReport>();
          
         }
 
@@ -761,7 +766,14 @@ namespace FailoverDetector
             // just simply sort by Endtime stamp
             Reports.Sort((rp1, rp2) => DateTimeOffset.Compare(rp1.EndTime, rp2.EndTime));
         }
- 
+
+        // I think we can add a bit of tolerance at time to allow two report merge into one
+        // #1 if two reports has complementary roles: each report has different role transition
+        public void MergeReports()
+        {
+
+        }
+
         public void ShowReportArRoleTransition()
         {
             foreach (PartialReport pReport in Reports)
@@ -773,29 +785,27 @@ namespace FailoverDetector
         }
         public void ShowReportFailoverArRoleTransition()
         {
-            foreach (PartialReport pReport in _mFailoverReport)
+            foreach (PartialReport pReport in Reports)
             {
-                Console.WriteLine("A report starts at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
-
-                Console.WriteLine();
+                Console.WriteLine("-------------------------");
+                Console.WriteLine("A report happended at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
                 // Old Primary
                 Console.WriteLine("Old Primary: {0}", pReport.OldPrimary);
                 // New Primary
                 Console.WriteLine("New Primary: {0}", pReport.NewPrimary);
                 Console.WriteLine();
-                // Lease timeout
-                Console.WriteLine("AG LeaseTimeout: {0}", pReport.LeaseTimeoutFound);
+
                 // Root Cause:
+                if (pReport.EstimateResult)
+                {
+                    Console.WriteLine("{0}", pReport.EstimateResult ? "We cannot determine a concrete root cause, This is an estimated result" : "");
+                }
                 Console.WriteLine("Root Cause: {0}", pReport.RootCause == String.Empty ? "We cannot determine Failover at this case" : pReport.RootCause);
-                Console.WriteLine("{0}", pReport.EstimateResult ? "We cannot determine a concrete root cause, This is an estimated result" : "");
-                Console.WriteLine("Descrption: ");
-                // Lease timeout
-                Console.WriteLine("Failover due to AG LeaseTimeout: {0}", pReport.LeaseTimeoutFound);
-                // Force failover
-                Console.WriteLine("Failover due to Force Failover DDL: {0}", pReport.ForceFailoverFound);
+
+                Console.WriteLine("Descrption: {0}", pReport.RootCauseDescription);
 
                 Console.WriteLine();
-                pReport.ShowRoleTransition();
+                //pReport.ShowRoleTransition();
 
                 pReport.ShowMessageSet();
 
@@ -817,6 +827,7 @@ namespace FailoverDetector
         {
             // let me do a little sorting at here
             SortReports();
+            List<PartialReport> _mFailoverReport = new List<PartialReport>();
             foreach (PartialReport pReport in Reports)
             {
                 pReport.IdentifyRoles();
@@ -835,24 +846,29 @@ namespace FailoverDetector
                 if (pReport.ForceFailoverFound)
                 {
                     // this report is useful, I will push it into Failover Report for future investigation
+                    pReport.FailoverDetected = true;
                     _mFailoverReport.Add(pReport);
                 }else 
                 if (pReport.LeaseTimeoutFound)
                 {
+                    pReport.FailoverDetected = true;
                     _mFailoverReport.Add(pReport);
                 }else if (pReport.SearchFailoverRole())
                 {
                     // this report is useful, I will push it into Failover Report for future investigation
+                    pReport.FailoverDetected = true;
                     _mFailoverReport.Add(pReport);
                 }
 //                pReport.ProcessSystemData();
                 SpecialRecipe(pReport);
             }
+
+            Reports = _mFailoverReport;
         }
 
         public void AnalyzeRootCause()
         {
-            foreach (PartialReport pReport in _mFailoverReport)
+            foreach (PartialReport pReport in Reports)
             {
                 // search root cause property.
                 if (pReport.ForceFailoverFound)

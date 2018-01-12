@@ -81,9 +81,6 @@ namespace FailoverDetector
 
             public override void HandleOnceMatch(string msg, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
 
                 // capture 'ag_name', 'prev_state'  and 'current_state'
                 if(RxStringInQuote.IsMatch(msg))
@@ -444,7 +441,7 @@ namespace FailoverDetector
             }
 
             // use use internal Path to validate Data folder
-            public void ProcessDirectory()
+            public bool ProcessDirectory()
             {
                 try
                 {
@@ -452,6 +449,7 @@ namespace FailoverDetector
                     if (!File.Exists(configureFilePath))
                     {
                         Console.WriteLine("Failed to locate configuration file.");
+                        return false;
                     }
                     else
                     {
@@ -463,11 +461,14 @@ namespace FailoverDetector
                     {
                         DirectoryInfo di = Directory.CreateDirectory(resultDirectory);
                     }
+                    return true;
 
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("The process failed: {0}", e.ToString());
+                    return false;
+
                 }
 
             }
@@ -578,17 +579,24 @@ namespace FailoverDetector
                     Console.WriteLine("Configuration File is not located at {0}", configureFilePath);
                     return false;
                 }
-
-                using (StreamReader reader = new StreamReader(configureFilePath))
+                try
                 {
-                    string json = reader.ReadToEnd();
-                    MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                    ConfigInfo = new Configuration();
-                    var res = new DataContractJsonSerializer(typeof(Configuration));
-                    ConfigInfo = (Configuration) res.ReadObject(ms);
+                    using (StreamReader reader = new StreamReader(configureFilePath))
+                    {
+                        string json = reader.ReadToEnd();
+                        MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                        ConfigInfo = new Configuration();
+                        var res = new DataContractJsonSerializer(typeof(Configuration));
+                        ConfigInfo = (Configuration)res.ReadObject(ms);
 
-                    ms.Close();
+                        ms.Close();
+                    }
+                }catch(FileNotFoundException e)
+                {
+                    Console.WriteLine("Loading configuration failed.");
+                    Console.WriteLine(e);
                 }
+
                 ConfigInfo.FlatInstanceList();
                 return true;
             }
@@ -613,47 +621,88 @@ namespace FailoverDetector
 
                 foreach (MetaAgInfo agInfo in ConfigInfo.AgInfo)
                 {
-                    Console.WriteLine("Validating log provided for AG: {0}", agInfo.Name);
+                    Console.WriteLine("{0}Validating log data provided for{0}AG: {1}{0}instances includes:", Environment.NewLine, agInfo.Name);
+                    foreach(string instance in agInfo.InstanceName)
+                    {
+                        Console.WriteLine("\t{0}", instance);
+                    }
+                    Console.WriteLine();
                     foreach (string instance in agInfo.InstanceName)
                     {
+
+                        string validateString = string.Empty;
+                        string AlwaysOnFile = string.Empty;
+                        string SystemHealthFile = string.Empty;
+                        string ErrologFile = string.Empty;
+                        string ClusterLogFile = string.Empty;
+                        string SystemLogFile = string.Empty;
+
                         if (!NodeList.ContainsKey(instance))
                         {
-                            Console.WriteLine(
-                                "All data about instance: {0} is missing. Please check files that you provided.",
-                                instance);
+                            
+                            validateString = string.Format("Instance: {0} folder is not existed. Please check files that you provided.", instance);
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine(validateString);
+                            Console.ForegroundColor = ConsoleColor.White;
                             continue;
                         }
                         // instance folder is existed. Check each log now. 
                         FileProcessor.NodeFileInfo pInstanceFileInfo = NodeList[instance];
-                        Console.WriteLine("For Instance: {0}.", instance);
 
                         if (pInstanceFileInfo.FoundAlwaysOnFile && pInstanceFileInfo.FoundErrologLogFile &&
                             pInstanceFileInfo.FoundClusterLogFile && pInstanceFileInfo.FoundSystemHealthFile)
                         {
-                            Console.WriteLine("All data is ready.");
+                            Console.WriteLine("All data is ready for instance: {0} folder.", instance);
                         }
                         else
                         {
+                            int countEmptyData = 0;
+                            string fileTypeString = string.Empty;
                             if (!pInstanceFileInfo.FoundAlwaysOnFile)
                             {
-                                Console.WriteLine(
-                                    "AlwaysOn XEvent Data is not existed. We may not be able to detect failover at all");
+                                fileTypeString += "AlwaysOn XEvent";
+                                countEmptyData += 1;
                             }
                             if (!pInstanceFileInfo.FoundErrologLogFile)
                             {
-                                Console.WriteLine(
-                                    "ErrorLog Data is not existed. We may not be able to detect some root cause.");
+                                if (fileTypeString != string.Empty)
+                                {
+                                    fileTypeString += ", ";
+                                }
+                                fileTypeString += "ErrorLog";
+                                countEmptyData += 1;
                             }
                             if (!pInstanceFileInfo.FoundClusterLogFile)
                             {
-                                Console.WriteLine(
-                                    "Cluster log Data is not existed. We may not be able to detect some root cause.");
+                                if (fileTypeString != string.Empty)
+                                {
+                                    fileTypeString += ", ";
+                                }
+                                fileTypeString += "Cluster Log";
+                                countEmptyData += 1;
                             }
                             if (!pInstanceFileInfo.FoundSystemHealthFile)
                             {
-                                Console.WriteLine(
-                                    "System Health XEvents Data is not existed. We may not be able to detect some root cause.", instance);
+                                if (fileTypeString != string.Empty)
+                                {
+                                    fileTypeString += ", ";
+                                }
+                                fileTypeString += "System Health XEvents";
+                                countEmptyData += 1;
                             }
+                            if (countEmptyData < 2)
+                            {
+                                fileTypeString += " is missing";
+                            }else
+                            {
+                                fileTypeString += " are missing";
+                            }
+
+                            Console.WriteLine("Reviewing data for instance: {0}.", instance);
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.Write(fileTypeString);
+                            Console.WriteLine("Tool may not be able to find root cause in some condition. Please check files that you provided.");
+                            Console.ForegroundColor = ConsoleColor.White;
                         }
 
                     }
@@ -670,7 +719,10 @@ namespace FailoverDetector
                 {
                     return;
                 }
+
+                Console.WriteLine("{0}Tool executed as default mode. {0}", Environment.NewLine);
                 // check remote directory if valid
+                Console.WriteLine("Start to copy data logs from share path to local workspace.");
                 string sourcePath = ConfigInfo.SourcePath;
                 if (!Directory.Exists(sourcePath))
                 {
@@ -690,7 +742,8 @@ namespace FailoverDetector
                     DirectoryCopy(sourcePath, targetPath);
 
                 }
-                
+                Console.WriteLine("Complete copying data logs from share path to local workspace.{0}", Environment.NewLine);
+
             }
             public void DirectoryCopy(string sourceDirPath, string destDirPath)
             {
@@ -809,16 +862,20 @@ namespace FailoverDetector
             public MetaAgInfo()
             {
                 Name = string.Empty;
+                HealthLevel = string.Empty;
                 InstanceName = new List<string>();
             }
 
             public MetaAgInfo(string agName)
             {
                 Name = agName;
+                HealthLevel = string.Empty;
                 InstanceName = new List<string>();
             }
             [DataMember(Name = "AG Name")]
             public string Name { get; set; }
+            [DataMember(Name = "AG Health Level")]
+            public string HealthLevel { get; set; }
             [DataMember(Name = "Instances")]
             public List<string> InstanceName { get; set; }
 

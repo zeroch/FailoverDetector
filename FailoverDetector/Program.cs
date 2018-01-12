@@ -19,6 +19,7 @@ namespace FailoverDetector
                 Console.WriteLine("Exit with Error.");
                 return;
             }
+            Console.WriteLine();
 
             // Handle Necessaries Files
             pFileProcess.ProcessDirectory();
@@ -39,7 +40,7 @@ namespace FailoverDetector
             {
                 string nodeName = node.Key;
                 FileProcessor.NodeFileInfo cNode = node.Value;
-                Console.WriteLine("Node name: {0}",  nodeName);
+
                 var instance = new AlwaysOnXeventParser();
                 foreach (var xelPath in cNode.AlwaysOnFileList)
                 {
@@ -58,12 +59,13 @@ namespace FailoverDetector
             ClusterLogParser clusterLogParser = new ClusterLogParser();
             SystemHealthParser systemHealthParser = new SystemHealthParser();
 
+
+            Console.WriteLine("{0}Start to analyze failover root cause.{0}", Environment.NewLine);
             foreach (var node in pFileProcess.NodeList)
             {
                 // Direcotry
                 string nodeName = node.Key;
                 FileProcessor.NodeFileInfo cNode = node.Value;
-                Console.WriteLine("Node name: {0}", nodeName);
                 foreach (var logPath in cNode.ErrorLogFileList)
                 {
                     if (File.Exists(logPath))
@@ -71,14 +73,12 @@ namespace FailoverDetector
                         errorLogParser.ParseLog(logPath, nodeName);
                     }
                 }
-                Console.WriteLine("Parsing Cluster Log:");
                 if (File.Exists(cNode.ClusterLogPath))
                 {
                     clusterLogParser.ParseLog(cNode.ClusterLogPath, nodeName);
                 }
 
                 // parse System Health XEvent
-                Console.WriteLine("Parsing System Health XEvents:");
                 foreach (var systemXEventFile in cNode.SystemHealthFileList)
                 {
                     if (File.Exists(systemXEventFile))
@@ -98,8 +98,10 @@ namespace FailoverDetector
                 pReportMgr.ShowFailoverReports();
             }
 
-            Console.ReadLine();
+            Console.WriteLine("{0}Start saving report results.{0}", Environment.NewLine);
             pReportMgr.SaveReportsToJson();
+
+            Console.ReadLine();
         }
 
     }

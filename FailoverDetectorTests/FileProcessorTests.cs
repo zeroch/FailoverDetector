@@ -231,7 +231,7 @@ namespace FailoverDetector.UtilsTests
 
         }
 
-        [DeploymentItem("Data\\Demo", "Data\\Demo")]
+        [DeploymentItem("Data", "Data")]
         [DeploymentItem("Data\\UnitTest\\Configuration\\TestCase_Failed\\Configuration.json")]
         [TestMethod]
         public void ValidateFileConverageFaiedTest()
@@ -247,6 +247,7 @@ namespace FailoverDetector.UtilsTests
                 Assert.IsTrue(actualFileProcessor.FoundConfiguration);
 
                 actualFileProcessor.ParseConfigurationFile();
+                actualFileProcessor.ProcessDataDirectory();
                 actualFileProcessor.ValidateFileCoverage();
 
                 string expected = string.Format(
@@ -273,6 +274,7 @@ namespace FailoverDetector.UtilsTests
                 Assert.IsTrue(actualFileProcessor.FoundConfiguration);
 
                 actualFileProcessor.ParseConfigurationFile();
+                actualFileProcessor.ProcessDataDirectory();
                 actualFileProcessor.ValidateFileCoverage();
 
                 string expected = string.Format(
