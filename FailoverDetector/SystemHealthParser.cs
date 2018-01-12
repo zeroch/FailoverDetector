@@ -262,6 +262,11 @@ IsNullable = false)]
                 pCurrentReport.SystemUnhealthFound = true;
                 pCurrentReport.Memorycribbler = true;
             }
+            
+            if (!systemComp.sickSpinlockTypeAfterAv.Equals("none"))
+            {
+                pCurrentReport.SickSpinLock = true;
+            }
 
 
 
@@ -284,10 +289,9 @@ IsNullable = false)]
             qPComponent = (QPComponent)serializer.Deserialize(ms);
 
 
-
             if (qPComponent.hasDeadlockedSchedulersOccurred || qPComponent.hasUnresolvableDeadlockOccurred)
             {
-
+                pCurrentReport.UnresolvedDeadlock = true;
                 pCurrentReport.SystemUnhealthFound = true;
             }
         }

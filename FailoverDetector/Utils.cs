@@ -862,20 +862,20 @@ namespace FailoverDetector
             public MetaAgInfo()
             {
                 Name = string.Empty;
-                HealthLevel = string.Empty;
+                HealthLevel = 3;
                 InstanceName = new List<string>();
             }
 
             public MetaAgInfo(string agName)
             {
                 Name = agName;
-                HealthLevel = string.Empty;
+                HealthLevel = 3;
                 InstanceName = new List<string>();
             }
             [DataMember(Name = "AG Name")]
             public string Name { get; set; }
             [DataMember(Name = "AG Health Level")]
-            public string HealthLevel { get; set; }
+            public int HealthLevel { get; set; }
             [DataMember(Name = "Instances")]
             public List<string> InstanceName { get; set; }
 
@@ -885,6 +885,7 @@ namespace FailoverDetector
                 if (!(obj is MetaAgInfo other))
                     return false;
                 return this.Name == other.Name &&
+                       this.HealthLevel == other.HealthLevel &&
                        this.InstanceName.SequenceEqual(other.InstanceName);
 
             }

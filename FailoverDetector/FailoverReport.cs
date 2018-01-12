@@ -224,7 +224,9 @@ namespace FailoverDetector
         public bool SystemUnhealthFound { get; set; }
         public bool ExceedDumpThreshold { get; set; }
         public bool Memorycribbler { get; set; }
+        public bool SickSpinLock { get; set; }
         public bool SqlOOM { get; set; }
+        public bool UnresolvedDeadlock { get; set; }
         public bool LongIO { get; set; }
 
         public bool SqlLowMemory { get; set; }
@@ -428,65 +430,6 @@ namespace FailoverDetector
        
             }
         }
-
-        //public void ProcessSystemData()
-        //{
-        //    // open the system xevent, search sp_server_diagnostics_component_result
-        //    // in the timeline, this is a bit brute force, but we can optimize  later time
-        //    string url = "C:\\Users\\zeche\\Documents\\WorkItems\\POC\\SYS001_0.xel";
-        //    // we should have a prev primary at this point now. 
-        //    // use primary name to determine which .xel file to open
-        //    if ( OldPrimary.Length != 0)
-        //    {
-        //        url = Directory.GetCurrentDirectory();
-        //        url += @"\Data\";
-        //        url += OldPrimary;
-        //        url += @"\";
-        //        url += @"system_health*.xel";
-        //    }
-        //    SystemHealthParser parser = new SystemHealthParser(_mSysData);
-        //    TimeSpan diff = new TimeSpan(0, 5, 0);
-        //    using (QueryableXEventData evts = new QueryableXEventData(url))
-        //    {
-        //        foreach (PublishedEvent evt in evts)
-        //        {
-        //            if (evt.Timestamp > (StartTime - diff) && evt.Timestamp < (EndTime + diff))
-        //            {
-        //                if (evt.Name == "sp_server_diagnostics_component_result")
-        //                {
-        //                    String tComponent = evt.Fields["component"].Value.ToString();
-        //                    String tData = evt.Fields["data"].Value.ToString();
-        //                    switch (tComponent)
-        //                    {
-        //                        case "QUERY_PROCESSING":
-        //                            // fix it later
-        //                            if (!parser.ParseQpComponent(tData))
-        //                            {
-        //                                //Console.WriteLine("Event: {0}, time:{1} ", evt.Name, evt.Timestamp);
-        //                            }
-        //                            break;
-        //                        case "SYSTEM":
-        //                            // component data should written in side parser, pass by reference
-        //                            if (parser.ParseSystemComponent(tData))
-        //                            {
-        //                                // mark the time stamp, since inside parser doesn't come with time. 
-        //                                _mSysData.SysComp.Timestamp = evt.Timestamp;
-        //                            }
-        //                            break;
-        //                        case "RESOURCE":
-        //                            parser.ParseResource(tData);
-        //                            break;
-        //                        case "IO_SUBSYSTEM":
-        //                            parser.ParseIoSubsytem(tData);
-        //                            break;
-        //                        default:
-        //                            break;
-        //                    }
-        //                }
-        //            }
-        //            }
-        //        }
-        //    }
         
         public bool SearchFailoverRole()
         {
@@ -693,8 +636,9 @@ namespace FailoverDetector
 
 
         readonly string _serverName;
-
-
+        // TODO
+        // set healthLevel from configuration
+        readonly int HealthLevel;
 
         public IEnumerable<PartialReport> AgReportIterator()
         {
@@ -718,12 +662,14 @@ namespace FailoverDetector
             Reports = new List<PartialReport>();
             AgName = agName;
             _serverName = instanceName;
+            HealthLevel = 3;
         }
 
         public AgReport(string agName)
         {
             AgName = agName;
-             Reports = new List<PartialReport>();
+            HealthLevel = 3;
+            Reports = new List<PartialReport>();
          
         }
 
@@ -771,7 +717,33 @@ namespace FailoverDetector
         // #1 if two reports has complementary roles: each report has different role transition
         public void MergeReports()
         {
+            SortReports();
+            List<PartialReport> tReportList = new List<PartialReport>();
+            foreach(PartialReport cReport in Reports)
+            {
+                PartialReport pReport = tReportList.LastOrDefault();
 
+                // first item
+                if (pReport == null)
+                {
+                    tReportList.Add(cReport);
+                }
+                else
+                {
+                    // either there is not role transition or only one instance
+                    // existed in this report. We should merge two report if both
+                    // report only contain less value.
+                    if (pReport.GetRoleInstanceNumber() < 2)
+                    {
+                        List<string> pInstanceList = pReport.GetRoleInstanceNames();
+                        List<string> cInstanceList = cReport.GetRoleInstanceNames();
+                        if (!pInstanceList.Intersect(cInstanceList).Any())
+                        {
+                            // merge pReport with cReport
+                        }
+                    }
+                }
+            }
         }
 
         public void ShowReportArRoleTransition()
@@ -816,7 +788,9 @@ namespace FailoverDetector
 
         public void ShowReport()
         {
+            Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("AG name: {0}", AgName);
+            Console.ForegroundColor = ConsoleColor.White;
             ShowReportFailoverArRoleTransition();
         }
 
@@ -874,51 +848,96 @@ namespace FailoverDetector
                 if (pReport.ForceFailoverFound)
                 {
                     pReport.RootCause = "ForceFailover";
-                    pReport.EstimateResult = false;
                 }
                 else if (pReport.MessageSet.Contains("17147"))
                 {
                     pReport.RootCause = "ShutDownServer";
-                    pReport.EstimateResult = false;
 
                 }
                 else if (pReport.MessageSet.Contains("17148"))
                 {
                     pReport.RootCause = "StopService";
-                    pReport.EstimateResult = false;
-
                 }
 
+                // search if system components is not health
+                // failover level == 3, trigger failover at system component
+                // failover level == 4, trigger failover at resource component error
+                if (pReport.SystemUnhealthFound)
+                {
+                    if (HealthLevel >3)
+                    {
+                        if (pReport.SqlOOM)
+                        {
+                            pReport.RootCause = "SQL Out Of Memeory";
+                        }else if (pReport.UnresolvedDeadlock)
+                        {
+                            pReport.RootCause = "Unresolved Deadlock";
+                        }
+                        
+                    }else if  (HealthLevel >2)
+                    {
+                        if (pReport.ExceedDumpThreshold)
+                        {
+                            pReport.RootCause = "Exceed Dump Threshold";
+                        }else if (pReport.Memorycribbler)
+                        {
+                            pReport.RootCause = "Memory scribbler";
+                        }else if (pReport.SickSpinLock)
+                        {
+                            pReport.RootCause = "Sick SpinLock";
+                        }
+                    }
+                }
 
+                // 1205 indicate cluster AG component offline
                 if (pReport.MessageSet.Contains("1205"))
                 {
                     if (pReport.MessageSet.Contains("Crash"))
                     {
                         pReport.RootCause = "Crash";
-                        pReport.EstimateResult = false;
                     }else if (pReport.MessageSet.Contains("Dump"))
                     {
                         pReport.RootCause = "Long Dump";
-                        pReport.EstimateResult = false;
-
                     }
                 }
 
-                if (pReport.MessageSet.Contains("1135"))
+                if (pReport.MessageSet.Contains("1146"))
                 {
-                    if (pReport.MessageSet.Contains("1146"))
+                    pReport.RootCause = "RHS Stopped";
+                }
+
+                if (pReport.MessageSet.Contains("1177"))
+                {
+                    if (pReport.MessageSet.Contains("1135"))
                     {
-                        pReport.RootCause = "Network Loss";
-                        pReport.EstimateResult = true;
+                        if (pReport.MessageSet.Contains("1006"))
+                        {
+                            pReport.RootCause = "Cluster Service halted";
+                        }
+                        else
+                        {
+                            pReport.RootCause = "Cluster Node Offline";
+                            pReport.EstimateResult = true;
+                        }
                     }
-                    else if (pReport.MessageSet.Contains("1177"))
+
+                    if (pReport.MessageSet.Contains("1069"))
                     {
-                        
+                        pReport.RootCause = "Network interface failure";
+                    }
+                    else
+                    {
                         pReport.RootCause = "Lost Quorum";
-                        pReport.EstimateResult = false;
-
                     }
+                }
 
+
+                // at this point we search every condition we may expected.
+                // but we still cannot find root cause. we kick in estimation
+                if (pReport.RootCause == string.Empty)
+                {
+                    // TODO
+                    // estimate high cpu, low memory or high disk i/o
                 }
 
             }

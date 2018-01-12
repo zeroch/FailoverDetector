@@ -204,7 +204,7 @@ namespace FailoverDetector.UtilsTests
             Assert.IsTrue(actualResult);
         }
 
-        [DeploymentItem("Configuration.json")]
+        [DeploymentItem("Data\\UnitTest\\Configuration\\TestCase_Pass\\Configuration.json")]
         [TestMethod()]
         public void ParseConfigurationFileTest()
         {
@@ -218,6 +218,7 @@ namespace FailoverDetector.UtilsTests
                 {
                     new MetaAgInfo("ag1023")
                     {
+                        HealthLevel = 3,
                         InstanceName = new List<string>() { "ze-2016-v1", "ze-2016-v2" }
                     }
                 }

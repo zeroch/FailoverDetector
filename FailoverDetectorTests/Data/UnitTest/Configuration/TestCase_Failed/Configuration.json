@@ -3,6 +3,7 @@
 	"AG" : [
         {
             "AG Name": "ag1023",
+            "AG Health Level": 4,
             "Instances": [
                 "ze-2016-v1",
                 "ze-2016-v3"
