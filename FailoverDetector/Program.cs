@@ -54,6 +54,7 @@ namespace FailoverDetector
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
 
+
             // parse ErrorLog
             ErrorLogParser errorLogParser = new ErrorLogParser();
             ClusterLogParser clusterLogParser = new ClusterLogParser();
@@ -89,7 +90,7 @@ namespace FailoverDetector
 
             }
 
-
+            pReportMgr.MergeReports();
             // determine Failover 
             pReportMgr.AnalyzeReports();
 

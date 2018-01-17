@@ -309,7 +309,41 @@ namespace FailoverDetector
             return EndTime > other.EndTime;
         }
 
+        public bool MergeReport(PartialReport other)
+        {
+            if (AgName != other.AgName)
+            {
+                return false;
+            }
 
+            FailoverDetected |= other.FailoverDetected;
+            ForceFailoverFound |= other.ForceFailoverFound;
+            SystemUnhealthFound |= other.SystemUnhealthFound;
+            ExceedDumpThreshold |= other.ExceedDumpThreshold;
+            Memorycribbler |= other.Memorycribbler;
+            SickSpinLock |= other.SickSpinLock;
+            SqlOOM |= other.SqlOOM;
+            UnresolvedDeadlock |= other.UnresolvedDeadlock;
+            LongIO |= other.LongIO;
+            SqlLowMemory |= other.SqlLowMemory;
+            EstimateResult |= other.EstimateResult;
+            LeaseTimeoutFound |= other.LeaseTimeoutFound;
+
+            StartTime = StartTime < other.StartTime ? StartTime : other.StartTime;
+
+            EndTime = EndTime > other.EndTime ? EndTime : other.EndTime;
+
+            var result = other._roleTransition.Keys.Except(_roleTransition.Keys);
+            foreach(var key in result)
+            {
+                _roleTransition[key] = other._roleTransition[key];
+            }
+            // message set
+            MessageSet.UnionWith(other.MessageSet);
+
+            return true;
+
+        }
 
         public bool IsEmptyRole( string currentNode)
         {
@@ -587,6 +621,13 @@ namespace FailoverDetector
             }
         }
 
+        public void MergeReports()
+        {
+            foreach(var agReport in AgReports)
+            {
+                agReport.Value.MergeReports();
+            }
+        }
 
         public void AnalyzeReports()
         {
@@ -754,10 +795,18 @@ namespace FailoverDetector
                         if (!pInstanceList.Intersect(cInstanceList).Any())
                         {
                             // merge pReport with cReport
+                            pReport.MergeReport(cReport);
+                        }else
+                        {
+                            tReportList.Add(cReport);
                         }
+                    }else
+                    {
+                        tReportList.Add(cReport);
                     }
                 }
             }
+            Reports = tReportList;
         }
 
         public void ShowReportArRoleTransition()
