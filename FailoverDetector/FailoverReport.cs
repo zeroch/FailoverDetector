@@ -399,6 +399,19 @@ namespace FailoverDetector
 
         }
 
+        // return how many instance for role transition list was found at this report
+        public int GetRoleInstanceNumber()
+        {
+            return _roleTransition.Count;
+        }
+
+
+        // return list of instance names for role transition list was found at this report
+        public List<string> GetRoleInstanceNames()
+        {
+            return _roleTransition.Keys.ToList();
+        }
+
         public void IdentifyRoles()
         {
             //  iterate through roleTransition
@@ -540,6 +553,7 @@ namespace FailoverDetector
                 }
                 else
                 {
+                    // Add object into a read pointer
                     iterator.MergeMultipleReports(agReport.Value.Reports);
                 }
             }
@@ -777,7 +791,7 @@ namespace FailoverDetector
                 Console.WriteLine("Descrption: {0}", pReport.RootCauseDescription);
 
                 Console.WriteLine();
-                //pReport.ShowRoleTransition();
+                pReport.ShowRoleTransition();
 
                 pReport.ShowMessageSet();
 
@@ -977,7 +991,11 @@ namespace FailoverDetector
 
         public ReportEnum(List<PartialReport> other)
         {
-            _reports = other;
+            _reports = new List<PartialReport>();
+            foreach(var report in other)
+            {
+                _reports.Add(report);
+            }
         }
         public void MergeMultipleReports(List<PartialReport> other)
         {
