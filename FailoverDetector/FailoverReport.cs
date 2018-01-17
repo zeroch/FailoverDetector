@@ -7,6 +7,7 @@ using System.Collections;
 using System.Reflection;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
+using System.Collections.ObjectModel;
 
 namespace FailoverDetector
 {
@@ -21,8 +22,32 @@ namespace FailoverDetector
             ErrorLog,
             SystemLog,
             ClusterLog,
-        }
+        };
 
+
+        public static readonly Dictionary<string, string> RootCauseMapping
+          = new Dictionary<string, string>
+        {
+           { "Force Failover", "Admin or other process gracefully shuts down SQL Serverhosting the AG primary. In this case, Windows notifies WSFC to initiate a failover and picks one secondary as new primary, if automatic failover is enabled"  },
+           { "Shut Down Server", "The Windows Server which hosts the SQL Server that  has the primary replica is shut down or restarted. In this case, Windows notifies WSFC to initiate a failover and picks one secondary as new primary, if automatic failover is enabled" },
+           { "Stop Service", "An administrator performs a manual failover through Management Studio or through a direct Transact-SQL statement “ALTER AVAILABILITY GROUP <AG name> FAILOVER” or “ALTER AVAILABILITY GROUP <AG name> FAILOVER WITH DATA_LOSS” on the secondary replica that will become the primary replica." },
+           { "SQL Out Of Memeory", ": If no memory has been freed in 2 minutes, sp_server_diagnostics running in SQL Server determines that SQL Server system component is in  error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
+           { "Unresolved Deadlock", "If sp_server_diagnostics detects unresolved deadlock from query processing component, it determines that SQL Server system component is in error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
+           { "Exceed Dump Threshold", "There are more than 100 SQL Server dumps on the primary replica since the last SQL Server restart, and there is at least one dump in the last 10 seconds. In this case, sp_server_diagnostics running in SQL Server determines that SQL Server system component is in error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
+           { "Memory scribbler", "SQL Server has write access violation and the write address is more than 64KB. If there are more than three such memory corruptions since SQL Server started,, sp_server_diagnostics running in SQL Server determines that  SQL Server system component is in  error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
+           { "Sick SpinLock", "After an access violation, a spin-lock is marked as sick if it backs off more than three times, which is the threshold. In this case, sp_server_diagnostics running in SQL Server determines that SQL Server system component is in error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
+           { "Unexpected Crash", "SQL Server service was shut down unexpectedly. In this scenario, SQL Server crashed without error message or exception thrown. Resources host service (rhs.exe) does not detect lease check from SQL Server about availability group lease. This results an AG lease timeout signal to WSFC and WSFC will initiate a failover if automatic failover is enabled." },
+           { "Long Dump", "SQL Server is creating a dump file. During the process, threads handle AG lease are frozen and exceed lease timeout. Resources host service (rhs.exe)  can not detect lease check from SQL Server for availability group lease. This results an AG lease timeout signal to WSFC and WSFC will initiate a failover if automatic failover is enabled." },
+           { "RHS Stopped", "" },
+           { "Cluster Service halted", "Cluster service on primary was halted, resulting in  primary unable to communicate with other nodes in the cluster. Cluster will initiate quorum vote and determine a new primary to fail over to." },
+           { "Cluster Node Offline", "When primary node is frozen or loses power, WSFC loses connection from and to the primary. Failover cluster decide to initiate failover and pick a primary from other possible nodes" },
+           { "Network interface failure", "Network interface used to communicate between cluster nodes fails. Primary and secondary replicas cannot communicate. WSFC will initiate quorum vote and determine a new primary to fail over to." },
+           { "Lost Quorum", "AG resource is brought offline because quorum is lost. This could be due to connectivity issue, but we do not have further evidence to conclude more detail answer." },
+           {"Unknown", "We cannot determine exact failover root cause at this case. " },
+           {"Unsuccessful Failover", "Failover was initiated by WSFC, but availability group did not failover to any secondary replica successfully. original primary replica become primary role again. Most two common reasons to this behavior are secondary replica lost connection to primary and failover cluster exceed failover threshold in one hour. "}
+
+
+        };
     }
 
     [DataContract]
@@ -220,6 +245,9 @@ namespace FailoverDetector
         [DataMember(Name = "Force Failover")]
         [JsonProperty(Order = 5)]
         public bool ForceFailoverFound { get; set; }
+        [DataMember(Name = "Unsuccessed Failover")]
+        [JsonProperty(Order = 5)]
+        public bool UnsuccessedFailover { get; set; }
 
         public bool SystemUnhealthFound { get; set; }
         public bool ExceedDumpThreshold { get; set; }
@@ -255,7 +283,7 @@ namespace FailoverDetector
             NewPrimary = String.Empty;
             AgId = String.Empty;
             AgName = String.Empty;
-            RootCause = String.Empty;
+            RootCause = "Unknown";
             EstimateResult = false;
             MessageSet = new HashSet<string>();
 
@@ -318,6 +346,7 @@ namespace FailoverDetector
 
             FailoverDetected |= other.FailoverDetected;
             ForceFailoverFound |= other.ForceFailoverFound;
+            UnsuccessedFailover |= other.UnsuccessedFailover;
             SystemUnhealthFound |= other.SystemUnhealthFound;
             ExceedDumpThreshold |= other.ExceedDumpThreshold;
             Memorycribbler |= other.Memorycribbler;
@@ -475,6 +504,10 @@ namespace FailoverDetector
                     OldPrimary = instanceName;
                 }
        
+            }
+            if (OldPrimary == NewPrimary)
+            {
+                UnsuccessedFailover = true;
             }
         }
         
@@ -830,13 +863,22 @@ namespace FailoverDetector
                 Console.WriteLine("New Primary: {0}", pReport.NewPrimary);
                 Console.WriteLine();
 
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                if (pReport.UnsuccessedFailover)
+                {
+                    Console.WriteLine("Unsuccessful Failover");
+                    Console.WriteLine(Constants.RootCauseMapping["Unsuccessful Failover"]);
+                }
+                Console.ResetColor();
+
                 // Root Cause:
                 if (pReport.EstimateResult)
                 {
-                    Console.WriteLine("{0}", pReport.EstimateResult ? "We cannot determine a concrete root cause, This is an estimated result" : "");
+                    Console.WriteLine( "We cannot determine a concrete root cause, This is an estimated result");
                 }
-                Console.WriteLine("Root Cause: {0}", pReport.RootCause == String.Empty ? "We cannot determine Failover at this case" : pReport.RootCause);
-
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Root Cause: {0}", pReport.RootCause);
+                Console.ResetColor();
                 Console.WriteLine("Descrption: {0}", pReport.RootCauseDescription);
 
                 Console.WriteLine();
@@ -896,7 +938,7 @@ namespace FailoverDetector
                     pReport.FailoverDetected = true;
                     _mFailoverReport.Add(pReport);
                 }
-//                pReport.ProcessSystemData();
+
                 SpecialRecipe(pReport);
             }
 
@@ -910,16 +952,16 @@ namespace FailoverDetector
                 // search root cause property.
                 if (pReport.ForceFailoverFound)
                 {
-                    pReport.RootCause = "ForceFailover";
+                    pReport.RootCause = "Force Failover";
                 }
                 else if (pReport.MessageSet.Contains("17147"))
                 {
-                    pReport.RootCause = "ShutDownServer";
+                    pReport.RootCause = "Shut Down Server";
 
                 }
                 else if (pReport.MessageSet.Contains("17148"))
                 {
-                    pReport.RootCause = "StopService";
+                    pReport.RootCause = "Stop Service";
                 }
 
                 // search if system components is not health
@@ -957,7 +999,7 @@ namespace FailoverDetector
                 {
                     if (pReport.MessageSet.Contains("Crash"))
                     {
-                        pReport.RootCause = "Crash";
+                        pReport.RootCause = "Unexpected Crash";
                     }else if (pReport.MessageSet.Contains("Dump"))
                     {
                         pReport.RootCause = "Long Dump";
@@ -1002,6 +1044,10 @@ namespace FailoverDetector
                     // TODO
                     // estimate high cpu, low memory or high disk i/o
                 }
+
+
+                // Map root cause to short description
+                pReport.RootCauseDescription = Constants.RootCauseMapping[pReport.RootCause];
 
             }
         }
