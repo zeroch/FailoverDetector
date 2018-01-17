@@ -91,8 +91,8 @@ namespace FailoverDetector
                                 {
                                     if (regexParser.IsMatch(pEntry.Message))
                                     {
-                                        regexParser.HandleOnceMatch(pEntry.Message, reportInstance);
-                                        reportInstance.AddNewMessage(sourceType, instanceName, pEntry.Timestamp, line);
+                                        regexParser.HandleOnceMatch(instanceName, pEntry, reportInstance);
+
                                     }
                                 }
                                 line = reader.ReadLine();
@@ -124,10 +124,12 @@ namespace FailoverDetector
 
         public string Spid { get; set; }
 
+        public string RawMessage { get; set; }
 
         public ErrorLogEntry()
         {
             Message = String.Empty;
+            RawMessage = String.Empty;
             Spid = String.Empty;
             Timestamp = DateTimeOffset.MinValue;
         }
@@ -137,6 +139,7 @@ namespace FailoverDetector
             Timestamp = pTimestamp;
             Spid = pSpid;
             Message = pMessage;
+            RawMessage = String.Empty;
 
         }
 
@@ -144,7 +147,8 @@ namespace FailoverDetector
         {
             return String.Equals(Timestamp, logEntry.Timestamp)
                    && String.Equals(Spid, logEntry.Spid)
-                   && String.Equals(Message, logEntry.Message);
+                   && String.Equals(Message, logEntry.Message)
+                   && String.Equals(RawMessage, logEntry.RawMessage);
         }
 
         // if a log entry doesn't has timestamp, then it is a tracated message from last message
@@ -269,6 +273,8 @@ namespace FailoverDetector
         public override ErrorLogEntry ParseLogEntry(string line)
         {
             ErrorLogEntry entry = new ErrorLogEntry();
+
+            entry.RawMessage = line;
 
             string tmpTimeStamp = TokenizeTimestamp(line);
 

@@ -102,6 +102,7 @@ namespace FailoverDetector
 
         public override ErrorLogEntry ParseLogEntry(string line)
         {
+            string rawLine = line;
             // channel could be at the beginning or after timestamp
             string tmpChannel = TokenizeChannel(line);
             line = line.Substring(tmpChannel.Length).Trim();
@@ -123,6 +124,7 @@ namespace FailoverDetector
             }
 
             ErrorLogEntry entry = new ErrorLogEntry(tmpParsedTime, tmpPid, line);
+            entry.RawMessage = rawLine;
             return entry;
 
         }

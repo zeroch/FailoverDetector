@@ -59,6 +59,7 @@ namespace FailoverDetector
 
         public override ErrorLogEntry ParseLogEntry(string line)
         {
+            string rawLine = line;
             string tmpTimestamp = TokenizeTimestamp(line);
             DateTimeOffset tmpParsedTime = ParseTimeStamp(tmpTimestamp);
             line = line.Substring(tmpTimestamp.Length).Trim();
@@ -70,6 +71,7 @@ namespace FailoverDetector
             line = line.Substring(tmpSqlSource.Length ).Trim();
 
             ErrorLogEntry entry = new ErrorLogEntry(tmpParsedTime, "", line);
+            entry.RawMessage = rawLine;
             return entry;
 
         }

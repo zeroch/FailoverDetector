@@ -57,6 +57,7 @@ namespace FailoverDetectorTests
             ErrorLogEntry entry = new ErrorLogEntry();
             ErrorLogParser parser = new ErrorLogParser();
             entry = parser.ParseLogEntry(testString);
+            pEntry.RawMessage = testString;
             Assert.IsTrue(entry.Equals(pEntry));
 
         }

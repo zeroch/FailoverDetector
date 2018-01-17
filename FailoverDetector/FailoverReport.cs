@@ -159,6 +159,7 @@ namespace FailoverDetector
             // MessageMgr part
             private Dictionary<Constants.SourceType, DataSourceSet> rawDataEntries;
 
+            private Dictionary<string, List<string>> messageSet;
             public MessageMgr()
             {
                 rawDataEntries = new Dictionary<Constants.SourceType, DataSourceSet>();
@@ -166,6 +167,8 @@ namespace FailoverDetector
                 {
                     rawDataEntries[type] = new DataSourceSet(type);
                 }
+
+                messageSet = new Dictionary<string, List<string>>();
             }
 
             public void AddNewMessage(Constants.SourceType type, string instance, DateTimeOffset timestamp, string msg)
@@ -178,12 +181,31 @@ namespace FailoverDetector
 
             }
 
+            public void AddNewMessage(string instance, string msg)
+            {
+                if (!messageSet.ContainsKey(instance))
+                {
+                    List<string> tList = new List<string>();
+                    tList.Add(msg);
+                    messageSet[instance] = tList;
+                }else
+                {
+                    List<string> pList = messageSet[instance];
+                    pList.Add(msg);
+                }
+            }
+
             public void Show()
             {
-                Console.WriteLine("Following log entries are related with Failover.");
-                foreach (KeyValuePair<Constants.SourceType, DataSourceSet> dataSourceSet in rawDataEntries)
+                
+                foreach (KeyValuePair<string,List<string>> kvp in messageSet)
                 {
-                    dataSourceSet.Value.Show();
+                    Console.WriteLine("Following log entries are captured from: {0}", kvp.Key);
+                    List<string> pList = kvp.Value;
+                    foreach(string msg in pList)
+                    {
+                        Console.WriteLine(msg);
+                    }
                 }
             }
 
@@ -439,6 +461,11 @@ namespace FailoverDetector
             pMessageMgr.AddNewMessage(type, instance, timestamp, msg);
         }
 
+        public void AddNewMessage(string instance, string msg)
+        {
+            pMessageMgr.AddNewMessage(instance, msg);
+        }
+
         // helper function that used to show result or debugging.
 
         public void ShowRoleTransition()
@@ -457,8 +484,8 @@ namespace FailoverDetector
         
         public void ShowMessageSet()
         {
-            Console.WriteLine("This RCA was determined by following message:");
-            //pMessageMgr.Show();
+            Console.WriteLine("{0}This RCA was determined by following message:", Environment.NewLine);
+            pMessageMgr.Show();
 
         }
 
@@ -519,7 +546,6 @@ namespace FailoverDetector
                 EHadrArRole prevRole = pList.FirstOrDefault();
 
                 // role transition always is a pair. 
-
                 foreach(EHadrArRole currentRole in pList)
                 {
                     if( currentRole == EHadrArRole.HadrArRoleResolvingPendingFailover)

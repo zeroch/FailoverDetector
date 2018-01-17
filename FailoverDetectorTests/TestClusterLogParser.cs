@@ -69,6 +69,7 @@ namespace FailoverDetectorTests
             ErrorLogEntry ret = _clusterLogParser.ParseLogEntry(testString);
             DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 18, 16, 27, new TimeSpan(0, 0, 0));
             ErrorLogEntry test = new ErrorLogEntry(cmp, @"0000126c.00001cec::", @"SQL Server Availability Group <ag8102017>: [hadrag] SQL server service is not alive");
+            test.RawMessage = testString;
             Assert.IsTrue(ret.Equals(test));
         }
 

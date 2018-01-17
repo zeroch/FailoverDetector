@@ -57,7 +57,10 @@ namespace FailoverDetectorTests
         {
             ErrorLogEntry ret = _appLogParser.ParseLogEntry(_testString);
             DateTimeOffset cmp = new DateTimeOffset(2017, 9, 19, 10, 30, 8, new TimeSpan(-4, 0, 0));
+
             ErrorLogEntry test = new ErrorLogEntry(cmp, @"", @"The state of the local availability replica in availability group 'ag8102017' has changed from   'RESOLVING_NORMAL' to 'PRIMARY_PENDING'.  The state changed because the availability group is coming online.  For more information, see the SQL Server error log, Windows Server Failover Clustering (WSFC) management console, or WSFC log.");
+            test.RawMessage = _testString;
+
             Assert.IsTrue(ret.Equals(test));
         }
 

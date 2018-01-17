@@ -31,7 +31,7 @@ namespace FailoverDetector
             {
                 return _Regex.IsMatch(msg);
             }
-            public abstract void HandleOnceMatch(string msg, PartialReport pReport);
+            public abstract void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport);
 
         }
 
@@ -39,12 +39,13 @@ namespace FailoverDetector
         public class StopSqlServiceExpression : MessageExpression
         {
 
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("17148");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public StopSqlServiceExpression()
@@ -60,12 +61,13 @@ namespace FailoverDetector
         {
 
 
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("17147");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public ShutdownServerExpression()
@@ -79,14 +81,14 @@ namespace FailoverDetector
         {
 
 
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
 
                 // capture 'ag_name', 'prev_state'  and 'current_state'
-                if(RxStringInQuote.IsMatch(msg))
+                if(RxStringInQuote.IsMatch(pEntry.Message))
                 {
                     // in this case, matches must equels to 3
-                    MatchCollection mc = RxStringInQuote.Matches((msg));
+                    MatchCollection mc = RxStringInQuote.Matches((pEntry.Message));
                     if (mc.Count != 3)
                         return;
                     pReport.AgName = mc[0].Value;
@@ -109,12 +111,13 @@ namespace FailoverDetector
         {
 
 
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("19407");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public LeaseExpiredExpression()
@@ -129,12 +132,13 @@ namespace FailoverDetector
         {
 
 
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("19421");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public LeaseTimeoutExpression()
@@ -148,12 +152,13 @@ namespace FailoverDetector
         {
 
 
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("19422");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public LeaseRenewFailedExpression()
@@ -165,12 +170,13 @@ namespace FailoverDetector
         // Match LeaseFailedToSleep
         public class LeaseFailedToSleepExpression : MessageExpression
         {
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("19423");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public LeaseFailedToSleepExpression()
@@ -181,12 +187,13 @@ namespace FailoverDetector
         }
         public class GenerateDumpExpression : MessageExpression
         {
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("Dump");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public GenerateDumpExpression()
@@ -198,12 +205,13 @@ namespace FailoverDetector
         //  cluster log 1006
         public class ClusterHaltExpression : MessageExpression
         {
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("1006");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public ClusterHaltExpression()
@@ -214,12 +222,13 @@ namespace FailoverDetector
         // cluster log 1069
         public class ResourceFailedExpression : MessageExpression
         {
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("1069");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public ResourceFailedExpression()
@@ -230,12 +239,13 @@ namespace FailoverDetector
         // Cluster log Node Offline, 1135
         public class NodeOfflineExpression : MessageExpression
         {
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("1135");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public NodeOfflineExpression()
@@ -247,12 +257,13 @@ namespace FailoverDetector
         // cluster log 1177
         public class LostQuorumExpression : MessageExpression
         {
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("1177");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
             }
 
             public LostQuorumExpression()
@@ -264,7 +275,7 @@ namespace FailoverDetector
         // cluster log 1205
         public class ClusterOfflineExpression : MessageExpression
         {
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
@@ -279,7 +290,7 @@ namespace FailoverDetector
         }
         public class FailoverExpression : MessageExpression
         {
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report
@@ -297,7 +308,7 @@ namespace FailoverDetector
         // RHS terminated
         public class RhsTerminatedExpression : MessageExpression
         {
-            public override void HandleOnceMatch(string msg, PartialReport pReport)
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
                 // TODO
                 // get current Partial Report

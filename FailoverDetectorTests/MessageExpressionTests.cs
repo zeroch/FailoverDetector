@@ -68,12 +68,15 @@ namespace FailoverDetectorTests
         [TestMethod]
         public void HandleOnceMatchTest()
         {
+            string instanceName = "test";
             PartialReport pReport = new PartialReport();
             for (int i = 0; i < regexList.Count; i++)
             {
+                ErrorLogEntry errorLogEntry = new ErrorLogEntry();
+                errorLogEntry.Message = TestStringList[i];
                 if (regexList[i].IsMatch(TestStringList[i]))
                 {
-                    regexList[i].HandleOnceMatch(TestStringList[i], pReport);
+                    regexList[i].HandleOnceMatch(instanceName, errorLogEntry, pReport);
                 }
             }
             
