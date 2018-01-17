@@ -102,6 +102,7 @@
     <None Include="Data\UnitTest\Configuration\TestCase_Pass\Configuration.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Data\UnitTest\Configuration\TestCase_Failed\Configuration.json">
@@ -110,7 +111,6 @@
     <None Include="Data\UnitTest\Configuration\TestCase_Pass\Configuration.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

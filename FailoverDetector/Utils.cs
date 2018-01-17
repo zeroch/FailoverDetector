@@ -46,6 +46,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("17148");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public StopSqlServiceExpression()
@@ -68,6 +69,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("17147");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public ShutdownServerExpression()
@@ -118,6 +120,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("19407");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public LeaseExpiredExpression()
@@ -139,6 +142,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("19421");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public LeaseTimeoutExpression()
@@ -159,6 +163,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("19422");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public LeaseRenewFailedExpression()
@@ -177,6 +182,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("19423");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public LeaseFailedToSleepExpression()
@@ -194,6 +200,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("Dump");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public GenerateDumpExpression()
@@ -212,6 +219,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("1006");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public ClusterHaltExpression()
@@ -229,6 +237,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("1069");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public ResourceFailedExpression()
@@ -246,6 +255,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("1135");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public NodeOfflineExpression()
@@ -264,6 +274,7 @@ namespace FailoverDetector
                 // fill data into partial report
                 pReport.MessageSet.Add("1177");
                 pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
             }
 
             public LostQuorumExpression()
@@ -281,6 +292,8 @@ namespace FailoverDetector
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("1205");
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+
             }
 
             public ClusterOfflineExpression()
@@ -296,6 +309,8 @@ namespace FailoverDetector
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("Failover");
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+
             }
 
             public FailoverExpression()
@@ -314,6 +329,8 @@ namespace FailoverDetector
                 // get current Partial Report
                 // fill data into partial report
                 pReport.MessageSet.Add("1146");
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+
             }
 
             public RhsTerminatedExpression()

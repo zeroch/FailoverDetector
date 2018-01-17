@@ -58,128 +58,52 @@ namespace FailoverDetector
         [DataContract]
         public class MessageMgr
         {
-            // Raw message section
-            [DataContract]
-            private class RawMessage
-            {
-                public DateTimeOffset Timestamp { get; }
-                [DataMember(Name = "msg")]
-                public string Message { get; }
 
-                public RawMessage(DateTimeOffset timestamp, string message)
-                {
-                    Timestamp = timestamp;
-                    Message = message;
-                }
-
-
-
-                public void Show()
-                {
-                    Console.WriteLine("{0}{1}", Timestamp, Message);
-                }
-            }
-
-            [DataContract]
-            private class DataSource
-            {
-                public DataSource(string instanceName)
-                {
-                    InstanceName = instanceName;
-                    MessagList = new List<RawMessage>();
-                }
-
-                private string InstanceName { get; }
-                [DataMember(Name = "Messages")]
-                private List<RawMessage> MessagList { get; }
-
-                public void AddMessage(DateTimeOffset timestamp, string msg)
-                {
-                    RawMessage pMessage = new RawMessage(timestamp, msg);
-                    MessagList.Add(pMessage);
-                    MessagList.Sort((msg1, msg2) => DateTimeOffset.Compare(msg1.Timestamp, msg2.Timestamp));
-                }
-
-                public void Show()
-                {
-                    Console.WriteLine("Log recorded at {0}", InstanceName);
-                    foreach (RawMessage message in MessagList)
-                    {
-                        message.Show();
-                    }
-                }
-
-            }
-            [DataContract]
-            private class DataSourceSet
-            {
-                [DataMember(Name = "Set")]
-                private Dictionary<string, DataSource> DataSources;
-                public Constants.SourceType ResourceType { get; }
-                private bool DataEntryFound { set; get; }
-                public DataSourceSet(Constants.SourceType type)
-                {
-                    DataSources = new Dictionary<string, DataSource>();
-                    ResourceType = type;
-                    DataEntryFound = false;
-                }
-
-                protected internal void AddNewMessage(string instance, DateTimeOffset timestamp, string msg)
-                {
-                    DataSource pDataSource = null;
-                    if (!DataSources.ContainsKey(instance))
-                    {
-                        pDataSource = new DataSource(instance);
-                        DataSources[instance] = pDataSource;
-                    }
-                    else
-                    {
-                        pDataSource = DataSources[instance];
-                    }
-
-                    pDataSource.AddMessage(timestamp, msg);
-                    DataEntryFound = true;
-                }
-
-                public void Show()
-                {
-                    if (DataEntryFound)
-                    {
-                        Console.WriteLine("{0} entries that related with this failover", ResourceType);
-                        foreach (var datasourcePairs in DataSources)
-                        {
-                            DataSource pDataSource = datasourcePairs.Value;
-                            pDataSource.Show();
-                        }
-                    }
-
-                }
-            }
 
             [DataMember(Name = "Data Source")]
-            // MessageMgr part
-            private Dictionary<Constants.SourceType, DataSourceSet> rawDataEntries;
+            private Dictionary<string, Dictionary<Constants.SourceType, List<string>>> DetailMessageSet;
 
             private Dictionary<string, List<string>> messageSet;
             public MessageMgr()
             {
-                rawDataEntries = new Dictionary<Constants.SourceType, DataSourceSet>();
-                foreach (Constants.SourceType type in Enum.GetValues(typeof(Constants.SourceType)))
-                {
-                    rawDataEntries[type] = new DataSourceSet(type);
-                }
-
                 messageSet = new Dictionary<string, List<string>>();
+                DetailMessageSet = new Dictionary<string, Dictionary<Constants.SourceType, List<string>>>();
             }
 
-            public void AddNewMessage(Constants.SourceType type, string instance, DateTimeOffset timestamp, string msg)
+            public void AddNewDetailMessage(Constants.SourceType type, string instance, DateTimeOffset timestamp, string msg)
             {
+                Dictionary<Constants.SourceType, List<string>> dictionary = null;
+                List<string> pList = null;
                 // if current instance log is not existed, we create an dataSource
+                if (!DetailMessageSet.ContainsKey(instance))
+                {
+                    dictionary = new Dictionary<Constants.SourceType, List<string>>();
+                    DetailMessageSet[instance] = dictionary;
+                }
+                else
+                {
+                    dictionary = DetailMessageSet[instance];
+                }
 
-                DataSourceSet sourceSet = rawDataEntries[type];
-                sourceSet.AddNewMessage(instance, timestamp, msg);
+                if (!dictionary.ContainsKey(type))
+                {
+                    pList = new List<string>();
+                    dictionary[type] = pList;
+                }else
+                {
+                    pList = dictionary[type];
+                }
 
-
+                string message = string.Empty;
+                // format message. XML data that system health own doesn't have timestamp
+                if (type == Constants.SourceType.SystemHealthXevent)
+                {
+                    message = String.Format("{0}\t{1}", timestamp, msg);
+                }else
+                {
+                    message = msg;
+                }
+                pList.Add(message);
             }
 
             public void AddNewMessage(string instance, string msg)
@@ -462,7 +386,7 @@ namespace FailoverDetector
         public void AddNewMessage(Constants.SourceType type, string instance, DateTimeOffset timestamp, string msg)
         {
             // when we init RawMessageMgr, we make sure all type is initialted
-            pMessageMgr.AddNewMessage(type, instance, timestamp, msg);
+            pMessageMgr.AddNewDetailMessage(type, instance, timestamp, msg);
         }
 
         public void AddNewMessage(string instance, string msg)

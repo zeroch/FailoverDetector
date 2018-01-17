@@ -60,6 +60,7 @@ namespace FailoverDetector
             ClusterLogParser clusterLogParser = new ClusterLogParser();
             SystemHealthParser systemHealthParser = new SystemHealthParser();
 
+            Console.WriteLine("{0}Disclaimer: Time zone used in this application is UTC time. Local time from log already converted to UTC before processing.{0}", Environment.NewLine);
 
             Console.WriteLine("{0}Start to analyze failover root cause.{0}", Environment.NewLine);
             foreach (var node in pFileProcess.NodeList)
