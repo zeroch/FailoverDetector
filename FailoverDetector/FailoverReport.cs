@@ -44,8 +44,9 @@ namespace FailoverDetector
            { "Network interface failure", "Network interface used to communicate between cluster nodes fails. Primary and secondary replicas cannot communicate. WSFC will initiate quorum vote and determine a new primary to fail over to." },
            { "Lost Quorum", "AG resource is brought offline because quorum is lost. This could be due to connectivity issue, but we do not have further evidence to conclude more detail answer." },
            {"Unknown", "We cannot determine exact failover root cause at this case. " },
-           {"Unsuccessful Failover", "Failover was initiated by WSFC, but availability group did not failover to any secondary replica successfully. original primary replica become primary role again. Most two common reasons to this behavior are secondary replica lost connection to primary and failover cluster exceed failover threshold in one hour. "}
-
+           {"Unsuccessful Failover", "Failover was initiated by WSFC, but availability group did not failover to any secondary replica successfully. original primary replica become primary role again. Most two common reasons to this behavior are secondary replica lost connection to primary and failover cluster exceed failover threshold in one hour. "},
+           {"High I/O", "System wide performance issue causes SQL Server service unable respond to AG lease handler. It is possible that other process or SQL Server has high I/O requests for a long time." },
+           {"High CPU utilization", "System wide performance issue causes SQL Server service unable respond to AG lease handler. It is possible that other process or SQL Server is taking 100% CPU resource for a long time." }
 
         };
     }
@@ -281,7 +282,10 @@ namespace FailoverDetector
 
         public bool SqlLowMemory { get; set; }
 
-
+        public UInt32 systemCpuUtilization { get; set; }
+        public UInt32 sqlCpuUtilization { get; set; }
+        public UInt32 pendingTasksCount { get; set; }
+        public UInt32 intervalLongIos { get; set; }
 
         [DataMember(Name = "Role Transition")]
         [JsonProperty(Order = 9)]
@@ -911,6 +915,11 @@ namespace FailoverDetector
                 pReport.ShowRoleTransition();
 
                 pReport.ShowMessageSet();
+                if (pReport.EstimateResult)
+                {
+                    // show CPU state as reference
+                    Console.WriteLine("System CPU Utilization: {0}\nSQL CPU Utilization: {1}\nPending Tasks: {2}\nLong Disk I/O wait:{3}", pReport.systemCpuUtilization, pReport.sqlCpuUtilization, pReport.pendingTasksCount, pReport.intervalLongIos);
+                }
 
 
                 Console.ReadLine();
@@ -1069,6 +1078,15 @@ namespace FailoverDetector
                 {
                     // TODO
                     // estimate high cpu, low memory or high disk i/o
+                    if (pReport.LongIO || pReport.pendingTasksCount > 0)
+                    {
+                        pReport.RootCause = "High I/O";
+                        pReport.EstimateResult = true;
+                    }else if (pReport.systemCpuUtilization > 95 || pReport.sqlCpuUtilization > 95)
+                    {
+                        pReport.RootCause = "High CPU utilization";
+                        pReport.EstimateResult = true;
+                    }
                 }
 
 

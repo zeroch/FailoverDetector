@@ -268,6 +268,9 @@ IsNullable = false)]
                 pCurrentReport.SickSpinLock = true;
             }
 
+            // write useful data to report
+            pCurrentReport.systemCpuUtilization = systemComp.systemCpuUtilization;
+            pCurrentReport.sqlCpuUtilization = systemComp.sqlCpuUtilization;
 
 
         }
@@ -294,6 +297,7 @@ IsNullable = false)]
                 pCurrentReport.UnresolvedDeadlock = true;
                 pCurrentReport.SystemUnhealthFound = true;
             }
+            pCurrentReport.pendingTasksCount = qPComponent.pendingTasks;
         }
 
         public void ParseResource(String xmlString)
@@ -326,6 +330,7 @@ IsNullable = false)]
             {
                 pCurrentReport.LongIO = true;
             }
+            pCurrentReport.intervalLongIos = ioComponent.intervalLongIos;
         }
 
 
