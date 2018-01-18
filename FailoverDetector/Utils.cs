@@ -616,16 +616,20 @@ namespace FailoverDetector
                         ConfigInfo = new Configuration();
                         var res = new DataContractJsonSerializer(typeof(Configuration));
                         ConfigInfo = (Configuration)res.ReadObject(ms);
-
                         ms.Close();
+
                     }
                 }catch(FileNotFoundException e)
                 {
                     Console.WriteLine("Loading configuration failed.");
                     Console.WriteLine(e);
+                } catch(Exception e)
+                {
+                    Console.WriteLine("Configuration file is not a valid json format.");
+                    System.Environment.Exit(1);
                 }
 
-                ConfigInfo.FlatInstanceList();
+
                 return true;
             }
 
@@ -647,15 +651,14 @@ namespace FailoverDetector
 
                 // We need to validate /data dir if there are data logs existed
 
-                foreach (MetaAgInfo agInfo in ConfigInfo.AgInfo)
-                {
-                    Console.WriteLine("{0}Validating log data provided for{0}AG: {1}{0}instances includes:", Environment.NewLine, agInfo.Name);
-                    foreach(string instance in agInfo.InstanceName)
+
+                    Console.WriteLine("{0}Validating log data{0}instances includes:", Environment.NewLine);
+                    foreach(string instance in ConfigInfo.InstanceList)
                     {
                         Console.WriteLine("\t{0}", instance);
                     }
                     Console.WriteLine();
-                    foreach (string instance in agInfo.InstanceName)
+                    foreach (string instance in ConfigInfo.InstanceList)
                     {
 
                         string validateString = string.Empty;
@@ -729,12 +732,12 @@ namespace FailoverDetector
                             Console.WriteLine("Reviewing data for instance: {0}.", instance);
                             Console.ForegroundColor = ConsoleColor.Red;
                             Console.Write(fileTypeString);
-                            Console.WriteLine("Tool may not be able to find root cause in some condition. Please check files that you provided.");
+                            Console.WriteLine("Tool may not be able to find root cause in some conditions. Please check files that you provided.");
                             Console.ForegroundColor = ConsoleColor.White;
                         }
 
                     }
-                }
+
             }
 
 
@@ -846,83 +849,58 @@ namespace FailoverDetector
 
 
         [DataContract]
-        public class Configuration
+        public class Configuration : IEquatable<Configuration>
         {
             [DataMember(Name = "Data Source Path")]
             public string SourcePath { get; set; }
-            [DataMember(Name = "AG")]
-            public List<MetaAgInfo> AgInfo { get; set; }
+            [DataMember(Name = "Instances")]
+            public HashSet<string> InstanceList { get; set; }
+            [DataMember(Name = "Health Level")]
+            public int HealthLevel { get; set; }
 
             public Configuration()
             {
                 SourcePath = string.Empty;
-                AgInfo = new List<MetaAgInfo>();
+                HealthLevel = 3;
+                InstanceList = new HashSet<string>();
             }
             public override bool Equals(object obj)
             {
                 if (!(obj is Configuration other))
                     return false;
                 return this.SourcePath == other.SourcePath &&
-                       this.AgInfo.SequenceEqual(other.AgInfo);
-            }
-            public HashSet<string> InstanceList { get; set; }
-            // Convert instance lists in AG to a flat list
-            // so we can use this list to check data directory
-            public void FlatInstanceList()
-            {
-                InstanceList = new HashSet<string>();
-                foreach(MetaAgInfo ag in AgInfo)
-                {
-                    foreach(string instance in ag.InstanceName)
-                    {
-                        if (!InstanceList.Contains(instance))
-                        {
-                            InstanceList.Add(instance);
-                        }
-                    }
-                }
-            }
-        }
-        
-        [DataContract]
-        public class MetaAgInfo
-        {
-            public MetaAgInfo()
-            {
-                Name = string.Empty;
-                HealthLevel = 3;
-                InstanceName = new List<string>();
+                       this.InstanceList.SequenceEqual(other.InstanceList);
             }
 
-            public MetaAgInfo(string agName)
+            public bool Equals(Configuration other)
             {
-                Name = agName;
-                HealthLevel = 3;
-                InstanceName = new List<string>();
-            }
-            [DataMember(Name = "AG Name")]
-            public string Name { get; set; }
-            [DataMember(Name = "AG Health Level")]
-            public int HealthLevel { get; set; }
-            [DataMember(Name = "Instances")]
-            public List<string> InstanceName { get; set; }
-
-            public override bool Equals(object obj)
-            {
-
-                if (!(obj is MetaAgInfo other))
-                    return false;
-                return this.Name == other.Name &&
-                       this.HealthLevel == other.HealthLevel &&
-                       this.InstanceName.SequenceEqual(other.InstanceName);
-
+                return other != null &&
+                       SourcePath == other.SourcePath &&
+                       EqualityComparer<HashSet<string>>.Default.Equals(InstanceList, other.InstanceList) &&
+                       HealthLevel == other.HealthLevel;
             }
 
             public override int GetHashCode()
             {
-                return 0;
+                var hashCode = 1794263820;
+                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(SourcePath);
+                hashCode = hashCode * -1521134295 + EqualityComparer<HashSet<string>>.Default.GetHashCode(InstanceList);
+                hashCode = hashCode * -1521134295 + HealthLevel.GetHashCode();
+                return hashCode;
+            }
+
+            public static bool operator ==(Configuration configuration1, Configuration configuration2)
+            {
+                return EqualityComparer<Configuration>.Default.Equals(configuration1, configuration2);
+            }
+
+            public static bool operator !=(Configuration configuration1, Configuration configuration2)
+            {
+                return !(configuration1 == configuration2);
             }
         }
+        
+ 
 
 
     }

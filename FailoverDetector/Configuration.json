@@ -1,14 +1,9 @@
 {
-	"Data Source Path" : "\\\\zechen-d1\\dbshare\\Temp\\Data",
-	"AG" : [
-        {
-            "AG Name": "ag1023",
-            "Instances": [
-                "ze-2016-v1",
-                "ze-2016-v2"
-            ]
-        }
-
-	]
-	
+    "Data Source Path": "\\\\zechen-d1\\dbshare\\Temp\\Data",
+    "Health Level": 3,
+    "Instances": [
+        "WindowsNod1",
+        "WindowsNod2",
+        "WindowsNode6"
+    ]
 }

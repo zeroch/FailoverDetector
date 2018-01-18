@@ -7,45 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Runtime.Serialization.Json;
 
-namespace FailoverDetector.Utils.FileProcessor.ConfigurationTests
-{
-    [TestClass()]
-    public class FileProcessorTests
-    {
-        [TestMethod()]
-        public void EqualsTest()
-        {
-            MetaAgInfo actualAgInfo = new MetaAgInfo("test")
-            {
-                InstanceName = new List<string>() {"ze-vm001", "ze-vm003"}
-            };
-
-            MetaAgInfo expectedAgInfo = new MetaAgInfo("test")
-            {
-                InstanceName = new List<string>() { "ze-vm001", "ze-vm003" }
-            };
-            Assert.IsTrue(actualAgInfo.Equals(expectedAgInfo));
-        }
-
-        [TestMethod()]
-        public void FlatInstanceListTest()
-        {
-            Configuration actualAgInfo = new Configuration();
-            MetaAgInfo metaAg =  new MetaAgInfo("test")
-            {
-                InstanceName = new List<string>() { "ze-vm001", "ze-vm003" }
-            };
-
-            actualAgInfo.AgInfo.Add(metaAg);
-
-            actualAgInfo.FlatInstanceList();
-
-            HashSet<string> expectedInstanceList = new HashSet<string>() { "ze-vm001", "ze-vm003" };
-
-            Assert.IsTrue(expectedInstanceList.SequenceEqual( actualAgInfo.InstanceList));
-        }
-    }
-}
 
 namespace FailoverDetector.UtilsTests
 {
@@ -214,14 +175,8 @@ namespace FailoverDetector.UtilsTests
             Configuration expectedConfiguration = new Configuration
             {
                 SourcePath = @"\\zechen-d1\dbshare\Temp\Data",
-                AgInfo = new List<MetaAgInfo>()
-                {
-                    new MetaAgInfo("ag1023")
-                    {
-                        HealthLevel = 3,
-                        InstanceName = new List<string>() { "ze-2016-v1", "ze-2016-v2" }
-                    }
-                }
+                HealthLevel = 3,
+                InstanceList = new HashSet<string>() { "ze-2016-v1", "ze-2016-v2" }
             };
 
             MemoryStream ms = new MemoryStream();
