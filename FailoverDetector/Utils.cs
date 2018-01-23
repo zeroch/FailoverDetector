@@ -392,7 +392,7 @@ namespace FailoverDetector
                 if (File.Exists(dataDirectory))
                 {
                     // This path is a file
-                    Console.WriteLine("{0} is not a File not a valid directory", dataDirectory);
+                    Console.WriteLine("{0} is a file not a valid directory", dataDirectory);
                     return false;
                 }
                 else if (Directory.Exists(dataDirectory))
@@ -403,7 +403,7 @@ namespace FailoverDetector
                 }
                 else
                 {
-                    Console.WriteLine("{0} is not a valid file or directory.", dataDirectory);
+                    Console.WriteLine("{0} is neither a valid file nor directory.", dataDirectory);
                     return false;
                 }
             }
@@ -588,7 +588,7 @@ namespace FailoverDetector
                                 ShowResult = true;
                                 break;
                             default:
-                                Console.WriteLine("{0} is an invalide parameter.", s);
+                                Console.WriteLine("{0} is an invalid parameter.", s);
                                 Console.WriteLine("Please check valid Parameter input:");
                                 Console.WriteLine("--Analyze");
                                 Console.WriteLine("--Show");
@@ -651,7 +651,7 @@ namespace FailoverDetector
 
                 // We need to validate /data dir if there are data logs existed
 
-
+                    //TODO discuss about this line
                     Console.WriteLine("{0}Validating log data{0}instances includes:", Environment.NewLine);
                     foreach(string instance in ConfigInfo.InstanceList)
                     {
@@ -729,10 +729,10 @@ namespace FailoverDetector
                                 fileTypeString += " are missing";
                             }
 
-                            Console.WriteLine("Reviewing data for instance: {0}.", instance);
+                            Console.WriteLine("Reviewing Logs for instance: {0}.", instance);
                             Console.ForegroundColor = ConsoleColor.Red;
                             Console.Write(fileTypeString);
-                            Console.WriteLine("Tool may not be able to find root cause in some conditions. Please check files that you provided.");
+                            Console.WriteLine("Root Cause analysis may not be complete in some cases, please refer log for more information.");
                             Console.ForegroundColor = ConsoleColor.White;
                         }
 
@@ -751,14 +751,14 @@ namespace FailoverDetector
                     return;
                 }
 
-                Console.WriteLine("{0}Tool executed as default mode. {0}", Environment.NewLine);
+                Console.WriteLine("{0}Executing in default mode.{0}", Environment.NewLine);
                 // check remote directory if valid
-                Console.WriteLine("Start to copy data logs from share path to local workspace.");
+                Console.WriteLine("Copying logs from the shared path to local workspace.");
                 string sourcePath = ConfigInfo.SourcePath;
                 if (!Directory.Exists(sourcePath))
                 {
                    
-                    Console.WriteLine("We won't be able to copy data logs from Data Source Path: {0}. We will use data at current workspace for continue.", sourcePath);
+                    Console.WriteLine("Unable to copy logs from Data Source Path: {0}. Files available in the current workspace will be used.", sourcePath);
                     // let's do yes
                     //Console.ReadLine();
 
@@ -773,7 +773,7 @@ namespace FailoverDetector
                     DirectoryCopy(sourcePath, targetPath);
 
                 }
-                Console.WriteLine("Complete copying data logs from share path to local workspace.{0}", Environment.NewLine);
+                Console.WriteLine("Finished copying data logs from shared path to local workspace.{0}", Environment.NewLine);
 
             }
             public void DirectoryCopy(string sourceDirPath, string destDirPath)
@@ -784,7 +784,7 @@ namespace FailoverDetector
 
                 if (!dir.Exists)
                 {
-                    Console.WriteLine("Source directory does not exist or could not be found: {0}", sourceDirPath);
+                    Console.WriteLine("Source directory does not exist or cannot not be found: {0}", sourceDirPath);
                     return;
                 }
 

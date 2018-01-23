@@ -28,25 +28,42 @@ namespace FailoverDetector
         public static readonly Dictionary<string, string> RootCauseMapping
           = new Dictionary<string, string>
         {
-           { "SQL Service Stopped", "Admin or other process gracefully shuts down SQL Serverhosting the AG primary. In this case, Windows notifies WSFC to initiate a failover and picks one secondary as new primary, if automatic failover is enabled"  },
-           { "Windows Server Stopped", "The Windows Server hosting the primary replica was shut down or restarted. In this case, Windows notifies WSFC to initiate a failover and picks one secondary as new primary, if automatic failover is enabled" },
-           { "Force Failover", "An administrator performs a manual failover through Management Studio or through a direct Transact-SQL statement “ALTER AVAILABILITY GROUP <AG name> FAILOVER” or “ALTER AVAILABILITY GROUP <AG name> FAILOVER WITH DATA_LOSS” on the secondary replica that will become the primary replica." },
-           { "SQL Out Of Memeory", ": If no memory has been freed in 2 minutes, sp_server_diagnostics running in SQL Server determines that SQL Server system component is in  error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
-           { "Unresolved Deadlock", "If sp_server_diagnostics detects unresolved deadlock from query processing component, it determines that SQL Server system component is in error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
-           { "Exceed Dump Threshold", "There are more than 100 SQL Server dumps on the primary replica since the last SQL Server restart, and there is at least one dump in the last 10 seconds. In this case, sp_server_diagnostics running in SQL Server determines that SQL Server system component is in error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
-           { "Memory Scribbler", "SQL Server has write access violation and the write address is more than 64KB. If there are more than three such memory corruptions since SQL Server started,, sp_server_diagnostics running in SQL Server determines that  SQL Server system component is in  error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
-           { "Sick SpinLock", "After an access violation, a spin-lock is marked as sick if it backs off more than three times, which is the threshold. In this case, sp_server_diagnostics running in SQL Server determines that SQL Server system component is in error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
-           { "SQL Service Crashed Unexpectedly", "SQL Server service was shut down unexpectedly. In this scenario, SQL Server crashed without error message or exception thrown. Resources host service (rhs.exe) does not detect lease check from SQL Server about availability group lease. This results an AG lease timeout signal to WSFC and WSFC will initiate a failover if automatic failover is enabled." },
-           { "Long Dump", "SQL Server is creating a dump file. During the process, threads handle AG lease are frozen and exceed lease timeout. Resources host service (rhs.exe)  can not detect lease check from SQL Server for availability group lease. This results an AG lease timeout signal to WSFC and WSFC will initiate a failover if automatic failover is enabled." },
-           { "RHS Stopped", "" },
-           { "Cluster Service Halted", "Cluster service on primary was halted, resulting in  primary unable to communicate with other nodes in the cluster. Cluster will initiate quorum vote and determine a new primary to fail over to." },
-           { "Cluster Node Offline", "When primary node is frozen or loses power, WSFC loses connection from and to the primary. Failover cluster decide to initiate failover and pick a primary from other possible nodes" },
-           { "Network Interface Failure", "Network interface used to communicate between cluster nodes fails. Primary and secondary replicas cannot communicate. WSFC will initiate quorum vote and determine a new primary to fail over to." },
-           { "Lost Quorum", "AG resource is brought offline because quorum is lost. This could be due to connectivity issue, but we do not have further evidence to conclude more detail answer." },
-           {"Unknown", "We cannot determine exact failover root cause at this case. " },
-           {"Unsuccessful Failover", "Failover was initiated by WSFC, but availability group did not failover to any secondary replica successfully. original primary replica become primary role again. Two most common reasons to this behavior are secondary replica was not sync with primary and failover cluster exceed failover threshold in one hour. "},
-           {"High I/O", "System wide performance issue causes SQL Server service unable respond to AG lease handler. It is possible that other process or SQL Server has high I/O requests for a long time." },
-           {"High CPU Utilization", "System wide performance issue causes SQL Server service unable respond to AG lease handler. It is possible that other process or SQL Server is taking 100% CPU resource for a long time." }
+
+                { "SQL Server Stopped", "An administrator or another process gracefully shut down the SQL Server hosting the Availability Group primary. In this case, Windows notifies WSFC to initiate a failover and picks a synchronized secondary as the new primary, if automatic failover is enabled."  },
+
+                { "Windows Server Stopped", "The Windows Server hosting the primary replica was shut down or restarted. In this case, Windows notifies WSFC to initiate a failover and picks a synchronized secondary as the new primary, if automatic failover is enabled." },
+
+                { "Manual Failover", "An administrator performed a manual failover by either using SQL Server Management Studio or the Transact-SQL statement “ALTER AVAILABILITY GROUP <AG name> FAILOVER” or “ALTER AVAILABILITY GROUP <AG name> FAILOVER WITH DATA_LOSS” on the secondary replica that will become the primary replica." },
+
+                { "SQL Server Out Of Memory", ": SQL Server hosting the Availability Group primary replica was out of memory. If no memory has been freed in two minutes, sp_server_diagnostics determines that SQL Server system component is in error state and notifies WSFC to initiate a failover,. " },
+
+                { "Unresolved Deadlock", "A deadlock was unresolved. If sp_server_diagnostics detects unresolved deadlock from query processing component, it determines that SQL Server system component is in error state and notifies failover WSFC to initiate a failover, if automatic failover is enabled. " },
+
+                { "Dump Threshold Exceeded", "There were more than 100 SQL Server dumps on the primary replica since the last SQL Server restart, and there was at least one dump in the last 10 seconds. In this case, sp_server_diagnostics running in SQL Server determines that SQL Server system component is in error state and notifies WSFC to initiate a failover, if automatic failover is enabled. " },
+
+                { "Memory Corruption", "SQL Server had write access violation and the write address was more than 64KB. If there are more than three such memory corruptions since SQL Server started, sp_server_diagnostics running in SQL Server determines that SQL Server system component is in error state and notifies WSFC to initiate a failover, if automatic failover is enabled. " },
+
+                { "Sick SpinLock", "After an access violation, a spin-lock was marked as sick because it backed off more than three times, which is the threshold. In this case, sp_server_diagnostics running in SQL Server determines that SQL Server system component is in error state and notifies WSFC to initiate a failover, if automatic failover is enabled. " },
+
+                { "Unexpected Crash in SQL Server", "SQL Server was shut down unexpectedly. SQL Server crashed without error message or exception thrown. Resources host service (rhs.exe) did not detect lease check from SQL Server about Availability Group lease. This resulted an Availability Group lease timeout signal to WSFC and WSFC initiated a failover if automatic failover is enabled." },
+
+                { "Long Duration in Dump", "SQL Server was creating a dump file. During the process, threads handling Availability Group lease were frozen and exceeded lease timeout. Resources host service (rhs.exe) could not detect lease check from SQL Server for the availability group lease. This resulted an Availability Group lease timeout signal to WSFC and WSFC initiated a failover if automatic failover is enabled." },
+
+                { "Cluster Service Halted", "Cluster service on the primary replica was halted, resulting in primary unable to communicate with other nodes in the cluster. Cluster initiated a quorum vote and determined a new primary to fail over to." },
+
+                { "Cluster Node Offline", "When primary node was frozen or lost power, WSFC lost connection from and to the primary. Failover cluster decided to initiate a failover and picked a primary from other possible nodes." },
+
+                { "Network Interface Failure", "Network interface for communication among cluster nodes failed. Primary and secondary replicas cannot communicate. WSFC initiated a quorum vote and determined a new primary to fail over to." },
+
+                { "Lost Quorum", "Availability Group resource was brought offline because quorum was lost. This could be due to connectivity issues, but there is no further evidence to conclude more details." },
+
+                {"Unsuccessful Failover", "Failover was initiated by WSFC, but Availability Group did not successfully failover to any secondary replica. The two most common reasons to this behavior are \n\ta) At least one database in the AG is not fully synchronized on any of the replicas \n\t b) failover threshold exceeded. "},
+
+                {"High I/O", " SQL Server unable to respond to Availability Group lease handler because of a System wide performance issue. It is possible that another process or SQL Server has had high I/O requests for a long time." },
+
+                {"High CPU Utilization", "SQL Server unable to respond to Availability Group lease handler because of a system wide performance issue. It is possible that another process or SQL Server has taken 100% CPU resource for a long time." },
+
+                {"Unknown", "Failover root cause cannot be determined in this case. " }
 
         };
     }
@@ -125,7 +142,7 @@ namespace FailoverDetector
                 
                 foreach (KeyValuePair<string,List<string>> kvp in messageSet)
                 {
-                    Console.WriteLine("Following log entries are captured from: {0}", kvp.Key);
+                    Console.WriteLine("The following log entries were captured from: {0}", kvp.Key);
                     List<string> pList = kvp.Value;
                     foreach(string msg in pList)
                     {
@@ -412,7 +429,7 @@ namespace FailoverDetector
         
         public void ShowMessageSet()
         {
-            Console.WriteLine("{0}This RCA was determined by following message:", Environment.NewLine);
+            Console.WriteLine("{0}Current root cause was determined by the following message:", Environment.NewLine);
             pMessageMgr.Show();
 
         }
@@ -810,7 +827,7 @@ namespace FailoverDetector
             foreach (PartialReport pReport in Reports)
             {
                 Console.WriteLine("-------------------------");
-                Console.WriteLine("A failover detected at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
+                Console.WriteLine("A failover was detected at : {0:MM/dd/yy H:mm:ss zzz} ", pReport.StartTime.ToString());
                 // Old Primary
                 Console.WriteLine("Old Primary: {0}", pReport.OldPrimary);
                 // New Primary
@@ -828,7 +845,7 @@ namespace FailoverDetector
                 // Root Cause:
                 if (pReport.EstimateResult)
                 {
-                    Console.WriteLine("We cannot determine the exact root cause, This is an estimated analysis");
+                    Console.WriteLine("The exact root cause cannot be determined. This is an estimate based on the available logs.");
                 }
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Root Cause: {0}", pReport.RootCause);
@@ -843,7 +860,7 @@ namespace FailoverDetector
                 {
                     Console.WriteLine("{0}Resource utilization during failover:", Environment.NewLine);
                     // show CPU state as reference
-                    Console.WriteLine("System CPU Utilization: {0}\nSQL CPU Utilization: {1}\nPending Task in SQL Server Scheduler: {2}\nLong Disk I/O wait:{3}", pReport.systemCpuUtilization, pReport.sqlCpuUtilization, pReport.pendingTasksCount, pReport.intervalLongIos);
+                    Console.WriteLine("System CPU Utilization: {0}\nSQL CPU Utilization: {1}\nPending Tasks in SQL Server Scheduler: {2}\nLong Disk I/O wait:{3}", pReport.systemCpuUtilization, pReport.sqlCpuUtilization, pReport.pendingTasksCount, pReport.intervalLongIos);
                 }
 
 
@@ -912,7 +929,7 @@ namespace FailoverDetector
                 // search root cause property.
                 if (pReport.ForceFailoverFound)
                 {
-                    pReport.RootCause = "Force Failover";
+                    pReport.RootCause = "Manual Failover";
                 }
                 else if (pReport.MessageSet.Contains("17147"))
                 {
@@ -921,7 +938,7 @@ namespace FailoverDetector
                 }
                 else if (pReport.MessageSet.Contains("17148"))
                 {
-                    pReport.RootCause = "SQL Service Stopped";
+                    pReport.RootCause = "SQL Server Stopped";
                 }
 
                 // search if system components is not health
@@ -933,7 +950,7 @@ namespace FailoverDetector
                     {
                         if (pReport.SqlOOM)
                         {
-                            pReport.RootCause = "SQL Out Of Memeory";
+                            pReport.RootCause = "SQL Server Out Of Memory";
                         }else if (pReport.UnresolvedDeadlock)
                         {
                             pReport.RootCause = "Unresolved Deadlock";
@@ -943,11 +960,12 @@ namespace FailoverDetector
                     {
                         if (pReport.ExceedDumpThreshold)
                         {
-                            pReport.RootCause = "Exceed Dump Threshold";
+                            pReport.RootCause = "Dump Threshold Exceeded";
                         }else if (pReport.Memorycribbler)
                         {
-                            pReport.RootCause = "Memory Scribbler";
-                        }else if (pReport.SickSpinLock)
+                            pReport.RootCause = "Memory Corruption";
+                        }
+                        else if (pReport.SickSpinLock)
                         {
                             pReport.RootCause = "Sick SpinLock";
                         }
@@ -959,17 +977,13 @@ namespace FailoverDetector
                 {
                     if (pReport.MessageSet.Contains("Crash"))
                     {
-                        pReport.RootCause = "SQL Service Crashed Unexpectedly";
+                        pReport.RootCause = "Unexpected Crash in SQL Server";
                     }else if (pReport.MessageSet.Contains("Dump"))
                     {
-                        pReport.RootCause = "Long Dump";
+                        pReport.RootCause = "Long Duration in Dump";
                     }
                 }
 
-                if (pReport.MessageSet.Contains("1146"))
-                {
-                    pReport.RootCause = "RHS Stopped";
-                }
 
                 if (pReport.MessageSet.Contains("1177"))
                 {
