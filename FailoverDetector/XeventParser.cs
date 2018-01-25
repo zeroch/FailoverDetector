@@ -113,6 +113,9 @@ namespace FailoverDetector
                     {
                         pReport.AgName = agName;
                     }
+                    pReport.AddNewMessage(Constants.SourceType.AlwaysOnXevent, _instanceName, evt.Timestamp, evtStatement);
+                    string rawStatement = "XEvent: " + evt.Timestamp + "\t" + evtStatement;
+                    pReport.AddNewMessage(_instanceName, rawStatement);
 
                 }
 
@@ -173,7 +176,7 @@ namespace FailoverDetector
             {
                 pReport.AgName = agName;
             }
-            //mReports.UpdateReport(pReport);
+
         }
         public void HandleArMgrStateChange(PublishedEvent evt)
         {
