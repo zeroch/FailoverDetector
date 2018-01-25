@@ -61,7 +61,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="AlwaysOnXeventParserTests.cs" />
-    <Compile Include="ApplicationLogParserTests.cs" />
+    <Compile Include="SystemLogParserTests.cs" />
     <Compile Include="FileProcessorTests.cs" />
     <Compile Include="MessageExpressionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -102,6 +102,9 @@
     <None Include="Data\UnitTest\Configuration\TestCase_Pass\Configuration.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Data\UnitTest\SystemLog\TestCase_0.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -112,6 +115,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
       <ItemGroup>

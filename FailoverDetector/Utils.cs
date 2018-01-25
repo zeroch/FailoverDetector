@@ -72,6 +72,23 @@ namespace FailoverDetector
 
 
         }
+        // match stop sqlservice and handle method
+        public class ServiceCrashedExpression : MessageExpression
+        {
+
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
+            {
+                pReport.MessageSet.Add("Crash");
+                pReport.AddNewMessage(instance, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+            }
+
+            public ServiceCrashedExpression()
+            {
+                _Regex = new Regex(
+                    @"(The SQL Server)(.*)(service terminated unexpectedly)");
+
+            }
         }
 
         // match stop sqlservice and handle method
@@ -498,6 +515,10 @@ namespace FailoverDetector
                     {
                         pNode.SetClusterLog(fileEntry);
                     }
+                    else if (fileEntry.Contains("System.csv"))
+                    {
+                        pNode.SetSystemLog(fileEntry);
+                    }
                 }
 
 
@@ -552,10 +573,14 @@ namespace FailoverDetector
                 public string ClusterLogPath { get; set; }
                 public bool FoundClusterLogFile { get; set; }
 
+                public string SystemLogPath { get; set; }
+                public bool FoundSystemLogFile { get; set; }
+
                 public NodeFileInfo(string name)
                 {
                     NodeName = name;
                     ClusterLogPath = String.Empty;
+                    SystemLogPath = String.Empty;
                     AlwaysOnFileList = new List<string>();
                     SystemHealthFileList = new List<string>();
                     ErrorLogFileList = new List<string>();
@@ -565,6 +590,7 @@ namespace FailoverDetector
                 {
                     return NodeName.Equals(obj.NodeName) &&
                            ClusterLogPath.Equals(obj.ClusterLogPath) &&
+                           SystemLogPath.Equals(obj.SystemLogPath) &&
                            AlwaysOnFileList.Count == obj.AlwaysOnFileList.Count &&
                            AlwaysOnFileList.SequenceEqual(obj.AlwaysOnFileList) &&
                            SystemHealthFileList.Count == obj.SystemHealthFileList.Count &&
@@ -595,6 +621,11 @@ namespace FailoverDetector
                 {
                     ClusterLogPath = path;
                     FoundClusterLogFile = true;
+                }
+                public void SetSystemLog(string path)
+                {
+                    SystemLogPath = path;
+                    FoundSystemLogFile = true;
                 }
 
             }

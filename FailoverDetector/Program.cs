@@ -59,6 +59,7 @@ namespace FailoverDetector
             ErrorLogParser errorLogParser = new ErrorLogParser();
             ClusterLogParser clusterLogParser = new ClusterLogParser();
             SystemHealthParser systemHealthParser = new SystemHealthParser();
+            SystemLogParser systemLogParser = new SystemLogParser();
 
             Console.WriteLine("{0}Disclaimer: All DateTime information represented in UTC.{0}", Environment.NewLine);
 
@@ -75,6 +76,15 @@ namespace FailoverDetector
                         errorLogParser.ParseLog(logPath, nodeName);
                     }
                 }
+
+                // after ErrorLog, we should know Timezone info from errorlogParser
+                // system log knows nothing about time zone so we have to borrow it from errorlog
+                systemLogParser.SetUTCCorrection(errorLogParser.FGetUTCTimeZone());
+                if (File.Exists(cNode.SystemLogPath))
+                {
+                    systemLogParser.ParseLog(cNode.SystemLogPath, nodeName);
+                }
+
                 if (File.Exists(cNode.ClusterLogPath))
                 {
                     clusterLogParser.ParseLog(cNode.ClusterLogPath, nodeName);
@@ -88,6 +98,9 @@ namespace FailoverDetector
                         systemHealthParser.LoadXevents(systemXEventFile, nodeName);
                     }
                 }
+
+                // reset logParser Timezone incase two nodes locate at different timezone
+
 
             }
 
