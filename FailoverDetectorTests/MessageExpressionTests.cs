@@ -2,7 +2,7 @@
 using FailoverDetector;
 using FailoverDetector.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
+using System;
 
 namespace FailoverDetectorTests
 {
@@ -99,6 +99,53 @@ namespace FailoverDetectorTests
                 "1146"
             };
             Assert.IsTrue(pReport.MessageSet.SetEquals(expected));
+        }
+
+
+    }
+
+    [TestClass()]
+    public class UTCMessageTest
+    {
+        [TestMethod()]
+        public void HandleUtcTimeWithNegativeTest()
+        {
+
+                ErrorLogEntry errorLogEntry = new ErrorLogEntry();
+                errorLogEntry.Message = "Server UTC adjustment: -8:00";
+                TimeSpan expectedTime = new TimeSpan(8, 0, 0);
+                UTCCorrectionExpression pExpression = new UTCCorrectionExpression();
+                TimeSpan actualTime;
+                if (pExpression.IsMatch(errorLogEntry.Message))
+                {
+                    actualTime = pExpression.HandleOnceMatch(errorLogEntry);
+                }
+                else
+                {
+                    actualTime = new TimeSpan(0, 0, 0);
+                }
+
+                Assert.AreEqual(expectedTime, actualTime);
+        }
+        [TestMethod()]
+        public void HandleUtcTimeWithPositiveTest()
+        {
+
+            ErrorLogEntry errorLogEntry = new ErrorLogEntry();
+            errorLogEntry.Message = "Server UTC adjustment: 8:00";
+            TimeSpan expectedTime = new TimeSpan(-8, 0, 0);
+            UTCCorrectionExpression pExpression = new UTCCorrectionExpression();
+            TimeSpan actualTime;
+            if (pExpression.IsMatch(errorLogEntry.Message))
+            {
+                actualTime = pExpression.HandleOnceMatch(errorLogEntry);
+            }
+            else
+            {
+                actualTime = new TimeSpan(0, 0, 0);
+            }
+
+            Assert.AreEqual(expectedTime, actualTime);
         }
     }
 

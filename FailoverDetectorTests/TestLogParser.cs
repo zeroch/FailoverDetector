@@ -29,7 +29,7 @@ namespace FailoverDetectorTests
         [TestMethod]
         public void TestParseTimeStamp()
         {
-            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 16, 19, 57, new TimeSpan(-7, 0, 0));
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 14, 16, 19, 57, new TimeSpan(0, 0, 0));
 
             string retTime = _logParser.TokenizeTimestamp(_testString);
             DateTimeOffset parsedTime = _logParser.ParseTimeStamp(retTime);
@@ -51,7 +51,7 @@ namespace FailoverDetectorTests
         [TestMethod]
         public void TestErrorLogEntryEquals()
         {
-            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 10, 22, 00, 00, new TimeSpan(-7, 0, 0));
+            DateTimeOffset cmp = new DateTimeOffset(2017, 9, 10, 22, 00, 00, new TimeSpan(0, 0, 0));
             ErrorLogEntry pEntry = new ErrorLogEntry(cmp, "spid191", "UTC adjustment: -4:00");
             string testString = @"2017-09-10 22:00:00.19 spid191     UTC adjustment: -4:00";
             ErrorLogEntry entry = new ErrorLogEntry();

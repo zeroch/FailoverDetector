@@ -33,6 +33,45 @@ namespace FailoverDetector
             }
             public abstract void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport);
 
+            public TimeSpan HandleOnceMatch(ErrorLogEntry errorLogEntry)
+            {
+                throw new NotImplementedException();
+            }
+        }
+        // Match UTC time difference
+        public class UTCCorrectionExpression : MessageExpression
+        {
+            // this method should never being called
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
+            {
+                throw new NotImplementedException();
+            }
+
+            public new TimeSpan HandleOnceMatch(ErrorLogEntry pEntry)
+            {
+                Match mc = _Regex.Match(pEntry.Message);
+                string matchString = mc.Value;
+                int firstSemicolon = matchString.IndexOf(':');
+                int SecomdSemicolon = matchString.LastIndexOf(':');
+
+                int stringLen = SecomdSemicolon - firstSemicolon-1;
+                string timeDiff = matchString.Substring(firstSemicolon + 1, stringLen);
+
+                int timeZone = 0;
+                int.TryParse(timeDiff, out timeZone);
+
+                // timezone parsed from log, we should give it compensation
+                timeZone = -1 * timeZone;
+                return new TimeSpan(timeZone, 0, 0);
+            }
+
+            public UTCCorrectionExpression()
+            {
+                _Regex = new Regex(@"(UTC adjustment:).*");
+            }
+
+
+        }
         }
 
         // match stop sqlservice and handle method

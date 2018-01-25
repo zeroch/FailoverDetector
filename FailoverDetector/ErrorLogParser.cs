@@ -14,8 +14,26 @@ namespace FailoverDetector
         private DateTimeOffset _failoverTimeEnd;
         protected List<MessageExpression> _logParserList;
         protected Constants.SourceType sourceType;
+        protected UTCCorrectionExpression pUTCCorrection;
+
+        public TimeSpan FGetUTCTimeZone()
+        {
+            if (utcCorrectionFound)
+            {
+                return _utCcorrection;
+            }else
+            {
+                return new TimeSpan(0, 0, 0);
+            }
+        }
+        // UTC correction should only used at system log and error log
+        protected TimeSpan _utCcorrection { get; set; }
+        protected bool utcCorrectionFound { get; set; }
+
         protected LogParser()
         {
+            _utCcorrection = new TimeSpan(0, 0, 0);
+            pUTCCorrection = new UTCCorrectionExpression();
         }
 
         public void SetTargetFailoverTime(DateTimeOffset start, DateTimeOffset end)
@@ -63,9 +81,19 @@ namespace FailoverDetector
                                 // append message with last one I think. 
                                 // trancated is a special case in our problem.
                             }
+                            // fix UTC correction issue is not relevent with timestamp
+                            if (!utcCorrectionFound)
+                            {
+                                if (pUTCCorrection.IsMatch(pEntry.Message))
+                                {
+                                    utcCorrectionFound = true;
+                                    // parse time 
+                                    _utCcorrection = pUTCCorrection.HandleOnceMatch(pEntry);
+                                }
+                            }
+
+
                             DateTimeOffset messageTime = pEntry.Timestamp;
-
-
                             // compare time
                             PartialReport reportInstance = (PartialReport)ReportIterator.Current;
 
@@ -143,6 +171,14 @@ namespace FailoverDetector
 
         }
 
+        public override bool Equals(object obj)
+        {
+            if (obj is ErrorLogEntry)
+                return Equals(obj as ErrorLogEntry);
+
+            return base.Equals(obj);
+        }
+
         public bool Equals(ErrorLogEntry logEntry)
         {
             return String.Equals(Timestamp, logEntry.Timestamp)
@@ -171,15 +207,11 @@ namespace FailoverDetector
 
     public class ErrorLogParser : LogParser
     {
-        // get timestamp from each line.
-
-        readonly TimeSpan _utCcorrection;
-
 
         public ErrorLogParser()
         {
-            _utCcorrection = new TimeSpan(7, 0, 0);
             sourceType = Constants.SourceType.ErrorLog;
+            utcCorrectionFound = false;
             SetupRegexList();
         }
 
@@ -196,7 +228,9 @@ namespace FailoverDetector
                 new LeaseFailedToSleepExpression(),
                 new GenerateDumpExpression()
             };
-        }
+            // match UTC adjustment so we can convert all time to UTC time
+
+    }
 
         private readonly Regex _rxTimeStamp = new Regex(@"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{2}",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -204,27 +238,13 @@ namespace FailoverDetector
         private readonly Regex _rxSpid =
             new Regex(@"spid[0-9]{1,5}|LOGON|Backup", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        // SQLError 17148, 
-        private readonly Regex _rxError17148 =
-            new Regex(@"SQL Server is terminating in response to a 'stop' request from Service Control Manager",
-                RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-        // SQL Error 17147
-        private readonly Regex _rxErrorServerKill =
-            new Regex(@"SQL Server is terminating because of a system shutdown");
-
-        // SQL Error 19406, show state transition of a replica
-        private readonly Regex _rxStateTransition =
-            new Regex(@"The state of the local availability replica in availability group");
-
         // if we match current message is 19406, we tokenize value from '%ls'
         private readonly Regex _rxStringInQuote = new Regex(@"\'\w+\'");
 
         // match any character that beginning of a string and end with a dot '.'
         private readonly Regex _rxFirstSentence = new Regex(@"^([^.]*)\.");
 
-        // match UTC adjustment so we can convert all time to UTC time
-        private readonly Regex _rxUtcAdjust = new Regex(@"(UTC adjustment:).*");
+
 
         // methods
         public override string TokenizeTimestamp(string line)
