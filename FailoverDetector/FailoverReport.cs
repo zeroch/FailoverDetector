@@ -625,6 +625,17 @@ namespace FailoverDetector
             }
         }
 
+        // order:   determine how we want to sort reports
+        //          true  => new to old
+        //          false => old to new
+        public void SortReports(bool order)
+        {
+            foreach (var agReport in AgReports)
+            {
+                agReport.Value.SortReports(order);
+            }
+        }
+
         public void MergeReports()
         {
             foreach(var agReport in AgReports)
@@ -766,17 +777,25 @@ namespace FailoverDetector
 
         // XEvent somehow doesn't sorted by timestamp. 
         // once we have a list of Report, we need to sort them before merge two instance reports
-        public void SortReports()
+        public void SortReports(bool order)
         {
             // just simply sort by Endtime stamp
-            Reports.Sort((rp1, rp2) => DateTimeOffset.Compare(rp1.EndTime, rp2.EndTime));
+            if (order)
+            {
+                Reports.Sort((rp1, rp2) => DateTimeOffset.Compare(rp2.EndTime, rp1.EndTime));
+            }
+            else
+            {
+                Reports.Sort((rp1, rp2) => DateTimeOffset.Compare(rp1.EndTime, rp2.EndTime));
+            }
+
         }
 
         // I think we can add a bit of tolerance at time to allow two report merge into one
         // #1 if two reports has complementary roles: each report has different role transition
         public void MergeReports()
         {
-            SortReports();
+            SortReports(false);
             List<PartialReport> tReportList = new List<PartialReport>();
             foreach(PartialReport cReport in Reports)
             {
@@ -882,7 +901,7 @@ namespace FailoverDetector
         public void AnalyzeReport()
         {
             // let me do a little sorting at here
-            SortReports();
+            SortReports(false);
             List<PartialReport> _mFailoverReport = new List<PartialReport>();
             foreach (PartialReport pReport in Reports)
             {
@@ -915,8 +934,6 @@ namespace FailoverDetector
                     pReport.FailoverDetected = true;
                     _mFailoverReport.Add(pReport);
                 }
-
-                SpecialRecipe(pReport);
             }
 
             Reports = _mFailoverReport;
