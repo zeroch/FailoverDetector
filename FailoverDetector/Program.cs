@@ -115,7 +115,7 @@ namespace FailoverDetector
 
             Console.WriteLine("{0}Saving results to JSON File.{0}", Environment.NewLine);
             pReportMgr.SaveReportsToJson();
-
+            Console.WriteLine("Complete analysis. Please type enter to return.");
             Console.ReadLine();
         }
 

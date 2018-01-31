@@ -139,16 +139,25 @@ namespace FailoverDetector
 
             public void Show()
             {
-                
-                foreach (KeyValuePair<string,List<string>> kvp in messageSet)
+                foreach(var set in DetailMessageSet)
                 {
-                    Console.WriteLine("The following log entries were captured from: {0}", kvp.Key);
-                    List<string> pList = kvp.Value;
-                    foreach(string msg in pList)
+                    Console.WriteLine("The following log entries were captured from: {0}", set.Key);
+                    foreach (var kvp in set.Value)
                     {
-                        Console.WriteLine(msg);
+                        // we want to skip dump System Health Data, xml is overwhelming
+                        if (!(kvp.Key == Constants.SourceType.SystemHealthXevent))
+                        {
+                            List<string> pList = kvp.Value;
+                            foreach (string msg in pList)
+                            {
+                                Console.WriteLine(msg);
+                            }
+
+                        }
+
                     }
                 }
+
             }
 
         }
@@ -1002,8 +1011,8 @@ namespace FailoverDetector
                 }
 
                 // 1205 indicate cluster AG component offline
-                if (pReport.MessageSet.Contains("1205"))
-                {
+     //           if (pReport.MessageSet.Contains("1205"))
+       //         {
                     if (pReport.MessageSet.Contains("Crash"))
                     {
                         pReport.RootCause = "Unexpected Crash in SQL Server";
@@ -1011,7 +1020,7 @@ namespace FailoverDetector
                     {
                         pReport.RootCause = "Long Duration in Dump";
                     }
-                }
+         //       }
 
 
                 if (pReport.MessageSet.Contains("1177"))
