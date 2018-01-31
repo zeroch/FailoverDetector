@@ -242,8 +242,13 @@ namespace FailoverDetectorTests
             pReport.AddRoleTransition("ze-vm002", "RESOLVING_PENDING_FAILOVER");
             pReport.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL");
             string _testString = @"2017-09-14 16:19:57.05 spid24s     Always On: The availability replica manager is going offline because the local Windows Server Failover Clustering (WSFC) node has lost quorum. This is an informational message only. No user action is required.";
+            ErrorLogEntry entry = new ErrorLogEntry()
+            {
+                Timestamp = baseTimeOffset,
+                RawMessage = _testString
+            };
 
-            pReport.AddNewMessage(Constants.SourceType.ErrorLog, "ze-vm001", baseTimeOffset, _testString);
+            pReport.AddNewMessage(Constants.SourceType.ErrorLog, "ze-vm001", entry, "");
 
             // serialize to json stream
             string output = JsonConvert.SerializeObject(pReport);

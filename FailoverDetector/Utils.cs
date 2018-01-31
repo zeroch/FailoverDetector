@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Runtime.Serialization.Json;
+using System.Collections;
 
 namespace FailoverDetector
 {
@@ -17,7 +18,8 @@ namespace FailoverDetector
         public abstract class MessageExpression
         {
             protected Regex _Regex;
-
+            protected Constants.SourceType type;
+            protected string err;
             protected readonly Regex RxStringInQuote = new Regex(@"\'\w+\'");
             protected readonly Regex RxFirstSentence = new Regex(@"^([^.]*)\.");
 
@@ -25,7 +27,16 @@ namespace FailoverDetector
             {
                 _Regex = new Regex(pRegexPattern);
             }
-            protected MessageExpression() { }
+            protected MessageExpression()
+            {
+                type = Constants.SourceType.ErrorLog;
+                err = "";
+            }
+            protected MessageExpression(Constants.SourceType pType, string pError)
+            {
+                type = pType;
+                err = pError;
+            }
 
             public bool IsMatch(string msg)
             {
@@ -33,10 +44,26 @@ namespace FailoverDetector
             }
             public abstract void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport);
 
-            public TimeSpan HandleOnceMatch(ErrorLogEntry errorLogEntry)
+            // this method called without report info
+            // then we need to scan report list and find out the best fit.
+            public virtual void HandleOnceMatch(string instance, ErrorLogEntry pEntry)
             {
-                throw new NotImplementedException();
+                ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+                IEnumerator ReportIterator = pReportMgr.ReportVisitor();
+
+                // looping through all reports to find the exactly match in timestamp
+                while (ReportIterator.MoveNext() && ReportIterator.Current != null)
+                {
+                    PartialReport pReport = (PartialReport)ReportIterator.Current;
+                    if (pReport.InReportTime(pEntry.Timestamp))
+                    {
+                        pReport.AddNewMessage(type, instance, pEntry, err);
+                    }
+
+                }
+
             }
+
         }
         // Match UTC time difference
         public class UTCCorrectionExpression : MessageExpression
@@ -47,7 +74,7 @@ namespace FailoverDetector
                 throw new NotImplementedException();
             }
 
-            public new TimeSpan HandleOnceMatch(ErrorLogEntry pEntry)
+            public TimeSpan HandleOnceMatch(ErrorLogEntry pEntry)
             {
                 Match mc = _Regex.Match(pEntry.Message);
                 string matchString = mc.Value;
@@ -78,16 +105,16 @@ namespace FailoverDetector
 
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                pReport.MessageSet.Add("Crash");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry, "Crash");
+
             }
 
             public ServiceCrashedExpression()
             {
                 _Regex = new Regex(
                     @"(The SQL Server)(.*)(service terminated unexpectedly)");
-
+                type = Constants.SourceType.ErrorLog;
+                err = "Crash";
             }
         }
 
@@ -97,12 +124,8 @@ namespace FailoverDetector
 
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("17148");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry, "17148");
+
             }
 
             public StopSqlServiceExpression()
@@ -110,6 +133,8 @@ namespace FailoverDetector
                 _Regex = new Regex(
                     @"SQL Server is terminating in response to a 'stop' request from Service Control Manager");
 
+                type = Constants.SourceType.ErrorLog;
+                err = "17148";
             }
         }
 
@@ -120,17 +145,15 @@ namespace FailoverDetector
 
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("17147");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry, "17147");
+
             }
 
             public ShutdownServerExpression()
             {
                 _Regex = new Regex(@"SQL Server is terminating because of a system shutdown");
+                type = Constants.SourceType.ErrorLog;
+                err = "17147";
             }
         }
 
@@ -208,18 +231,15 @@ namespace FailoverDetector
 
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("19407");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry, "19407");
             }
 
             public LeaseExpiredExpression()
             {
                 _Regex = new Regex(
                     @"(The lease between availability group)(.*)(and the Windows Server Failover Cluster has expired)");
+                type = Constants.SourceType.ErrorLog;
+                err = "19407";
             }
         }
 
@@ -230,18 +250,16 @@ namespace FailoverDetector
 
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("19421");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry, "19421");
             }
 
             public LeaseTimeoutExpression()
             {
                 _Regex = new Regex(
                     @"(Windows Server Failover Cluster did not receive a process event signal from SQL Server hosting availability group)(.*)(within the lease timeout period.)");
+                type = Constants.SourceType.ErrorLog;
+                err = "19421";
             }
         }
         // Match Lease Renew Failed.
@@ -251,18 +269,16 @@ namespace FailoverDetector
 
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("19422");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry, "19422");
+
             }
 
             public LeaseRenewFailedExpression()
             {
                 _Regex = new Regex(
                     @"(The renewal of the lease between availability group)(.*)(and the Windows Server Failover Cluster failed)");
+                type = Constants.SourceType.ErrorLog;
+                err = "19422";
             }
         }
         // Match LeaseFailedToSleep
@@ -270,35 +286,32 @@ namespace FailoverDetector
         {
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("19423");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry, "19423");
+
             }
 
             public LeaseFailedToSleepExpression()
             {
                 _Regex = new Regex(
                     @"(The lease of availability group)(.*)(lease is no longer valid to start the lease renewal process)");
+                type = Constants.SourceType.ErrorLog;
+                err = "19423";
             }
         }
         public class GenerateDumpExpression : MessageExpression
         {
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("Dump");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry, "Dump");
+
             }
 
             public GenerateDumpExpression()
             {
                 _Regex = new Regex(@"(BEGIN STACK DUMP)");
+                type = Constants.SourceType.ErrorLog;
+                err = "Dump";
             }
         }
 
@@ -307,17 +320,15 @@ namespace FailoverDetector
         {
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("1006");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry, "1006");
+
             }
 
             public ClusterHaltExpression()
             {
                 _Regex = new Regex(@"Cluster service was halted due to incomplete connectivity with other cluster nodes");
+                type = Constants.SourceType.ClusterLog;
+                err = "1006";
             }
         }
         // cluster log 1069
@@ -325,17 +336,15 @@ namespace FailoverDetector
         {
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("1069");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry, "1069");
+
             }
 
             public ResourceFailedExpression()
             {
                 _Regex = new Regex(@"Cluster resource(.*)in clustered service or application(.*)failed");
+                type = Constants.SourceType.ClusterLog;
+                err = "1069";
             }
         }
         // Cluster log Node Offline, 1135
@@ -343,17 +352,15 @@ namespace FailoverDetector
         {
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("1135");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry, "1135");
+
             }
 
             public NodeOfflineExpression()
             {
                 _Regex = new Regex(@"(Cluster node)(.*)(was removed from the active failover cluster membership)");
+                type = Constants.SourceType.ClusterLog;
+                err = "1135";
             }
         }
 
@@ -362,17 +369,15 @@ namespace FailoverDetector
         {
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("1177");
-                pReport.AddNewMessage(instance, pEntry.RawMessage);
-                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry, "1177");
+
             }
 
             public LostQuorumExpression()
             {
                 _Regex = new Regex(@"The Cluster service is shutting down because quorum was lost");
+                type = Constants.SourceType.ClusterLog;
+                err = "1177";
             }
         }
 
@@ -381,34 +386,30 @@ namespace FailoverDetector
         {
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("1205");
-                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
-
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry, "1205");
             }
 
             public ClusterOfflineExpression()
             {
                 _Regex = new Regex(@"The Cluster service failed to bring clustered role(.*)completely online or offline");
+                type = Constants.SourceType.ClusterLog;
+                err = "1205";
             }
         }
         public class FailoverExpression : MessageExpression
         {
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("Failover");
-                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry, "Failover");
+
 
             }
 
             public FailoverExpression()
             {
                 _Regex = new Regex(@"The Cluster service is attempting to fail over the clustered role(.*)from node(.*)to node (.*)");
+                type = Constants.SourceType.ClusterLog;
+                err = "Failover";
             }
         }
 
@@ -418,17 +419,30 @@ namespace FailoverDetector
         {
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-                // TODO
-                // get current Partial Report
-                // fill data into partial report
-                pReport.MessageSet.Add("1146");
-                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry.Timestamp, pEntry.RawMessage);
+                pReport.AddNewMessage(Constants.SourceType.ClusterLog, instance, pEntry, "1146");
+
 
             }
 
             public RhsTerminatedExpression()
             {
                 _Regex = new Regex(@"The cluster Resource Hosting Subsystem \(RHS\) process was terminated and will be restarted");
+                type = Constants.SourceType.ClusterLog;
+                err = "1146";
+            }
+        }
+
+        // Use to check if system channel start to read
+        public class SystemChannelExpression : MessageExpression
+        {
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
+            {
+                // do nothing here
+            }
+
+            public SystemChannelExpression()
+            {
+                _Regex = new Regex(@"[=== System ===]");
             }
         }
 
@@ -446,7 +460,7 @@ namespace FailoverDetector
 
 
                 // some global value, we put at here first
-                DefaultMode = false;
+                DefaultMode = true;
                 AnalyzeOnly = false;
                 ShowResult = false;
                 FoundConfiguration = false;
@@ -621,6 +635,7 @@ namespace FailoverDetector
                     AlwaysOnFileList = new List<string>();
                     SystemHealthFileList = new List<string>();
                     ErrorLogFileList = new List<string>();
+
                 }
 
                 public bool Equals(NodeFileInfo obj)
@@ -678,18 +693,14 @@ namespace FailoverDetector
             {
                 int argsNumber = args.Length;
 
-                if (argsNumber == 0)
-                {
-                    DefaultMode = true;
-                }
-                else
-                {
+
                     foreach (string s in args)
                     {
                         switch (s)
                         {
                             case @"--Analyze":
                                 AnalyzeOnly = true;
+                                DefaultMode = false;
                                 break;
                             case "--Show":
                                 ShowResult = true;
@@ -702,7 +713,7 @@ namespace FailoverDetector
                                 return false;
                         }
                     }
-                }
+                
                 return true;
             }
 
@@ -945,7 +956,7 @@ namespace FailoverDetector
                 {
                     string tempPath = Path.Combine(destDirPath, subdir.Name);
                     DirectoryCopy(subdir.FullName, tempPath);
-
+                    Console.WriteLine("Completing copy folder: {0}", subdir);
                 }
                 
             }

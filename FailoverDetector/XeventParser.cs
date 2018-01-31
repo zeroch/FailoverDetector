@@ -113,9 +113,16 @@ namespace FailoverDetector
                     {
                         pReport.AgName = agName;
                     }
-                    pReport.AddNewMessage(Constants.SourceType.AlwaysOnXevent, _instanceName, evt.Timestamp, evtStatement);
                     string rawStatement = "XEvent: " + evt.Timestamp + "\t" + evtStatement;
-                    pReport.AddNewMessage(_instanceName, rawStatement);
+
+                    ErrorLogEntry entry = new ErrorLogEntry()
+                    {
+                        Timestamp = evt.Timestamp,
+                        RawMessage = rawStatement,
+                        Message = evtStatement
+                    };
+
+                    pReport.AddNewMessage(Constants.SourceType.AlwaysOnXevent, _instanceName, entry, "");
 
                 }
 

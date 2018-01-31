@@ -41,13 +41,21 @@ namespace FailoverDetectorTests
         [TestMethod]
         public void TestParseLogEntry()
         {
-            string testString = @"2017-09-10 22:00:00.12 spid191     UTC adjustment: -4:00";
+            string testString = @"2018-01-24 09:29:49.40 spid45s     The state of the local availability replica in availability group 'FirstHadron' has changed from 'SECONDARY_NORMAL' to 'RESOLVING_NORMAL'.  The state changed because the availability group state has changed in Windows Server Failover Clustering (WSFC).  For more information, see the SQL Server error log or cluster log.  If this is a Windows Server Failover Clustering (WSFC) availability group, you can also see the WSFC management console.";
             ErrorLogParser parser = new ErrorLogParser();
-            ErrorLogEntry entry = new ErrorLogEntry();
-            entry = parser.ParseLogEntry(testString);
-            Console.WriteLine("Timestamp: {0}, spid: {1}, and message: {2}", entry.Timestamp, entry.Spid, entry.Message);
+            ErrorLogEntry actual = parser.ParseLogEntry(testString);
+            ErrorLogEntry expected = new ErrorLogEntry()
+            {
+                Timestamp = new DateTimeOffset(2018, 01, 24, 09, 29, 49, TimeSpan.Zero),
+                Spid = "spid45s",
+                Message = "The state of the local availability replica in availability group 'FirstHadron' has changed from 'SECONDARY_NORMAL' to 'RESOLVING_NORMAL'.  The state changed because the availability group state has changed in Windows Server Failover Clustering (WSFC).  For more information, see the SQL Server error log or cluster log.  If this is a Windows Server Failover Clustering (WSFC) availability group, you can also see the WSFC management console.",
+                RawMessage = testString
+            };
+
+            Assert.AreEqual(expected, actual);
 
         }
+
         [TestMethod]
         public void TestErrorLogEntryEquals()
         {

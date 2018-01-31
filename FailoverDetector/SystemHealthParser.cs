@@ -114,9 +114,16 @@ namespace FailoverDetector
                 default:
                     break;
             }
+            ErrorLogEntry entry = new ErrorLogEntry()
+            {
+                Timestamp = evt.Timestamp,
+                RawMessage = t_data,
+                Message = ""
+            };
+
 
             // insert data to raw message
-            pCurrentReport.AddNewMessage(Constants.SourceType.SystemHealthXevent, _instanceName, evt.Timestamp, t_data);
+            pCurrentReport.AddNewMessage(Constants.SourceType.SystemHealthXevent, _instanceName, entry, "");
         }
 
         // Data structure used to parse xml and json format

@@ -414,16 +414,14 @@ namespace FailoverDetector
         }
 
         // message below should be a full/original message
-        public void AddNewMessage(Constants.SourceType type, string instance, DateTimeOffset timestamp, string msg)
+        public void AddNewMessage(Constants.SourceType type, string instance, ErrorLogEntry pEntry, string err)
         {
             // when we init RawMessageMgr, we make sure all type is initialted
-            pMessageMgr.AddNewDetailMessage(type, instance, timestamp, msg);
+            pMessageMgr.AddNewDetailMessage(type, instance, pEntry.Timestamp, pEntry.RawMessage);
+            pMessageMgr.AddNewMessage(instance, pEntry.Message);
+            MessageSet.Add(err);
         }
 
-        public void AddNewMessage(string instance, string msg)
-        {
-            pMessageMgr.AddNewMessage(instance, msg);
-        }
 
         // helper function that used to show result or debugging.
 
