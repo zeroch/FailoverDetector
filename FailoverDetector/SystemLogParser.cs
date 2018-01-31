@@ -18,6 +18,7 @@ namespace FailoverDetector
             sourceType = Constants.SourceType.SystemLog;
             _utCcorrection = new TimeSpan(0, 0, 0);
             SetupRegexList();
+            startToReadSystem = true;
         }
         public override void SetupRegexList()
         {

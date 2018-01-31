@@ -17,6 +17,7 @@ namespace FailoverDetector
             _utCcorrection = new TimeSpan(0, 0, 0);
             sourceType = Constants.SourceType.ClusterLog;
             SetupRegexList();
+            startToReadSystem = false;
         }
 
         public override void SetupRegexList()

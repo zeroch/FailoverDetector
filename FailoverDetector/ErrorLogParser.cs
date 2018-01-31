@@ -15,7 +15,9 @@ namespace FailoverDetector
         protected List<MessageExpression> _logParserList;
         protected Constants.SourceType sourceType;
         protected UTCCorrectionExpression pUTCCorrection;
-
+        // only use for cluster log
+        protected bool startToReadSystem;
+        protected SystemChannelExpression systemChannel;
         public TimeSpan FGetUTCTimeZone()
         {
             if (utcCorrectionFound)
@@ -34,6 +36,8 @@ namespace FailoverDetector
         {
             _utCcorrection = new TimeSpan(0, 0, 0);
             pUTCCorrection = new UTCCorrectionExpression();
+            startToReadSystem = false;
+            systemChannel = new SystemChannelExpression();
         }
 
         public void SetTargetFailoverTime(DateTimeOffset start, DateTimeOffset end)
@@ -66,6 +70,16 @@ namespace FailoverDetector
                         while (line != null && ReportIterator.Current != null)
                         {
 
+                            // this block is special for cluster log
+                            if (!startToReadSystem)
+                            {
+                                if (systemChannel.IsMatch(line))
+                                {
+                                    startToReadSystem = true;
+                                    line = reader.ReadLine();
+                                    continue;
+                                }
+                            }
                             var pEntry = ParseLogEntry(line);
                             if (pEntry.IsEmpty())
                             {
@@ -81,6 +95,8 @@ namespace FailoverDetector
                                 // append message with last one I think. 
                                 // trancated is a special case in our problem.
                             }
+
+                            // this line is special for system
                             // fix UTC correction issue is not relevent with timestamp
                             if (!utcCorrectionFound)
                             {
@@ -91,6 +107,7 @@ namespace FailoverDetector
                                     _utCcorrection = pUTCCorrection.HandleOnceMatch(pEntry);
                                 }
                             }
+
 
 
                             DateTimeOffset messageTime = pEntry.Timestamp;
@@ -203,6 +220,7 @@ namespace FailoverDetector
 
 
 
+
     }
 
     public class ErrorLogParser : LogParser
@@ -213,6 +231,8 @@ namespace FailoverDetector
             sourceType = Constants.SourceType.ErrorLog;
             utcCorrectionFound = false;
             SetupRegexList();
+            startToReadSystem = true;
+
         }
 
         public override void SetupRegexList()
