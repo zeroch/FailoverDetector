@@ -71,7 +71,7 @@ namespace FailoverDetectorTests
             ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
             // Create a fake report
             pReportMgr.AddNewAgReport("Dummy", "ze-vm001");
-            DateTimeOffset testTimeOffset = new DateTimeOffset(2017,10,23,18,42,31,TimeSpan.Zero);
+            DateTimeOffset testTimeOffset = new DateTimeOffset(2017, 10, 23, 18, 42, 31, TimeSpan.Zero);
             PartialReport pReport = pReportMgr.GetAgReports("Dummy").FGetReport(testTimeOffset);
             PartialReport expected = new PartialReport()
             {
@@ -108,6 +108,37 @@ namespace FailoverDetectorTests
 
             Assert.IsTrue(expected.Equals(pReport));
 
+        }
+
+        [TestMethod()]
+        [DeploymentItem("Data\\UnitTest\\ErrorLog", "ErrorLog")]
+        public void ParseRoleTransitionTest()
+        {
+            string testLogPath = baseTestPath + "TestCase_2.txt";
+            // Create a fake report
+            PartialReport expected = new PartialReport()
+            {
+                StartTime = new DateTimeOffset(2018, 01, 24, 09, 23, 32, new TimeSpan(-8, 0, 0)),
+                EndTime = new DateTimeOffset(2018, 01, 24, 09, 29, 53, new TimeSpan(-8, 0, 0)),
+                AgName = "FirstHadron",
+            };
+
+            expected.AddRoleTransition("LZHANG1S", "SECONDARY_NORMAL");
+            expected.AddRoleTransition("LZHANG1S", "RESOLVING_NORMAL");
+            expected.AddRoleTransition("LZHANG1S", "PRIMARY_PENDING");
+            expected.AddRoleTransition("LZHANG1S", "PRIMARY_NORMAL");
+
+
+            // run TestJob job to parse a testcase which generate report from errorlog without xevent
+            _logParser.ParseLog(testLogPath, "LZHANG1S");
+
+            // pull report from list
+            DateTimeOffset testTimeOffset = new DateTimeOffset(2018, 01, 24, 09, 29, 00, new TimeSpan(-8, 0, 0));
+            ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+            PartialReport pReport = pReportMgr.GetAgReports("FirstHadron").FGetReport(testTimeOffset);
+
+
+            Assert.IsTrue(expected.Equals(pReport));
         }
     }
 }

@@ -141,21 +141,58 @@ namespace FailoverDetector
 
             public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry, PartialReport pReport)
             {
-
-                // capture 'ag_name', 'prev_state'  and 'current_state'
-                if(RxStringInQuote.IsMatch(pEntry.Message))
+            }
+            public string[] ParseStateFromMessage(string message)
+            {
+                string[] ret = new string[3];
+                if (RxStringInQuote.IsMatch(message))
                 {
                     // in this case, matches must equels to 3
-                    MatchCollection mc = RxStringInQuote.Matches((pEntry.Message));
-                    if (mc.Count != 3)
-                        return;
-                    pReport.AgName = mc[0].Value;
-                    // TODO 
-                    // this is AG status ?
-                    //pReport.AddRoleTransition( mc[1].Value);
-                    //pReport.AddRoleTransition(mc[2].Value);
+                    MatchCollection mc = RxStringInQuote.Matches((message));
+                    if (mc.Count == 3)
+                    {
+                        // stringInQuote return value will be 'ag1203'
+                        // which included single quote, we need to trim them
+                        for(int i = 0; i < mc.Count; i++)
+                        {
+                            ret[i] = mc[i].Value.Trim('\'');
+                        }
+                    }
+
                 }
-                
+                return ret;
+            }
+
+            public override void HandleOnceMatch(string instance, ErrorLogEntry pEntry)
+            {
+                // capture 'ag_name', 'prev_state'  and 'current_state'
+                string[] tokens = ParseStateFromMessage(pEntry.Message);
+
+                string agName = tokens[0];
+                string prevRole = tokens[1];
+                string nextRole = tokens[2];
+
+                // get List of report for this ag
+                ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+                AgReport mReports = pReportMgr.GetAgReports(agName);
+                if (mReports == null)
+                {
+                    mReports = pReportMgr.AddNewAgReport(agName, instance);
+                }
+                // pReport we get here is match time range
+                // we insert role transition as not XEvent
+                PartialReport pReport = mReports.FGetReport(pEntry.Timestamp);
+                if (pReport.IsEmptyRole(instance))
+                {
+                    pReport.AddRoleTransition(instance, prevRole, false);
+                }
+                pReport.AddRoleTransition(instance, nextRole, false);
+
+                if (pReport.AgName == string.Empty)
+                {
+                    pReport.AgName = agName;
+                }
+
             }
 
             public StateTransitionExpression()

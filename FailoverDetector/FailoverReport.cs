@@ -231,7 +231,7 @@ namespace FailoverDetector
         [DataMember(Name = "Role Transition")]
         [JsonProperty(Order = 9)]
         private Dictionary<string, List<EHadrArRole>> _roleTransition;
-
+        private bool FoundRoleByXEvent;
         // Resource Tyep name, and raw message list
         [DataMember(Name = "Raw Data Set")]
         [JsonProperty(Order = 10)]
@@ -256,20 +256,21 @@ namespace FailoverDetector
 
             // contains raw message, coressponding to MessageSet
             pMessageMgr = new MessageMgr();
+            FoundRoleByXEvent = false;
 
 
-        }
+    }
 
-        // compare function 
-        // to compare if two Partial Reports are equal we make sure all content are same at following field
-        //
-        //_roleTransition 
-        //FailoverDetected
-        //OldPrimary 
-        //NewPrimary 
-        //AgId 
-        //AgName 
-        public bool Equals(PartialReport other)
+    // compare function 
+    // to compare if two Partial Reports are equal we make sure all content are same at following field
+    //
+    //_roleTransition 
+    //FailoverDetected
+    //OldPrimary 
+    //NewPrimary 
+    //AgId 
+    //AgName 
+    public bool Equals(PartialReport other)
         {
             if (! (FailoverDetected == other.FailoverDetected &&
                 OldPrimary == other.OldPrimary &&
@@ -299,9 +300,11 @@ namespace FailoverDetector
             // Morethan function compare two partial Report
         // return true if this EndTime is lager than other
         // current Report is older
-        public bool MoreThan(PartialReport other)
+        public bool InReportTime(DateTimeOffset time)
         {
-            return EndTime > other.EndTime;
+            return (((StartTime.AddMinutes(-1 * Constants.DefaultInterval)) < time) &&
+                (time < EndTime.AddMinutes(Constants.DefaultInterval)));
+
         }
 
         public bool MergeReport(PartialReport other)
@@ -387,15 +390,26 @@ namespace FailoverDetector
             }
             return mRole;
         }
-        public void AddRoleTransition(string currentNode, string cRole)
+        // isXEvent : indicate if this role transition come from XEvent
+        public void AddRoleTransition(string currentNode, string cRole, bool isXEvent = true)
         {
-
-            EHadrArRole mRole = ParseHadrRole(cRole);
-            if( IsEmptyRole(currentNode))
+            if (isXEvent)
             {
-                _roleTransition.Add(currentNode, new List<EHadrArRole>());
+                FoundRoleByXEvent = true;
             }
-            _roleTransition[currentNode].Add(mRole);
+
+            // only when it is not from XEvent and current report has role record from XEvent, we don't do insert. because Errorlog Role transition will duplicate with XEvent
+            if (! (FoundRoleByXEvent && !isXEvent))
+            {
+                EHadrArRole mRole = ParseHadrRole(cRole);
+                if (IsEmptyRole(currentNode))
+                {
+                    _roleTransition.Add(currentNode, new List<EHadrArRole>());
+                }
+                _roleTransition[currentNode].Add(mRole);
+            }
+
+
 
         }
 

@@ -4,6 +4,29 @@ using FailoverDetector.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
+namespace FailoverDetector.UtilsTests
+{
+    [TestClass()]
+    public class MessageExpressionTests
+    {
+        [TestMethod()]
+        public void ParseStateFromMessageTest()
+        {
+            string testMessage = @"The state of the local availability replica in availability group 'ag1023' has changed from 'RESOLVING_NORMAL' to 'SECONDARY_NORMAL'.  The state changed because the availability group state has changed in Windows Server Failover Clustering (WSFC).  For more information, see the SQL Server error log or cluster log. If this is a Windows Server Failover Clustering (WSFC) availability group, you can also see the WSFC management console.";
+            string[] expected = new string[3]
+            {
+                "ag1023",
+                "RESOLVING_NORMAL",
+                "SECONDARY_NORMAL"
+            };
+            StateTransitionExpression pParser= new StateTransitionExpression();
+            string[] actual = pParser.ParseStateFromMessage(testMessage);
+            CollectionAssert.AreEqual(expected, actual);
+        }
+
+    }
+}
+
 namespace FailoverDetectorTests
 {
     [TestClass()]

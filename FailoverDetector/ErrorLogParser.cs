@@ -236,7 +236,7 @@ namespace FailoverDetector
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private readonly Regex _rxSpid =
-            new Regex(@"spid[0-9]{1,5}|LOGON|Backup", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            new Regex(@"spid[0-9]{1,5}[a-z]{0,2}|LOGON|Backup", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         // if we match current message is 19406, we tokenize value from '%ls'
         private readonly Regex _rxStringInQuote = new Regex(@"\'\w+\'");
@@ -318,6 +318,74 @@ namespace FailoverDetector
 
             return entry;
         }
+        public new void ParseLog(string logFilePath, string instanceName)
+        {
+            try
+            {
+                using (FileStream stream = File.OpenRead(logFilePath))
+                {
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        string line = reader.ReadLine();
+                        ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
 
+                        while (line != null)
+                        {
+
+                            var pEntry = ParseLogEntry(line);
+                            if (pEntry.IsEmpty())
+                            {
+                                line = reader.ReadLine();
+                                continue;
+
+                            }
+                            if (pEntry.IsTrancated())
+                            {
+                                line = reader.ReadLine();
+                                continue;
+                                // dont use and access date
+                                // append message with last one I think. 
+                                // trancated is a special case in our problem.
+                            }
+
+                            // this line is special for system
+                            // fix UTC correction issue is not relevent with timestamp
+                            if (!utcCorrectionFound)
+                            {
+                                if (pUTCCorrection.IsMatch(pEntry.Message))
+                                {
+                                    utcCorrectionFound = true;
+                                    // parse time 
+                                    _utCcorrection = pUTCCorrection.HandleOnceMatch(pEntry);
+                                }
+                            }
+                            foreach (var regexParser in _logParserList)
+                            {
+                                if (regexParser.IsMatch(pEntry.Message))
+                                {
+                                    // scanning all reports to find a most match report
+                                    regexParser.HandleOnceMatch(instanceName, pEntry);
+                                }
+                            }
+                            line = reader.ReadLine();
+                        }
+
+                    }
+                }
+            }
+            catch (DirectoryNotFoundException e)
+            {
+
+                Console.WriteLine(e.Message);
+                return;
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
+        }
     }
+
+
 }

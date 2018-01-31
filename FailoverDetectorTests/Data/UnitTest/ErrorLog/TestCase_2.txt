@@ -1,0 +1,159 @@
+﻿2018-01-24 09:23:16.19 Server      Microsoft SQL Server 2017 (RTM) - 14.0.1000.169 (X64) 
+	Aug 22 2017 17:04:49 
+	Copyright (C) 2017 Microsoft Corporation
+	Enterprise Edition (64-bit) on Windows Server 2016 Datacenter 10.0 <X64> (Build 14393: ) (Hypervisor)
+
+2018-01-24 09:23:16.19 Server      UTC adjustment: -8:00
+2018-01-24 09:23:16.19 Server      (c) Microsoft Corporation.
+2018-01-24 09:23:16.22 Server      All rights reserved.
+2018-01-24 09:23:16.22 Server      Server process ID is 2844.
+2018-01-24 09:23:16.22 Server      System Manufacturer: 'Microsoft Corporation', System Model: 'Virtual Machine'.
+2018-01-24 09:23:16.22 Server      Authentication mode is WINDOWS-ONLY.
+2018-01-24 09:23:16.22 Server      Logging SQL Server messages in file 'C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\Log\ERRORLOG'.
+2018-01-24 09:23:16.22 Server      Registry startup parameters: 
+	 -d C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\DATA\master.mdf
+	 -e C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\Log\ERRORLOG
+	 -l C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\DATA\mastlog.ldf
+2018-01-24 09:23:16.22 Server      Command Line Startup Parameters:
+	 -s "MSSQLSERVER"
+2018-01-24 09:23:16.36 Server      SQL Server detected 1 sockets with 1 cores per socket and 1 logical processors per socket, 1 total logical processors; using 1 logical processors based on SQL Server licensing. This is an informational message; no user action is required.
+2018-01-24 09:23:16.36 Server      SQL Server is starting at normal priority base (=7). This is an informational message only. No user action is required.
+2018-01-24 09:23:16.36 Server      Detected 1023 MB of RAM. This is an informational message; no user action is required.
+2018-01-24 09:23:16.36 Server      Using conventional memory in the memory manager.
+2018-01-24 09:23:18.21 Server      Default collation: SQL_Latin1_General_CP1_CI_AS (us_english 1033)
+2018-01-24 09:23:19.41 Server      Buffer pool extension is already disabled. No action is necessary. 
+2018-01-24 09:23:20.52 Server      InitializeExternalUserGroupSid failed. Implied authentication will be disabled.
+2018-01-24 09:23:20.52 Server      Implied authentication manager initialization failed. Implied authentication will be disabled.
+2018-01-24 09:23:20.84 Server      The maximum number of dedicated administrator connections for this instance is '1'
+2018-01-24 09:23:20.85 Server      This instance of SQL Server last reported using a process ID of 8352 at 1/24/2018 9:22:44 AM (local) 1/24/2018 5:22:44 PM (UTC). This is an informational message only; no user action is required.
+2018-01-24 09:23:20.86 Server      Node configuration: node 0: CPU mask: 0x0000000000000001:0 Active CPU mask: 0x0000000000000001:0. This message provides a description of the NUMA configuration for this computer. This is an informational message only. No user action is required.
+2018-01-24 09:23:20.87 Server      Using dynamic lock allocation.  Initial allocation of 2500 Lock blocks and 5000 Lock Owner blocks per node.  This is an informational message only.  No user action is required.
+2018-01-24 09:23:20.90 Server      In-Memory OLTP initialized on lowend machine.
+2018-01-24 09:23:21.11 Server      Database Instant File Initialization: enabled. For security and performance considerations see the topic 'Database Instant File Initialization' in SQL Server Books Online. This is an informational message only. No user action is required.
+2018-01-24 09:23:21.31 Server      CLR version v4.0.30319 loaded.
+2018-01-24 09:23:21.38 Server      Query Store settings initialized with enabled = 1, 
+2018-01-24 09:23:22.39 Server      Software Usage Metrics is enabled.
+2018-01-24 09:23:22.67 spid6s      Starting up database 'master'.
+2018-01-24 09:23:22.98 spid6s      88 transactions rolled forward in database 'master' (1:0). This is an informational message only. No user action is required.
+2018-01-24 09:23:23.02 spid6s      0 transactions rolled back in database 'master' (1:0). This is an informational message only. No user action is required.
+2018-01-24 09:23:23.02 spid6s      Recovery is writing a checkpoint in database 'master' (1). This is an informational message only. No user action is required.
+2018-01-24 09:23:24.88 spid6s      Resource governor reconfiguration succeeded.
+2018-01-24 09:23:25.22 spid6s      SQL Server Audit is starting the audits. This is an informational message. No user action is required.
+2018-01-24 09:23:25.34 spid6s      SQL Server Audit has started the audits. This is an informational message. No user action is required.
+2018-01-24 09:23:25.65 Server      Common language runtime (CLR) functionality initialized using CLR version v4.0.30319 from C:\Windows\Microsoft.NET\Framework64\v4.0.30319\.
+2018-01-24 09:23:25.89 spid6s      SQL Trace ID 1 was started by login "sa".
+2018-01-24 09:23:26.13 spid6s      Server name is 'LZHANG1S'. This is an informational message only. No user action is required.
+2018-01-24 09:23:26.20 spid6s      Database mirroring has been enabled on this instance of SQL Server.
+2018-01-24 09:23:26.34 spid17s     A self-generated certificate was successfully loaded for encryption.
+2018-01-24 09:23:26.40 spid22s     Always On: The availability replica manager is starting. This is an informational message only. No user action is required.
+2018-01-24 09:23:26.41 spid17s     Server is listening on [ 'any' <ipv6> 1433].
+2018-01-24 09:23:26.42 spid17s     Server is listening on [ 'any' <ipv4> 1433].
+2018-01-24 09:23:26.42 spid22s     Always On Availability Groups: Waiting for local Windows Server Failover Clustering service to start. This is an informational message only. No user action is required.
+2018-01-24 09:23:26.42 spid6s      Error: 35262, Severity: 17, State: 1.
+2018-01-24 09:23:26.42 spid6s      Skipping the default startup of database 'hadron1' because the database belongs to an availability group (Group ID:  65536). The database will be started by the availability group. This is an informational message only. No user action is required.
+2018-01-24 09:23:26.43 spid9s      Starting up database 'mssqlsystemresource'.
+2018-01-24 09:23:26.43 spid6s      Error: 35262, Severity: 17, State: 1.
+2018-01-24 09:23:26.43 spid6s      Skipping the default startup of database 'hadron2' because the database belongs to an availability group (Group ID:  65536). The database will be started by the availability group. This is an informational message only. No user action is required.
+2018-01-24 09:23:26.43 spid17s     Server local connection provider is ready to accept connection on [ \\.\pipe\SQLLocal\MSSQLSERVER ].
+2018-01-24 09:23:26.43 spid22s     Always On Availability Groups: Local Windows Server Failover Clustering service started. This is an informational message only. No user action is required.
+2018-01-24 09:23:26.43 spid17s     Server named pipe provider is ready to accept connection on [ \\.\pipe\sql\query ].
+2018-01-24 09:23:26.43 spid22s     Always On Availability Groups: Waiting for local Windows Server Failover Clustering node to start. This is an informational message only. No user action is required.
+2018-01-24 09:23:26.43 spid6s      Starting up database 'msdb'.
+2018-01-24 09:23:26.44 Server      Server is listening on [ ::1 <ipv6> 1434].
+2018-01-24 09:23:26.44 Server      Server is listening on [ 127.0.0.1 <ipv4> 1434].
+2018-01-24 09:23:26.45 spid22s     Always On Availability Groups: Local Windows Server Failover Clustering node started. This is an informational message only. No user action is required.
+2018-01-24 09:23:26.45 Server      Dedicated admin connection support was established for listening locally on port 1434.
+2018-01-24 09:23:26.45 spid22s     Always On Availability Groups: Waiting for local Windows Server Failover Clustering node to come online. This is an informational message only. No user action is required.
+2018-01-24 09:23:31.93 spid22s     Always On: The local replica of availability group 'FirstHadron' is starting. This is an informational message only. No user action is required.
+2018-01-24 09:23:32.33 spid24s     Service Broker manager has started.
+2018-01-24 09:23:32.37 spid6s      Recovery is complete. This is an informational message only. No user action is required.
+2018-01-24 09:23:32.58 spid22s     The state of the local availability replica in availability group 'FirstHadron' has changed from 'NOT_AVAILABLE' to 'RESOLVING_NORMAL'.  The state changed because the local instance of SQL Server is starting up.  For more information, see the SQL Server error log or cluster log.  If this is a Windows Server Failover Clustering (WSFC) availability group, you can also see the WSFC management console.
+2018-01-24 09:23:32.94 spid45s     The state of the local availability replica in availability group 'FirstHadron' has changed from 'RESOLVING_NORMAL' to 'SECONDARY_NORMAL'.  The state changed because the availability group state has changed in Windows Server Failover Clustering (WSFC).  For more information, see the SQL Server error log or cluster log.  If this is a Windows Server Failover Clustering (WSFC) availability group, you can also see the WSFC management console.
+2018-01-24 09:23:32.97 spid46s     Starting up database 'hadron1'.
+2018-01-24 09:23:32.97 spid43s     Starting up database 'hadron2'.
+2018-01-24 09:23:33.19 spid51      Configuration option 'show advanced options' changed from 0 to 1. Run the RECONFIGURE statement to install.
+2018-01-24 09:23:33.27 spid51      Configuration option 'Agent XPs' changed from 0 to 1. Run the RECONFIGURE statement to install.
+2018-01-24 09:23:33.30 spid46s     Parallel redo is started for database 'hadron1' with worker pool size [1].
+2018-01-24 09:23:33.33 spid43s     Parallel redo is started for database 'hadron2' with worker pool size [1].
+2018-01-24 09:23:33.33 spid51      Configuration option 'show advanced options' changed from 1 to 0. Run the RECONFIGURE statement to install.
+2018-01-24 09:23:33.53 spid22s     A connection for availability group 'FirstHadron' from availability replica 'LZHANG1S' with id  [E06A3D01-6E2E-4236-8226-68FC5282EC03] to 'LZHANG1T' with id [2838BF89-2530-4349-8171-5F98C1321D3A] has been successfully established.  This is an informational message only. No user action is required.
+2018-01-24 09:23:33.55 spid57s     Error: 41145, Severity: 16, State: 1.
+2018-01-24 09:23:33.55 spid57s     Cannot join database 'hadron1' to availability group 'FirstHadron'.  The database has already joined the availability group.  This is an informational message.  No user action is required.
+2018-01-24 09:23:33.57 spid58s     Error: 41145, Severity: 16, State: 1.
+2018-01-24 09:23:33.57 spid58s     Cannot join database 'hadron2' to availability group 'FirstHadron'.  The database has already joined the availability group.  This is an informational message.  No user action is required.
+2018-01-24 09:23:33.57 spid58s     The availability group database "hadron2" is changing roles from "SECONDARY" to "SECONDARY" because the mirroring session or availability group failed over due to role synchronization. This is an informational message only. No user action is required.
+2018-01-24 09:29:49.40 spid45s     Always On: The local replica of availability group 'FirstHadron' is going offline because the corresponding resource in the Windows Server Failover Clustering (WSFC) cluster is no longer online. This is an informational message only. No user action is required.
+2018-01-24 09:29:49.40 spid45s     The state of the local availability replica in availability group 'FirstHadron' has changed from 'SECONDARY_NORMAL' to 'RESOLVING_NORMAL'.  The state changed because the availability group state has changed in Windows Server Failover Clustering (WSFC).  For more information, see the SQL Server error log or cluster log.  If this is a Windows Server Failover Clustering (WSFC) availability group, you can also see the WSFC management console.
+2018-01-24 09:29:49.41 spid63s     Always On Availability Groups connection with primary database terminated for secondary database 'hadron2' on the availability replica 'LZHANG1T' with Replica ID: {2838bf89-2530-4349-8171-5f98c1321d3a}. This is an informational message only. No user action is required.
+2018-01-24 09:29:49.41 spid22s     Always On Availability Groups connection with primary database terminated for secondary database 'hadron1' on the availability replica 'LZHANG1T' with Replica ID: {2838bf89-2530-4349-8171-5f98c1321d3a}. This is an informational message only. No user action is required.
+2018-01-24 09:29:49.41 spid46s     The availability group database "hadron1" is changing roles from "SECONDARY" to "RESOLVING" because the mirroring session or availability group failed over due to role synchronization. This is an informational message only. No user action is required.
+2018-01-24 09:29:49.41 spid63s     The availability group database "hadron2" is changing roles from "SECONDARY" to "RESOLVING" because the mirroring session or availability group failed over due to role synchronization. This is an informational message only. No user action is required.
+2018-01-24 09:29:49.41 spid46s     State information for database 'hadron1' - Hardened Lsn: '(36:1696:1)'    Commit LSN: '(0:0:0)'    Commit Time: 'Jan  1 1900 12:00AM'
+2018-01-24 09:29:49.41 spid63s     State information for database 'hadron2' - Hardened Lsn: '(36:1832:1)'    Commit LSN: '(0:0:0)'    Commit Time: 'Jan  1 1900 12:00AM'
+2018-01-24 09:29:53.71 spid66      Always On: The local replica of availability group 'FirstHadron' is preparing to transition to the primary role. This is an informational message only. No user action is required.
+2018-01-24 09:29:53.78 spid66      The state of the local availability replica in availability group 'FirstHadron' has changed from 'RESOLVING_NORMAL' to 'PRIMARY_PENDING'.  The state changed because the availability group is coming online.  For more information, see the SQL Server error log or cluster log.  If this is a Windows Server Failover Clustering (WSFC) availability group, you can also see the WSFC management console.
+2018-01-24 09:29:53.78 Server      Started listening on virtual network name 'FirstHadronLst'. No user action is required.
+2018-01-24 09:29:53.79 Server      The Service Broker endpoint is in disabled or stopped state.
+2018-01-24 09:29:53.79 Server      The lease worker of availability group 'FirstHadron' is now sleeping the excess lease time (164438 ms) supplied during online. This is an informational message only. No user action is required.
+2018-01-24 09:29:53.83 Server      The state of the local availability replica in availability group 'FirstHadron' has changed from 'PRIMARY_PENDING' to 'PRIMARY_NORMAL'.  The state changed because the local replica has completed processing Online command from Windows Server Failover Clustering (WSFC).  For more information, see the SQL Server error log or cluster log.  If this is a Windows Server Failover Clustering (WSFC) availability group, you can also see the WSFC management console.
+2018-01-24 09:29:53.85 spid46s     The availability group database "hadron1" is changing roles from "RESOLVING" to "PRIMARY" because the mirroring session or availability group failed over due to role synchronization. This is an informational message only. No user action is required.
+2018-01-24 09:29:53.85 spid63s     The availability group database "hadron2" is changing roles from "RESOLVING" to "PRIMARY" because the mirroring session or availability group failed over due to role synchronization. This is an informational message only. No user action is required.
+2018-01-24 09:29:53.85 Server      The Service Broker endpoint is in disabled or stopped state.
+2018-01-24 09:29:53.85 spid46s     State information for database 'hadron1' - Hardened Lsn: '(36:1696:1)'    Commit LSN: '(0:0:0)'    Commit Time: 'Jan  1 1900 12:00AM'
+2018-01-24 09:29:53.85 spid63s     State information for database 'hadron2' - Hardened Lsn: '(36:1832:1)'    Commit LSN: '(0:0:0)'    Commit Time: 'Jan  1 1900 12:00AM'
+2018-01-24 09:29:53.87 spid46s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:4
+2018-01-24 09:29:53.87 spid63s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:4
+2018-01-24 09:29:53.87 spid46s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:4
+2018-01-24 09:29:53.87 spid46s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:29:53.87 spid63s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:4
+2018-01-24 09:29:53.87 spid63s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:29:53.87 spid65s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:29:53.87 spid65s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:29:53.87 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:29:53.87 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:29:53.89 spid65s     Recovery is writing a checkpoint in database 'hadron1' (5). This is an informational message only. No user action is required.
+2018-01-24 09:29:53.89 spid22s     Recovery is writing a checkpoint in database 'hadron2' (6). This is an informational message only. No user action is required.
+2018-01-24 09:29:53.89 spid65s     Parallel redo is shutdown for database 'hadron1' with worker pool size [1].
+2018-01-24 09:29:53.89 spid22s     Parallel redo is shutdown for database 'hadron2' with worker pool size [1].
+2018-01-24 09:30:03.49 Server      The Service Broker endpoint is in disabled or stopped state.
+2018-01-24 09:30:36.56 spid48s     A connection for availability group 'FirstHadron' from availability replica 'LZHANG1S' with id  [E06A3D01-6E2E-4236-8226-68FC5282EC03] to 'LZHANG1T' with id [2838BF89-2530-4349-8171-5F98C1321D3A] has been successfully established.  This is an informational message only. No user action is required.
+2018-01-24 09:30:38.18 spid48s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.18 spid48s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.20 spid48s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.20 spid48s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.20 spid48s     Always On Availability Groups connection with secondary database established for primary database 'hadron1' on the availability replica 'LZHANG1T' with Replica ID: {2838bf89-2530-4349-8171-5f98c1321d3a}. This is an informational message only. No user action is required.
+2018-01-24 09:30:38.20 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.20 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.22 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.22 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.22 spid22s     Always On Availability Groups connection with secondary database established for primary database 'hadron2' on the availability replica 'LZHANG1T' with Replica ID: {2838bf89-2530-4349-8171-5f98c1321d3a}. This is an informational message only. No user action is required.
+2018-01-24 09:30:38.22 spid48s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.22 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.26 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.26 spid48s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.26 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.26 spid22s     Always On Availability Groups connection with secondary database established for primary database 'hadron2' on the availability replica 'LZHANG1T' with Replica ID: {2838bf89-2530-4349-8171-5f98c1321d3a}. This is an informational message only. No user action is required.
+2018-01-24 09:30:38.26 spid48s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.26 spid48s     Always On Availability Groups connection with secondary database established for primary database 'hadron1' on the availability replica 'LZHANG1T' with Replica ID: {2838bf89-2530-4349-8171-5f98c1321d3a}. This is an informational message only. No user action is required.
+2018-01-24 09:30:38.26 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.26 spid48s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.29 spid53s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.29 spid53s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.29 spid53s     Always On Availability Groups connection with secondary database established for primary database 'hadron1' on the availability replica 'LZHANG1T' with Replica ID: {2838bf89-2530-4349-8171-5f98c1321d3a}. This is an informational message only. No user action is required.
+2018-01-24 09:30:38.29 spid63s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.29 spid63s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.29 spid63s     Always On Availability Groups connection with secondary database established for primary database 'hadron2' on the availability replica 'LZHANG1T' with Replica ID: {2838bf89-2530-4349-8171-5f98c1321d3a}. This is an informational message only. No user action is required.
+2018-01-24 09:30:38.29 spid53s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.29 spid63s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.32 spid72s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.34 spid72s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:4
+2018-01-24 09:30:38.34 spid72s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:4
+2018-01-24 09:30:38.34 spid72s     DbMgrPartnerCommitPolicy::SetSyncState: 2838BF89-2530-4349-8171-5F98C1321D3A:4
+2018-01-24 09:30:38.34 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:1
+2018-01-24 09:30:38.36 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:4
+2018-01-24 09:30:38.36 spid22s     DbMgrPartnerCommitPolicy::SetSyncAndRecoveryPoint: 2838BF89-2530-4349-8171-5F98C1321D3A:4
+2018-01-24 09:30:38.36 spid22s     DbMgrPartnerCommitPolicy::SetSyncState: 2838BF89-2530-4349-8171-5F98C1321D3A:4
+2018-01-24 09:30:51.97 Server      The Service Broker endpoint is in disabled or stopped state.
+2018-01-25 00:00:43.47 spid18s     This instance of SQL Server has been using a process ID of 2844 since 1/24/2018 9:23:21 AM (local) 1/24/2018 5:23:21 PM (UTC). This is an informational message only; no user action is required.
+2018-01-25 09:31:03.21 Server      The Service Broker endpoint is in disabled or stopped state.
+2018-01-25 15:37:08.50 Server      The Service Broker endpoint is in disabled or stopped state.

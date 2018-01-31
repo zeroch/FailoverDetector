@@ -85,6 +85,9 @@
     <Content Include="Data\UnitTest\ErrorLog\TestCase_1.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Data\UnitTest\ErrorLog\TestCase_2.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Data\UnitTest\SystemHealth\QPCompTest_00.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
