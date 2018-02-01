@@ -205,11 +205,9 @@ namespace FailoverDetector
                 // pReport we get here is match time range
                 // we insert role transition as not XEvent
                 PartialReport pReport = mReports.FGetReport(pEntry.Timestamp);
-                if (pReport.IsEmptyRole(instance))
-                {
-                    pReport.AddRoleTransition(instance, prevRole, false);
-                }
-                pReport.AddRoleTransition(instance, nextRole, false);
+
+                pReport.AddRoleTransition(instance, prevRole, nextRole, false);
+
 
                 if (pReport.AgName == string.Empty)
                 {

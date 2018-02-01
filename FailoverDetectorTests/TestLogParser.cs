@@ -131,10 +131,10 @@ namespace FailoverDetectorTests
                 AgName = "FirstHadron",
             };
 
-            expected.AddRoleTransition("LZHANG1S", "SECONDARY_NORMAL");
-            expected.AddRoleTransition("LZHANG1S", "RESOLVING_NORMAL");
-            expected.AddRoleTransition("LZHANG1S", "PRIMARY_PENDING");
-            expected.AddRoleTransition("LZHANG1S", "PRIMARY_NORMAL");
+            expected.AddRoleTransition("LZHANG1S", "SECONDARY_NORMAL", "RESOLVING_NORMAL");
+            expected.AddRoleTransition("LZHANG1S", "RESOLVING_NORMAL", "PRIMARY_PENDING");
+            expected.AddRoleTransition("LZHANG1S", "PRIMARY_PENDING", "PRIMARY_NORMAL");
+
 
 
             // run TestJob job to parse a testcase which generate report from errorlog without xevent

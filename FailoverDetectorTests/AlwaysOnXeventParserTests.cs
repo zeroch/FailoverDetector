@@ -200,8 +200,7 @@ namespace FailoverDetectorTests
             expected.AgName = "ag001";
             expected.AgId = "90001";
             expected.ForceFailoverFound = true;
-            expected.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL");
-            expected.AddRoleTransition("ze-vm001", "RESOLVING_PENDING_FAILOVER");
+            expected.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
 
             PartialReport actual = new PartialReport
             {
@@ -211,8 +210,7 @@ namespace FailoverDetectorTests
                 AgId = "90001",
                 ForceFailoverFound = true
             };
-            actual.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL");
-            actual.AddRoleTransition("ze-vm001", "RESOLVING_PENDING_FAILOVER");
+            actual.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
 
             Assert.IsTrue(expected.Equals(actual));
 
@@ -237,10 +235,8 @@ namespace FailoverDetectorTests
                 StartTime = baseTimeOffset,
                 EndTime = baseTimeOffset
             };
-            pReport.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL");
-            pReport.AddRoleTransition("ze-vm001", "RESOLVING_PENDING_FAILOVER");
-            pReport.AddRoleTransition("ze-vm002", "RESOLVING_PENDING_FAILOVER");
-            pReport.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL");
+            pReport.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
+            pReport.AddRoleTransition("ze-vm002", "RESOLVING_PENDING_FAILOVER", "RESOLVING_NORMAL");
             string _testString = @"2017-09-14 16:19:57.05 spid24s     Always On: The availability replica manager is going offline because the local Windows Server Failover Clustering (WSFC) node has lost quorum. This is an informational message only. No user action is required.";
             ErrorLogEntry entry = new ErrorLogEntry()
             {
@@ -277,10 +273,8 @@ namespace FailoverDetectorTests
             expected.AgName = "ag001";
             expected.AgId = "90001";
             expected.ForceFailoverFound = true;
-            expected.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL");
-            expected.AddRoleTransition("ze-vm001", "RESOLVING_PENDING_FAILOVER");
-            expected.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL");
-            expected.AddRoleTransition("ze-vm002", "RESOLVING_PENDING_FAILOVER");
+            expected.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
+            expected.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
 
             PartialReport actual = new PartialReport
             {
@@ -290,8 +284,7 @@ namespace FailoverDetectorTests
                 AgId = "90001",
                 ForceFailoverFound = true
             };
-            actual.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL");
-            actual.AddRoleTransition("ze-vm001", "RESOLVING_PENDING_FAILOVER");
+            actual.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
 
             PartialReport other = new PartialReport
             {
@@ -301,8 +294,7 @@ namespace FailoverDetectorTests
                 AgId = "90001",
                 ForceFailoverFound = true
             };
-            actual.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL");
-            actual.AddRoleTransition("ze-vm002", "RESOLVING_PENDING_FAILOVER");
+            actual.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
             actual.MergeReport(other);
 
             Assert.IsTrue(expected.Equals(actual));
@@ -324,10 +316,8 @@ namespace FailoverDetectorTests
             expected.AgName = "ag001";
             expected.AgId = "90001";
             expected.ForceFailoverFound = true;
-            expected.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL");
-            expected.AddRoleTransition("ze-vm001", "RESOLVING_PENDING_FAILOVER");
-            expected.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL");
-            expected.AddRoleTransition("ze-vm002", "RESOLVING_PENDING_FAILOVER");
+            expected.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
+            expected.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
 
 
             AgReport agReport = pReportMgr.GetAgReports("ag001");
@@ -338,8 +328,7 @@ namespace FailoverDetectorTests
             actual.AgName = "ag001";
             actual.AgId = "90001";
             actual.ForceFailoverFound = true;
-            actual.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL");
-            actual.AddRoleTransition("ze-vm001", "RESOLVING_PENDING_FAILOVER");
+            actual.AddRoleTransition("ze-vm001", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
 
             PartialReport other = agReport.FGetReport(endTimeOffset);
             other.StartTime = endTimeOffset;
@@ -347,8 +336,7 @@ namespace FailoverDetectorTests
             other.AgName = "ag001";
             other.AgId = "90001";
             other.ForceFailoverFound = true;
-            other.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL");
-            other.AddRoleTransition("ze-vm002", "RESOLVING_PENDING_FAILOVER");
+            other.AddRoleTransition("ze-vm002", "RESOLVING_NORMAL", "RESOLVING_PENDING_FAILOVER");
 
             agReport.MergeReports();
 

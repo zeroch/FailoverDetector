@@ -204,11 +204,9 @@ namespace FailoverDetector
                 mReports = pReportMgr.AddNewAgReport(agName, _instanceName);
             }
             PartialReport pReport = mReports.FGetReport(evt.Timestamp);
-            if (pReport.IsEmptyRole(_instanceName))
-            {
-                pReport.AddRoleTransition(_instanceName, evt.Fields["previous_state"].Value.ToString());
-            }
-            pReport.AddRoleTransition(_instanceName, evt.Fields["current_state"].Value.ToString());
+
+            pReport.AddRoleTransition(_instanceName, evt.Fields["previous_state"].Value.ToString(), evt.Fields["current_state"].Value.ToString());
+
             if (pReport.AgId == string.Empty)
             {
                 pReport.AgId = agId;

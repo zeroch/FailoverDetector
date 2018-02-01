@@ -400,21 +400,28 @@ namespace FailoverDetector
             return mRole;
         }
         // isXEvent : indicate if this role transition come from XEvent
-        public void AddRoleTransition(string currentNode, string cRole, bool isXEvent = true)
+        public void AddRoleTransition(string currentNode, string prevRole, string nextRole, bool isXEvent = true)
         {
             if (isXEvent)
             {
                 FoundRoleByXEvent = true;
             }
 
+
             // only when it is not from XEvent and current report has role record from XEvent, we don't do insert. because Errorlog Role transition will duplicate with XEvent
             if (! (FoundRoleByXEvent && !isXEvent))
             {
-                EHadrArRole mRole = ParseHadrRole(cRole);
+                EHadrArRole mRole;
                 if (IsEmptyRole(currentNode))
                 {
                     _roleTransition.Add(currentNode, new List<EHadrArRole>());
+                    mRole = ParseHadrRole(prevRole);
+                    _roleTransition[currentNode].Add(mRole);
                 }
+
+
+                // insert next role
+                mRole = ParseHadrRole(nextRole);
                 _roleTransition[currentNode].Add(mRole);
             }
 
