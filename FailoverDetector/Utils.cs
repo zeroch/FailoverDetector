@@ -551,11 +551,11 @@ namespace FailoverDetector
                     {
                         errorlog.Add(fileEntry);
                     }
-                    else if (fileEntry.Contains("AlwaysOn_health"))
+                    else if (fileEntry.Contains("AlwaysOn_health") && fileEntry.EndsWith(".xel"))
                     {
                         alwaysOnList.Add(fileEntry);
                     }
-                    else if (fileEntry.Contains("system_health"))
+                    else if (fileEntry.Contains("system_health") && fileEntry.EndsWith(".xel"))
                     {
                         systemHealthList.Add(fileEntry);
 
@@ -564,7 +564,7 @@ namespace FailoverDetector
                     {
                         pNode.SetClusterLog(fileEntry);
                     }
-                    else if (fileEntry.Contains("System.csv"))
+                    else if (fileEntry.Contains("System.csv") && fileEntry.EndsWith(".csv"))
                     {
                         pNode.SetSystemLog(fileEntry);
                     }

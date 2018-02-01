@@ -23,17 +23,27 @@ namespace FailoverDetector
         // #TODO find out the way that dotnet core handle xevent.
         public void LoadXevent(string xelFileName, string serverName)
         {
-            _instanceName = serverName;
-            // load xel File
-            using (QueryableXEventData events = new QueryableXEventData(xelFileName))
+            try
             {
-                foreach (PublishedEvent evt in events)
+                _instanceName = serverName;
+                // load xel File
+                using (QueryableXEventData events = new QueryableXEventData(xelFileName))
                 {
-                    // dispatch event and handle by own method.
+                    foreach (PublishedEvent evt in events)
+                    {
+                        // dispatch event and handle by own method.
 
-                    DispatchEvent(evt);
+                        DispatchEvent(evt);
+                    }
                 }
             }
+            catch (Exception e)
+            {
+               
+                Console.WriteLine(e.Message);
+                return;
+            }
+
         }
     }
 

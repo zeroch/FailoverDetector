@@ -117,6 +117,11 @@ namespace FailoverDetector
                 pReportMgr.SortReports(false);
                 Console.WriteLine(e.Message);
                 return;
+            }catch(Exception e)
+            {
+                pReportMgr.SortReports(false);
+                Console.WriteLine(e.Message);
+                return;
             }
         }
 

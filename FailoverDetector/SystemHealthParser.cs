@@ -90,6 +90,13 @@ namespace FailoverDetector
                 Console.WriteLine(e.Message);
                 return;
             }
+            catch (Exception e)
+            {
+
+                Console.WriteLine(e.Message);
+                return;
+            }
+
 
         }
         public override void DispatchEvent(PublishedEvent evt)
