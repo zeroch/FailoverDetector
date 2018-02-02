@@ -569,8 +569,8 @@ namespace FailoverDetector
                         pNode.SetSystemLog(fileEntry);
                     }
                 }
-
-
+                // only errorlog is special here, reverse list will put older log in the front
+                errorlog.Reverse();
                 pNode.SetAlwaysOnFile(alwaysOnList);
                 pNode.SetErrorLogFile(errorlog);
                 pNode.SetSystemHealthFile(systemHealthList);
