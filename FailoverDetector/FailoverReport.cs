@@ -477,37 +477,62 @@ namespace FailoverDetector
 
         public void IdentifyRoles()
         {
-            //  iterate through roleTransition
-            //  find prev Primary is the keyword
-            foreach(KeyValuePair<string, List<EHadrArRole>> kvp in _roleTransition)
+
+            List<string> notNormalStateReplica = new List<string>();
+
+            // Identify New and Old primary role
+            // so we should search for PrimaryPending to Primary Normal sequence
+
+            foreach (KeyValuePair<string, List<EHadrArRole>> kvp in _roleTransition)
             {
-                string instanceName = kvp.Key;
-                List<EHadrArRole> tRoleSet = kvp.Value;
+                List<EHadrArRole> roleList = kvp.Value;
+                EHadrArRole pHadrRole = roleList.FirstOrDefault();
+                int primaryRepeatCount = 0;
 
-                EHadrArRole initState = tRoleSet.FirstOrDefault();
-                EHadrArRole endState = EHadrArRole.HadrArRoleLast;
-                bool restarted = false;
-                if (initState == EHadrArRole.HadrArRoleNotAvailable)
+                if ((pHadrRole != EHadrArRole.HadrArRolePrimaryNormal) &&
+                    (pHadrRole != EHadrArRole.HadrArRoleSecondaryNormal))
                 {
-                    restarted = true;
-                    initState = tRoleSet[1];
+                    notNormalStateReplica.Add(kvp.Key);
                 }
-                endState = tRoleSet.LastOrDefault();
 
-                if(  endState == EHadrArRole.HadrArRolePrimaryNormal)
+                for(int i = 1; i < roleList.Count; ++i)
                 {
-                    NewPrimary = instanceName;
+                    EHadrArRole nHadrRole = roleList[i];
+                    if ( (pHadrRole == EHadrArRole.HadrArRolePrimaryPending) &&
+                            (nHadrRole == EHadrArRole.HadrArRolePrimaryNormal))
+                    {
+                        NewPrimary = kvp.Key;
+                        primaryRepeatCount++;
+                    }
+
+                    if ((pHadrRole == EHadrArRole.HadrArRolePrimaryNormal) &&
+    (nHadrRole == EHadrArRole.HadrArRoleResolvingNormal))
+                    {
+                        OldPrimary = kvp.Key;
+                        primaryRepeatCount++;
+                    }
+
+                    pHadrRole = nHadrRole;
                 }
-                if ((initState == EHadrArRole.HadrArRolePrimaryNormal) ||
-                    (restarted && OldPrimary==String.Empty))
+                if (primaryRepeatCount > 1)
                 {
-                    OldPrimary = instanceName;
+                    UnsuccessedFailover = true;
                 }
-       
             }
-            if (OldPrimary == NewPrimary)
+
+            // now we are talking about special case
+            // 1. replica was primary but because restart instance, its initial state is NotAvailable. In this case, other instance's initial state should be Secondary. 
+            // 2. replica was primary but lost awareness for long time so its initial state  isResolvingState. we can check previous report. However we are not sure all reports will captured. we have to use same method that check 
+            if (OldPrimary == String.Empty)
             {
-                UnsuccessedFailover = true;
+                // if total role transition found is only one, we really cannot determine old primary base on Initial state, then leave it empty
+                if (_roleTransition.Count > 1)
+                {
+                    if (notNormalStateReplica.Count == 1)
+                    {
+                        OldPrimary = notNormalStateReplica[0];
+                    }
+                }
             }
         }
         
