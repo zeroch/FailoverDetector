@@ -208,7 +208,11 @@ namespace FailoverDetector
 
                 pReport.AddRoleTransition(instance, prevRole, nextRole, false);
 
-
+                // Handle raw data if we find force failover message
+                if (nextRole == "RESOLVING_PENDING_FAILOVER")
+                {
+                    pReport.AddNewMessage(Constants.SourceType.ErrorLog, instance, pEntry, "");
+                }
                 if (pReport.AgName == string.Empty)
                 {
                     pReport.AgName = agName;
