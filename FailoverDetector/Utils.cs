@@ -464,19 +464,29 @@ namespace FailoverDetector
                 // some global value, we put at here first
                 DefaultMode = true;
                 AnalyzeOnly = false;
-                ShowResult = false;
+                ShowResult = true;
                 FoundConfiguration = false;
 
                 rootDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 dataDirectory = rootDirectory + @"\Data";
                 resultDirectory = rootDirectory + @"\Result";
                 configureFilePath = rootDirectory + @"\Configuration.json";
+                NodeList = new Dictionary<string, NodeFileInfo>();
+
             }
 
             public FileProcessor(string dirRootDirectory)
             {
                 rootDirectory = dirRootDirectory;
+                dataDirectory = rootDirectory + @"\Data";
+                resultDirectory = rootDirectory + @"\Result";
+                configureFilePath = rootDirectory + @"\Configuration.json";
+
                 NodeList = new Dictionary<string, NodeFileInfo>();
+                DefaultMode = true;
+                AnalyzeOnly = false;
+                ShowResult = true;
+                FoundConfiguration = false;
             }
 
             public bool Equals(FileProcessor other)
@@ -704,14 +714,14 @@ namespace FailoverDetector
                                 AnalyzeOnly = true;
                                 DefaultMode = false;
                                 break;
-                            case "--Show":
-                                ShowResult = true;
+                            case "--Silence":
+                                ShowResult = false;
                                 break;
                             default:
                                 Console.WriteLine("{0} is an invalid parameter.", s);
                                 Console.WriteLine("Please check valid Parameter input:");
                                 Console.WriteLine("--Analyze");
-                                Console.WriteLine("--Show");
+                                Console.WriteLine("--Silence");
                                 return false;
                         }
                     }

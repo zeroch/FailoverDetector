@@ -144,7 +144,7 @@ namespace FailoverDetector.UtilsTests
 
 
             Assert.IsTrue(actualfFileProcessor.ProcessParameter(splitStrings));
-            bool actualResult = (actualfFileProcessor.ShowResult == false) &&
+            bool actualResult = (actualfFileProcessor.ShowResult == true) &&
                                 (actualfFileProcessor.DefaultMode == false) &&
                                 (actualfFileProcessor.AnalyzeOnly == true);
             Assert.IsTrue(actualResult);
@@ -154,12 +154,12 @@ namespace FailoverDetector.UtilsTests
         {
             FileProcessor actualfFileProcessor = new FileProcessor(@".\");
 
-            string testParameter = @"--Analyze --Show";
+            string testParameter = @"--Analyze --Silence";
             string[] splitStrings = testParameter.Split(' ');
 
 
             Assert.IsTrue(actualfFileProcessor.ProcessParameter(splitStrings));
-            bool actualResult = (actualfFileProcessor.ShowResult == true) &&
+            bool actualResult = (actualfFileProcessor.ShowResult == false) &&
                                 (actualfFileProcessor.DefaultMode == false) &&
                                 (actualfFileProcessor.AnalyzeOnly == true);
             Assert.IsTrue(actualResult);
