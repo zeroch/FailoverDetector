@@ -17,7 +17,6 @@ namespace FailoverDetector
             _utCcorrection = new TimeSpan(0, 0, 0);
             sourceType = Constants.SourceType.ClusterLog;
             SetupRegexList();
-            startToReadSystem = false;
         }
 
         public override void SetupRegexList()
@@ -124,7 +123,7 @@ namespace FailoverDetector
                 line = line.Substring(tmpChannel.Length).Trim();
             }
 
-            ErrorLogEntry entry = new ErrorLogEntry(tmpParsedTime, tmpPid, line);
+            ErrorLogEntry entry = new ErrorLogEntry(tmpParsedTime, tmpPid, tmpChannel, line);
             entry.RawMessage = rawLine;
             return entry;
 

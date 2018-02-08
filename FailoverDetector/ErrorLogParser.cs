@@ -15,9 +15,6 @@ namespace FailoverDetector
         protected List<MessageExpression> _logParserList;
         protected Constants.SourceType sourceType;
         protected UTCCorrectionExpression pUTCCorrection;
-        // only use for cluster log
-        protected bool startToReadSystem;
-        protected SystemChannelExpression systemChannel;
         public TimeSpan FGetUTCTimeZone()
         {
             if (utcCorrectionFound)
@@ -36,8 +33,6 @@ namespace FailoverDetector
         {
             _utCcorrection = new TimeSpan(0, 0, 0);
             pUTCCorrection = new UTCCorrectionExpression();
-            startToReadSystem = false;
-            systemChannel = new SystemChannelExpression();
         }
 
         public void SetTargetFailoverTime(DateTimeOffset start, DateTimeOffset end)
@@ -69,17 +64,6 @@ namespace FailoverDetector
                             return;
                         while (line != null && ReportIterator.Current != null)
                         {
-
-                            // this block is special for cluster log
-                            if (!startToReadSystem)
-                            {
-                                if (systemChannel.IsMatch(line))
-                                {
-                                    startToReadSystem = true;
-                                    line = reader.ReadLine();
-                                    continue;
-                                }
-                            }
                             var pEntry = ParseLogEntry(line);
                             if (pEntry.IsEmpty())
                             {
@@ -169,6 +153,8 @@ namespace FailoverDetector
 
         public string Spid { get; set; }
 
+        public string Channel { get; set; }
+
         public string RawMessage { get; set; }
 
         public ErrorLogEntry()
@@ -176,13 +162,15 @@ namespace FailoverDetector
             Message = String.Empty;
             RawMessage = String.Empty;
             Spid = String.Empty;
+            Channel = String.Empty;
             Timestamp = DateTimeOffset.MinValue;
         }
 
-        public ErrorLogEntry(DateTimeOffset pTimestamp, string pSpid, string pMessage)
+        public ErrorLogEntry(DateTimeOffset pTimestamp, string pSpid, string pChannel, string pMessage)
         {
             Timestamp = pTimestamp;
             Spid = pSpid;
+            Channel = pChannel;
             Message = pMessage;
             RawMessage = String.Empty;
 
@@ -231,8 +219,6 @@ namespace FailoverDetector
             sourceType = Constants.SourceType.ErrorLog;
             utcCorrectionFound = false;
             SetupRegexList();
-            startToReadSystem = true;
-
         }
 
         public override void SetupRegexList()

@@ -60,7 +60,7 @@ namespace FailoverDetectorTests
         public void TestErrorLogEntryEquals()
         {
             DateTimeOffset cmp = new DateTimeOffset(2017, 9, 10, 22, 00, 00, new TimeSpan(0, 0, 0));
-            ErrorLogEntry pEntry = new ErrorLogEntry(cmp, "spid191", "UTC adjustment: -4:00");
+            ErrorLogEntry pEntry = new ErrorLogEntry(cmp, "spid191", "", "UTC adjustment: -4:00");
             string testString = @"2017-09-10 22:00:00.19 spid191     UTC adjustment: -4:00";
             ErrorLogEntry entry = new ErrorLogEntry();
             ErrorLogParser parser = new ErrorLogParser();
