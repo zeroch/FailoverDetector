@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 using FailoverDetector.Utils;
 
@@ -33,7 +35,6 @@ namespace FailoverDetector
             };
         }
 
-        readonly TimeSpan _utCcorrection;
         private readonly Regex _rxTimeStamp = new Regex(@"\d{4}/\d{2}/\d{2}-\d{2}:\d{2}:\d{2}.\d{3}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly Regex _rxPid = new Regex(@"[0-9a-f]{8}.[0-9a-f]{8}::", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly Regex _rxEntryType = new Regex(@"ERR|INFO|warn|DBG");
@@ -129,5 +130,95 @@ namespace FailoverDetector
 
         }
 
+        public new void ParseLog(string logFilePath, string instanceName)
+        {
+            try
+            {
+                using (FileStream stream = File.OpenRead(logFilePath))
+                {
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        string line = reader.ReadLine();
+                        ReportMgr pReportMgr = ReportMgr.ReportMgrInstance;
+
+                        bool startToReadSystem = false;
+                        SystemChannelExpression systemChannel = new SystemChannelExpression();
+
+                        bool keepScan = true;
+                        while (line != null && keepScan)
+                        {
+
+
+                            var pEntry = ParseLogEntry(line);
+                            // this block is special for cluster log
+                            if (!startToReadSystem && pEntry.Channel == "[System]")
+                            {
+
+                                startToReadSystem = true;
+                            }
+                            if (keepScan && pEntry.Channel == "[Verbose]")
+                            {
+                                keepScan = false;
+                            }
+                            if (pEntry.IsEmpty())
+                            {
+                                line = reader.ReadLine();
+                                continue;
+
+                            }
+                            if (pEntry.IsTrancated())
+                            {
+                                line = reader.ReadLine();
+                                continue;
+                                // dont use and access date
+                                // append message with last one I think. 
+                                // trancated is a special case in our problem.
+                            }
+
+                            DateTimeOffset messageTime = pEntry.Timestamp;
+
+
+
+                            // I need an interator that I don't care which AG it is
+                            // only iterate through by time.
+                            //pReportMgr.
+                            IEnumerator ReportIterator = pReportMgr.ReportVisitor();
+                            while(ReportIterator.MoveNext() && ReportIterator.Current != null)
+                            {
+                                // compare time
+                                PartialReport reportInstance = (PartialReport)ReportIterator.Current;
+                                if ((messageTime < reportInstance.EndTime.AddMinutes(Constants.DefaultInterval)) &&
+                                    (messageTime > (reportInstance.StartTime.AddMinutes(-1 * Constants.DefaultInterval))))
+                                {
+                                    foreach (var regexParser in _logParserList)
+                                    {
+                                        if (regexParser.IsMatch(pEntry.Message))
+                                        {
+                                            regexParser.HandleOnceMatch(instanceName, pEntry, reportInstance);
+
+                                        }
+                                    }
+                                }
+                            }
+                            line = reader.ReadLine();
+ 
+                        }
+                    }
+                }
+            }
+            catch (DirectoryNotFoundException e)
+            {
+
+                Console.WriteLine(e.Message);
+                return;
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
+        }
+
     }
+
 }
