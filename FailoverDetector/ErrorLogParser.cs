@@ -43,7 +43,7 @@ namespace FailoverDetector
                         // only iterate through by time.
                         //pReportMgr.
                         IEnumerator ReportIterator = pReportMgr.ReportVisitor();
-                        if (!ReportIterator.MoveNext())
+                        if (ReportIterator == null || !ReportIterator.MoveNext())
                             return;
                         while (line != null && ReportIterator.Current != null)
                         {
